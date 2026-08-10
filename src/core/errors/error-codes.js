@@ -1,0 +1,15 @@
+export const errorCodes = Object.freeze({
+  validation: 'VALIDATION_ERROR',
+  authenticationRequired: 'AUTHENTICATION_REQUIRED',
+  invalidCredentials: 'INVALID_CREDENTIALS',
+  passwordChangeRequired: 'PASSWORD_CHANGE_REQUIRED',
+  sessionExpired: 'SESSION_EXPIRED',
+  sessionRevoked: 'SESSION_REVOKED',
+  forbidden: 'FORBIDDEN',
+  notFound: 'RESOURCE_NOT_FOUND',
+  conflict: 'RESOURCE_CONFLICT',
+  rateLimitExceeded: 'RATE_LIMIT_EXCEEDED',
+  payloadTooLarge: 'PAYLOAD_TOO_LARGE',
+  database: 'DATABASE_ERROR',
+  internal: 'INTERNAL_SERVER_ERROR',
+});

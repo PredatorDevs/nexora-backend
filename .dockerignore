@@ -1,0 +1,15 @@
+.git
+.github
+.agents
+.env
+.env.*
+!.env.example
+node_modules
+coverage
+logs
+*.log
+.idea
+.vscode
+Dockerfile*
+docker-compose*.yml
+IMPLEMENTATION_PLAN.md
