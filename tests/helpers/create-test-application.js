@@ -26,6 +26,8 @@ import { createUsersRepository } from '../../src/modules/users/users.repository.
 import { createUsersService } from '../../src/modules/users/users.service.js';
 import { createEntityChangeRepository } from '../../src/modules/entity-changes/entity-change.repository.js';
 import { createEntityChangeService } from '../../src/modules/entity-changes/entity-change.service.js';
+import { createAddressDictionariesRepository } from '../../src/modules/address-dictionaries/address-dictionaries.repository.js';
+import { createEconomicActivitiesRepository } from '../../src/modules/economic-activities/economic-activities.repository.js';
 
 export function createTestApplication({
   prisma,
@@ -86,6 +88,8 @@ export function createTestApplication({
       }),
       permissions: createPermissionsRepository(prisma),
       sessions: createSessionsService(createSessionsRepository(prisma)),
+      addressDictionaries: createAddressDictionariesRepository(prisma),
+      economicActivities: createEconomicActivitiesRepository(prisma),
     },
     settings: {
       auth: { refreshCookieName },

@@ -1,5 +1,8 @@
 # Entity change logging
 
+> **Migration status:** existing administration history is installation-wide.
+> New company aggregates require tenant context before they are introduced.
+
 The boilerplate keeps two complementary immutable histories:
 
 - `audit_logs` records who attempted a sensitive action, its result, request
@@ -30,6 +33,14 @@ Each `entity_change_logs` row contains:
 
 The table is append-only. The repository intentionally exposes only `create`;
 there is no application update or delete operation.
+
+The target model adds nullable `companyId`, `actorMembershipId`, `branchId`, and
+`operationId`. Company mutations require context derived from the authenticated
+session. Collection and detail queries inject the active company; fetching a
+change by its ID alone is insufficient.
+
+This history is not the inventory Kardex. Inventory requires its own append-only
+business ledger with quantities, locations, and source documents.
 
 ## Covered mutations
 

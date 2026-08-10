@@ -1,5 +1,9 @@
 # Administrative API
 
+> **Migration status:** these endpoints currently administer global users and
+> roles. They will be split into platform administration and company membership
+> administration during the multi-company milestone.
+
 All administrative routes require a valid access token and a concrete RBAC
 permission. Role names are never used as authorization decisions.
 
@@ -37,6 +41,27 @@ capabilities implemented in code.
 - `DELETE /api/v1/sessions/:id`
 
 Session responses omit refresh-token hashes. Revocation takes effect immediately.
+
+## Target API boundaries
+
+Platform administrators manage global users, companies, platform roles, and
+cross-company controls. Company administrators manage memberships and company
+roles without receiving general access to the global user table.
+
+The company boundary will expose operations such as:
+
+```text
+GET    /api/v1/company/members
+POST   /api/v1/company/members
+PATCH  /api/v1/company/members/:id/status
+PUT    /api/v1/company/members/:id/roles
+GET    /api/v1/company/sessions
+DELETE /api/v1/company/sessions/:id
+```
+
+An invitation by email creates or reuses the global identity internally without
+disclosing memberships or profile data from another company. Company session
+queries and revocations are scoped to the active company.
 
 ## Listing conventions
 

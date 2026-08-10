@@ -184,3 +184,74 @@ model EntityChangeLog {
   @@index([createdAt], map: "entity_change_logs_created_at_idx")
   @@map("entity_change_logs")
 }
+
+model Country {
+  id           Int      @id @default(autoincrement()) @db.UnsignedInt
+  name         String   @db.VarChar(128)
+  abbreviation String   @unique(map: "countries_abbreviation_key") @db.VarChar(5)
+  mhCode       String   @unique(map: "countries_mh_code_key") @map("mh_code") @db.VarChar(5)
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.DateTime(3)
+
+  @@index([isActive, name], map: "countries_active_name_idx")
+  @@map("countries")
+}
+
+model Department {
+  id             Int            @id @default(autoincrement()) @db.UnsignedInt
+  name           String         @db.VarChar(80)
+  abbreviation   String         @unique(map: "departments_abbreviation_key") @db.VarChar(10)
+  mhCode         String         @unique(map: "departments_mh_code_key") @map("mh_code") @db.VarChar(5)
+  zone           Int            @db.UnsignedTinyInt
+  isActive       Boolean        @default(true) @map("is_active")
+  createdAt      DateTime       @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt      DateTime       @updatedAt @map("updated_at") @db.DateTime(3)
+  municipalities Municipality[]
+
+  @@index([isActive, name], map: "departments_active_name_idx")
+  @@map("departments")
+}
+
+model Municipality {
+  id           Int        @id @default(autoincrement()) @db.UnsignedInt
+  departmentId Int        @map("department_id") @db.UnsignedInt
+  name         String     @db.VarChar(80)
+  mhCode       String     @map("mh_code") @db.VarChar(5)
+  isActive     Boolean    @default(true) @map("is_active")
+  createdAt    DateTime   @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt    DateTime   @updatedAt @map("updated_at") @db.DateTime(3)
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  districts    District[]
+
+  @@unique([departmentId, mhCode], map: "municipalities_department_mh_code_key")
+  @@index([departmentId, isActive, name], map: "municipalities_department_active_name_idx")
+  @@map("municipalities")
+}
+
+model District {
+  id             Int          @id @default(autoincrement()) @db.UnsignedInt
+  municipalityId Int          @map("municipality_id") @db.UnsignedInt
+  name           String       @db.VarChar(100)
+  mhCode         String       @map("mh_code") @db.VarChar(5)
+  isActive       Boolean      @default(true) @map("is_active")
+  createdAt      DateTime     @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt      DateTime     @updatedAt @map("updated_at") @db.DateTime(3)
+  municipality   Municipality @relation(fields: [municipalityId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([municipalityId, mhCode], map: "districts_municipality_mh_code_key")
+  @@index([municipalityId, isActive, name], map: "districts_municipality_active_name_idx")
+  @@map("districts")
+}
+
+model EconomicActivity {
+  id        Int      @id @default(autoincrement()) @db.UnsignedInt
+  code      String   @unique(map: "economic_activities_code_key") @db.VarChar(30)
+  name      String   @db.VarChar(512)
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.DateTime(3)
+
+  @@index([isActive, name], map: "economic_activities_active_name_idx")
+  @@map("economic_activities")
+}

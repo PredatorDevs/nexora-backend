@@ -24,6 +24,7 @@ WORKDIR /app
 COPY --from=production-dependencies --chown=node:node /app/node_modules ./node_modules
 COPY --from=production-dependencies --chown=node:node /app/package.json ./package.json
 COPY --from=production-dependencies --chown=node:node /app/prisma ./prisma
+COPY --from=production-dependencies --chown=node:node /app/planning ./planning
 COPY --from=production-dependencies --chown=node:node /app/src ./src
 COPY --from=production-dependencies --chown=node:node /app/scripts ./scripts
 COPY --from=production-dependencies --chown=node:node /app/public ./public

@@ -1,5 +1,9 @@
 # Authorization and RBAC
 
+> **Migration status:** this document describes the currently implemented
+> installation-wide RBAC. Its target replacement is defined in
+> `docs/multi-company-architecture.md`.
+
 Authorization is based on permissions, never on role names. Routes declare the
 capability they require with `authorize('resource.action')`. Authentication will
 populate `request.auth.userId`; authorization then resolves effective permissions
@@ -29,3 +33,20 @@ metadata and permission matrices without creating duplicates.
 - A valid permission allows the request to continue.
 - Permissions are cached only for the lifetime of a single request.
 - Assignment replacement is transactional and records the assigning user.
+
+## Multi-company migration contract
+
+- `SUPER_ADMIN` becomes a platform role assigned directly to a global user.
+- Company roles belong to one company and are assigned to a
+  `CompanyMembership`, never directly to `User`.
+- Permission definitions remain global and code-owned, but each permission has
+  an explicit `PLATFORM` or `COMPANY` scope.
+- Effective company permissions are resolved by membership and company. A cache
+  keyed only by `userId` is forbidden.
+- Routes use `authorizePlatform(code)` or `authorizeCompany(code)` so their
+  security boundary is explicit.
+- An active membership retains at least one role, and each company retains at
+  least one active owner or administrator.
+
+Permission mutation endpoints will not be introduced. Dynamic roles are useful;
+arbitrary permissions without behavior implemented in code are not.

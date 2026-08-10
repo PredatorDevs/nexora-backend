@@ -28,6 +28,8 @@ import { createAuditRepository } from './modules/audit/audit.repository.js';
 import { createAuditService } from './modules/audit/audit.service.js';
 import { createEntityChangeRepository } from './modules/entity-changes/entity-change.repository.js';
 import { createEntityChangeService } from './modules/entity-changes/entity-change.service.js';
+import { createAddressDictionariesRepository } from './modules/address-dictionaries/address-dictionaries.repository.js';
+import { createEconomicActivitiesRepository } from './modules/economic-activities/economic-activities.repository.js';
 import {
   configureServerTimeouts,
   createGracefulShutdown,
@@ -107,6 +109,8 @@ const app = createApp({
     sessions: sessionsService,
     audit: auditService,
     entityChanges: entityChangeService,
+    addressDictionaries: createAddressDictionariesRepository(prisma),
+    economicActivities: createEconomicActivitiesRepository(prisma),
   },
   settings: {
     auth: environment.auth,

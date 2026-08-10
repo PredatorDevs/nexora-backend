@@ -99,6 +99,16 @@ Persistence uses MySQL 8+ and Prisma ORM. The initial migration includes users,
 roles, permissions, explicit RBAC assignments, authentication sessions, and audit
 logs. See `docs/database.md` for conventions, relationships, and migration rules.
 
+Seeded read-only business catalogs include Salvadoran address dictionaries and
+economic activities. See `docs/address-dictionaries.md` and
+`docs/economic-activities.md` for their data contracts and API endpoints.
+
+The ERP uses global user identities with company-scoped memberships, sessions,
+RBAC, auditing, and business data. See `docs/multi-company-architecture.md` for
+the ERS-aligned target model, company structure, isolation rules, and
+implementation sequence. The current global RBAC is the migration source, not
+the final business authorization boundary.
+
 Authorization checks permission codes rather than role names. See
 `docs/authorization.md` for the permission catalog, system-role safeguards, and
 the `authorize('resource.action')` middleware contract.

@@ -1,5 +1,9 @@
 # Authentication and sessions
 
+> **Migration status:** the claims and endpoints below describe the current
+> global-session implementation. Company-bound sessions and switching are part
+> of the next architecture milestone.
+
 Passwords are hashed with Argon2id. Login responses contain a short-lived access
 token while refresh credentials are sent only through an HttpOnly cookie.
 
@@ -32,8 +36,19 @@ clients may omit Origin.
 - `GET /api/v1/auth/me`
 - `GET /api/v1/auth/permissions`
 
+The target multi-company flow adds `POST /api/v1/auth/switch-company`, company
+selection, `companyId` and `membershipId` on business sessions, and
+`membershipSecurityVersion` validation. One session has one active company. A
+branch is selected per operation or as a client preference and is always
+validated against that company.
+
 Login has a dedicated rate limit and always returns the same credential error for
 unknown users, incorrect passwords, and inactive accounts.
+
+The ERS additionally requires account lockout after five failed attempts. This
+must be implemented independently from IP rate limiting, with generic responses,
+audited lock and unlock transitions, and a defined expiry or administrator
+unlock policy.
 
 ## Initial administrator
 

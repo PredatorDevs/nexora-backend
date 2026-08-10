@@ -14,6 +14,8 @@ export const permissionCodes = Object.freeze([
   'audit.read',
   'sessions.read',
   'sessions.revoke',
+  'address_dictionaries.read',
+  'economic_activities.read',
 ]);
 
 export const systemRoleCodes = Object.freeze({
@@ -48,6 +50,8 @@ export const systemRoleDefinitions = Object.freeze([
       'permissions.read',
       'sessions.read',
       'sessions.revoke',
+      'address_dictionaries.read',
+      'economic_activities.read',
     ],
   },
   {
@@ -60,6 +64,8 @@ export const systemRoleDefinitions = Object.freeze([
       'permissions.read',
       'audit.read',
       'sessions.read',
+      'address_dictionaries.read',
+      'economic_activities.read',
     ],
   },
 ]);

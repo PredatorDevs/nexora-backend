@@ -21,6 +21,19 @@ Foreign keys are indexed explicitly. Deleting a user cascades their sessions and
 role memberships, while audit actor references become null so historical events
 remain available. Audit records have no update or delete API.
 
+## Target company isolation
+
+The administrative model will be extended to shared-database, row-level
+multi-company isolation. Every mutable business aggregate receives a non-null
+company foreign key, directly or through a constrained ownership chain.
+Business codes and document numbers are generally unique per company rather
+than installation-wide.
+
+Shared address dictionaries, economic activities, and permission definitions
+remain global. Global users connect to companies through memberships. See
+`docs/multi-company-architecture.md` for the complete ownership and isolation
+contract.
+
 ## Commands
 
 - `npm run prisma:format`: formats the Prisma schema.
