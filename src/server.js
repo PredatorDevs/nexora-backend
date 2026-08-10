@@ -32,6 +32,9 @@ import { createAddressDictionariesRepository } from './modules/address-dictionar
 import { createEconomicActivitiesRepository } from './modules/economic-activities/economic-activities.repository.js';
 import { createCompaniesRepository } from './modules/companies/companies.repository.js';
 import { createCompaniesService } from './modules/companies/companies.service.js';
+import { provisionCompanyRoles } from './modules/company-access/company-role-templates.js';
+import { createCompanyAccessRepository } from './modules/company-access/company-access.repository.js';
+import { createCompanyAccessService } from './modules/company-access/company-access.service.js';
 import {
   configureServerTimeouts,
   createGracefulShutdown,
@@ -86,6 +89,7 @@ const usersService = createUsersService({
   passwordHasher: hashPassword,
   entityChangeService,
   runInTransaction,
+  provisionRoles: provisionCompanyRoles,
 });
 const rolesService = createRolesService({
   repository: createRolesRepository(prisma),
@@ -98,6 +102,11 @@ const sessionsService = createSessionsService(createSessionsRepository(prisma));
 const auditService = createAuditService(createAuditRepository(prisma));
 const companiesService = createCompaniesService({
   repository: createCompaniesRepository(prisma),
+  entityChangeService,
+  runInTransaction,
+});
+const companyAccessService = createCompanyAccessService({
+  repository: createCompanyAccessRepository(prisma),
   entityChangeService,
   runInTransaction,
 });
@@ -119,6 +128,7 @@ const app = createApp({
     addressDictionaries: createAddressDictionariesRepository(prisma),
     economicActivities: createEconomicActivitiesRepository(prisma),
     companies: companiesService,
+    companyAccess: companyAccessService,
   },
   settings: {
     auth: environment.auth,

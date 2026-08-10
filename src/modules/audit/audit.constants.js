@@ -19,4 +19,11 @@ export const auditActions = Object.freeze({
   companyCreated: 'COMPANY.CREATED',
   companyUpdated: 'COMPANY.UPDATED',
   companyStatusChanged: 'COMPANY.STATUS_CHANGED',
+  companyMemberAdded: 'COMPANY_MEMBER.ADDED',
+  companyMemberStatusChanged: 'COMPANY_MEMBER.STATUS_CHANGED',
+  companyMemberRolesChanged: 'COMPANY_MEMBER.ROLES_CHANGED',
+  companyRoleCreated: 'COMPANY_ROLE.CREATED',
+  companyRoleUpdated: 'COMPANY_ROLE.UPDATED',
+  companyRoleDeleted: 'COMPANY_ROLE.DELETED',
+  companyRolePermissionsChanged: 'COMPANY_ROLE.PERMISSIONS_CHANGED',
 });

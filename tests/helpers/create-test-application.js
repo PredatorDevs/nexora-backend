@@ -30,6 +30,9 @@ import { createAddressDictionariesRepository } from '../../src/modules/address-d
 import { createEconomicActivitiesRepository } from '../../src/modules/economic-activities/economic-activities.repository.js';
 import { createCompaniesRepository } from '../../src/modules/companies/companies.repository.js';
 import { createCompaniesService } from '../../src/modules/companies/companies.service.js';
+import { provisionCompanyRoles } from '../../src/modules/company-access/company-role-templates.js';
+import { createCompanyAccessRepository } from '../../src/modules/company-access/company-access.repository.js';
+import { createCompanyAccessService } from '../../src/modules/company-access/company-access.service.js';
 
 export function createTestApplication({
   prisma,
@@ -81,6 +84,7 @@ export function createTestApplication({
         passwordHasher: hashPassword,
         entityChangeService,
         runInTransaction,
+        provisionRoles: provisionCompanyRoles,
       }),
       roles: createRolesService({
         repository: createRolesRepository(prisma),
@@ -94,6 +98,11 @@ export function createTestApplication({
       economicActivities: createEconomicActivitiesRepository(prisma),
       companies: createCompaniesService({
         repository: createCompaniesRepository(prisma),
+        entityChangeService,
+        runInTransaction,
+      }),
+      companyAccess: createCompanyAccessService({
+        repository: createCompanyAccessRepository(prisma),
         entityChangeService,
         runInTransaction,
       }),

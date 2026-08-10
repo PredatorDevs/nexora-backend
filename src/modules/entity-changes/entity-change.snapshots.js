@@ -63,3 +63,34 @@ export function companySnapshot(company) {
     updatedAt: iso(company.updatedAt),
   };
 }
+
+export function companyMembershipSnapshot(membership) {
+  if (!membership) return null;
+  return {
+    id: membership.id,
+    companyId: membership.companyId,
+    userId: membership.userId,
+    status: membership.status,
+    securityVersion: membership.securityVersion,
+    roleCodes: membership.roles?.map(({ role }) => role.code).sort() ?? [],
+    joinedAt: iso(membership.joinedAt),
+    createdAt: iso(membership.createdAt),
+    updatedAt: iso(membership.updatedAt),
+  };
+}
+
+export function companyRoleSnapshot(role) {
+  if (!role) return null;
+  return {
+    id: role.id,
+    companyId: role.companyId,
+    code: role.code,
+    name: role.name,
+    description: role.description,
+    isSystem: role.isSystem,
+    permissionCodes:
+      role.permissions?.map(({ permission }) => permission.code).sort() ?? [],
+    createdAt: iso(role.createdAt),
+    updatedAt: iso(role.updatedAt),
+  };
+}

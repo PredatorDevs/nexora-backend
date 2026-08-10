@@ -35,6 +35,7 @@ export function createCompaniesService({
   repository,
   entityChangeService,
   runInTransaction,
+  provisionRoles = async () => {},
 }) {
   async function validateReferences(data, client) {
     const address = await repository.findAddressContext(data, client);
@@ -114,6 +115,7 @@ export function createCompaniesService({
           },
           client,
         );
+        await provisionRoles(client, created.id, context.actorUserId);
         await recordChange(
           {
             operation: entityChangeOperations.create,

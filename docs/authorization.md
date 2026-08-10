@@ -36,6 +36,11 @@ metadata and permission matrices without creating duplicates.
 
 ## Multi-company migration contract
 
+The persistence portion of this migration is implemented: permissions declare a
+scope, company roles are private per company, and memberships receive roles
+through company-constrained assignment tables. Session-derived company
+authorization remains pending.
+
 - `SUPER_ADMIN` becomes a platform role assigned directly to a global user.
 - Company roles belong to one company and are assigned to a
   `CompanyMembership`, never directly to `User`.

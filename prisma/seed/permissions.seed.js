@@ -1,4 +1,7 @@
-import { permissionCodes } from '../../src/modules/rbac/rbac.constants.js';
+import {
+  permissionCodes,
+  permissionScopeForCode,
+} from '../../src/modules/rbac/rbac.constants.js';
 
 export async function seedPermissions(prisma) {
   return Promise.all(
@@ -9,6 +12,7 @@ export async function seedPermissions(prisma) {
         resource,
         action,
         description: `Allows ${action.replaceAll('_', ' ')} on ${resource}.`,
+        scope: permissionScopeForCode(code),
       };
 
       return prisma.permission.upsert({

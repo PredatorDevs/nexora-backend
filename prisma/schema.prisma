@@ -54,22 +54,40 @@ enum CompanyEconomicActivityType {
   @@map("company_economic_activity_type")
 }
 
+enum PermissionScope {
+  PLATFORM
+  COMPANY
+
+  @@map("permission_scope")
+}
+
+enum CompanyMembershipStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+
+  @@map("company_membership_status")
+}
+
 model User {
-  id                       Int               @id @default(autoincrement()) @db.UnsignedInt
-  email                    String            @unique(map: "users_email_key") @db.VarChar(191)
-  passwordHash             String            @map("password_hash") @db.VarChar(255)
-  displayName              String            @map("display_name") @db.VarChar(120)
-  status                   UserStatus        @default(ACTIVE)
-  securityVersion          Int               @default(1) @map("security_version") @db.UnsignedInt
-  mustChangePassword       Boolean           @default(false) @map("must_change_password")
-  createdAt                DateTime          @default(now()) @map("created_at") @db.DateTime(3)
-  updatedAt                DateTime          @updatedAt @map("updated_at") @db.DateTime(3)
-  roles                    UserRole[]        @relation("UserRoles")
-  roleAssignmentsGranted   UserRole[]        @relation("UserRoleAssignedBy")
-  permissionGrantsAssigned RolePermission[]  @relation("RolePermissionAssignedBy")
-  sessions                 AuthSession[]
-  auditLogs                AuditLog[]        @relation("AuditActor")
-  entityChanges            EntityChangeLog[] @relation("EntityChangeActor")
+  id                         Int                     @id @default(autoincrement()) @db.UnsignedInt
+  email                      String                  @unique(map: "users_email_key") @db.VarChar(191)
+  passwordHash               String                  @map("password_hash") @db.VarChar(255)
+  displayName                String                  @map("display_name") @db.VarChar(120)
+  status                     UserStatus              @default(ACTIVE)
+  securityVersion            Int                     @default(1) @map("security_version") @db.UnsignedInt
+  mustChangePassword         Boolean                 @default(false) @map("must_change_password")
+  createdAt                  DateTime                @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt                  DateTime                @updatedAt @map("updated_at") @db.DateTime(3)
+  roles                      UserRole[]              @relation("UserRoles")
+  roleAssignmentsGranted     UserRole[]              @relation("UserRoleAssignedBy")
+  permissionGrantsAssigned   RolePermission[]        @relation("RolePermissionAssignedBy")
+  sessions                   AuthSession[]
+  auditLogs                  AuditLog[]              @relation("AuditActor")
+  entityChanges              EntityChangeLog[]       @relation("EntityChangeActor")
+  companyMemberships         CompanyMembership[]
+  companyRolesAssigned       CompanyMembershipRole[] @relation("CompanyMembershipRoleAssignedBy")
+  companyPermissionsAssigned CompanyRolePermission[] @relation("CompanyRolePermissionAssignedBy")
 
   @@index([status], map: "users_status_idx")
   @@map("users")
@@ -91,13 +109,15 @@ model Role {
 }
 
 model Permission {
-  id          Int              @id @default(autoincrement()) @db.UnsignedInt
-  code        String           @unique(map: "permissions_code_key") @db.VarChar(150)
-  resource    String           @db.VarChar(75)
-  action      String           @db.VarChar(75)
-  description String?          @db.VarChar(500)
-  createdAt   DateTime         @default(now()) @map("created_at") @db.DateTime(3)
-  roles       RolePermission[]
+  id           Int                     @id @default(autoincrement()) @db.UnsignedInt
+  code         String                  @unique(map: "permissions_code_key") @db.VarChar(150)
+  resource     String                  @db.VarChar(75)
+  action       String                  @db.VarChar(75)
+  description  String?                 @db.VarChar(500)
+  scope        PermissionScope         @default(PLATFORM)
+  createdAt    DateTime                @default(now()) @map("created_at") @db.DateTime(3)
+  roles        RolePermission[]
+  companyRoles CompanyRolePermission[]
 
   @@unique([resource, action], map: "permissions_resource_action_key")
   @@map("permissions")
@@ -304,6 +324,8 @@ model Company {
   municipality        Municipality              @relation(fields: [municipalityId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   district            District                  @relation(fields: [districtId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   economicActivities  CompanyEconomicActivity[]
+  memberships         CompanyMembership[]
+  roles               CompanyRole[]
 
   @@index([status, legalName], map: "companies_status_legal_name_idx")
   @@index([countryId], map: "companies_country_id_idx")
@@ -311,6 +333,79 @@ model Company {
   @@index([municipalityId], map: "companies_municipality_id_idx")
   @@index([districtId], map: "companies_district_id_idx")
   @@map("companies")
+}
+
+model CompanyMembership {
+  id              Int                     @id @default(autoincrement()) @db.UnsignedInt
+  companyId       Int                     @map("company_id") @db.UnsignedInt
+  userId          Int                     @map("user_id") @db.UnsignedInt
+  status          CompanyMembershipStatus @default(ACTIVE)
+  securityVersion Int                     @default(1) @map("security_version") @db.UnsignedInt
+  joinedAt        DateTime                @default(now()) @map("joined_at") @db.DateTime(3)
+  createdAt       DateTime                @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt       DateTime                @updatedAt @map("updated_at") @db.DateTime(3)
+  company         Company                 @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  user            User                    @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  roles           CompanyMembershipRole[]
+
+  @@unique([companyId, userId], map: "company_memberships_company_user_key")
+  @@unique([id, companyId], map: "company_memberships_id_company_key")
+  @@index([userId, status], map: "company_memberships_user_status_idx")
+  @@index([companyId, status], map: "company_memberships_company_status_idx")
+  @@map("company_memberships")
+}
+
+model CompanyRole {
+  id          Int                     @id @default(autoincrement()) @db.UnsignedInt
+  companyId   Int                     @map("company_id") @db.UnsignedInt
+  code        String                  @db.VarChar(100)
+  name        String                  @db.VarChar(120)
+  description String?                 @db.VarChar(500)
+  isSystem    Boolean                 @default(false) @map("is_system")
+  createdAt   DateTime                @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt   DateTime                @updatedAt @map("updated_at") @db.DateTime(3)
+  company     Company                 @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  memberships CompanyMembershipRole[]
+  permissions CompanyRolePermission[]
+
+  @@unique([companyId, code], map: "company_roles_company_code_key")
+  @@unique([id, companyId], map: "company_roles_id_company_key")
+  @@index([companyId, isSystem], map: "company_roles_company_system_idx")
+  @@map("company_roles")
+}
+
+model CompanyMembershipRole {
+  membershipId     Int               @map("membership_id") @db.UnsignedInt
+  roleId           Int               @map("role_id") @db.UnsignedInt
+  companyId        Int               @map("company_id") @db.UnsignedInt
+  assignedByUserId Int?              @map("assigned_by_user_id") @db.UnsignedInt
+  assignedAt       DateTime          @default(now()) @map("assigned_at") @db.DateTime(3)
+  membership       CompanyMembership @relation(fields: [membershipId, companyId], references: [id, companyId], onDelete: Cascade, onUpdate: Cascade)
+  role             CompanyRole       @relation(fields: [roleId, companyId], references: [id, companyId], onDelete: Cascade, onUpdate: Cascade)
+  assignedBy       User?             @relation("CompanyMembershipRoleAssignedBy", fields: [assignedByUserId], references: [id], onDelete: SetNull)
+
+  @@id([membershipId, roleId])
+  @@index([roleId, companyId], map: "company_membership_roles_role_company_idx")
+  @@index([companyId], map: "company_membership_roles_company_idx")
+  @@index([assignedByUserId], map: "company_membership_roles_assigned_by_idx")
+  @@map("company_membership_roles")
+}
+
+model CompanyRolePermission {
+  roleId           Int         @map("role_id") @db.UnsignedInt
+  permissionId     Int         @map("permission_id") @db.UnsignedInt
+  companyId        Int         @map("company_id") @db.UnsignedInt
+  assignedByUserId Int?        @map("assigned_by_user_id") @db.UnsignedInt
+  assignedAt       DateTime    @default(now()) @map("assigned_at") @db.DateTime(3)
+  role             CompanyRole @relation(fields: [roleId, companyId], references: [id, companyId], onDelete: Cascade, onUpdate: Cascade)
+  permission       Permission  @relation(fields: [permissionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  assignedBy       User?       @relation("CompanyRolePermissionAssignedBy", fields: [assignedByUserId], references: [id], onDelete: SetNull)
+
+  @@id([roleId, permissionId])
+  @@index([permissionId], map: "company_role_permissions_permission_idx")
+  @@index([companyId], map: "company_role_permissions_company_idx")
+  @@index([assignedByUserId], map: "company_role_permissions_assigned_by_idx")
+  @@map("company_role_permissions")
 }
 
 model CompanyEconomicActivity {

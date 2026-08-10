@@ -9,6 +9,7 @@ import { createEntityChangeRouter } from '../modules/entity-changes/entity-chang
 import { createAddressDictionariesRouter } from '../modules/address-dictionaries/address-dictionaries.routes.js';
 import { createEconomicActivitiesRouter } from '../modules/economic-activities/economic-activities.routes.js';
 import { createCompaniesRouter } from '../modules/companies/companies.routes.js';
+import { createCompanyAccessRouter } from '../modules/company-access/company-access.routes.js';
 
 export function registerRoutes(app) {
   app.get('/api/v1/health', (_request, response) => {
@@ -63,6 +64,15 @@ export function registerRoutes(app) {
         '/api/v1/companies',
         createCompaniesRouter(
           app.locals.services.companies,
+          app.locals.services.audit,
+        ),
+      );
+    }
+    if (app.locals.services.companyAccess) {
+      app.use(
+        '/api/v1/companies',
+        createCompanyAccessRouter(
+          app.locals.services.companyAccess,
           app.locals.services.audit,
         ),
       );

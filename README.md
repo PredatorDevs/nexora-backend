@@ -108,6 +108,10 @@ economic activities and validated Salvadoran legal addresses. See
 `docs/companies.md` for the data rules, endpoints, permissions, and migration
 order.
 
+Company access uses memberships, private role copies, scoped permissions, and
+composite tenant constraints. See `docs/company-access.md` for APIs, owner
+invariants, migration status, and the remaining session-bound authorization work.
+
 The ERP uses global user identities with company-scoped memberships, sessions,
 RBAC, auditing, and business data. See `docs/multi-company-architecture.md` for
 the ERS-aligned target model, company structure, isolation rules, and

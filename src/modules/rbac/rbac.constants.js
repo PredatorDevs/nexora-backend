@@ -20,7 +20,36 @@ export const permissionCodes = Object.freeze([
   'companies.create',
   'companies.update',
   'companies.change_status',
+  'company_members.read',
+  'company_members.add',
+  'company_members.change_status',
+  'company_members.assign_roles',
+  'company_roles.read',
+  'company_roles.create',
+  'company_roles.update',
+  'company_roles.delete',
+  'company_roles.assign_permissions',
 ]);
+
+export const companyPermissionCodes = Object.freeze([
+  'address_dictionaries.read',
+  'economic_activities.read',
+  'company_members.read',
+  'company_members.add',
+  'company_members.change_status',
+  'company_members.assign_roles',
+  'company_roles.read',
+  'company_roles.create',
+  'company_roles.update',
+  'company_roles.delete',
+  'company_roles.assign_permissions',
+]);
+
+const companyPermissions = new Set(companyPermissionCodes);
+
+export function permissionScopeForCode(code) {
+  return companyPermissions.has(code) ? 'COMPANY' : 'PLATFORM';
+}
 
 export const systemRoleCodes = Object.freeze({
   superAdmin: 'SUPER_ADMIN',
@@ -73,6 +102,42 @@ export const systemRoleDefinitions = Object.freeze([
       'economic_activities.read',
       'companies.read',
     ],
+  },
+]);
+
+export const companySystemRoleCodes = Object.freeze({
+  owner: 'OWNER',
+  admin: 'ADMIN',
+  operator: 'OPERATOR',
+  readOnly: 'READ_ONLY',
+});
+
+export const companyRoleTemplates = Object.freeze([
+  {
+    code: companySystemRoleCodes.owner,
+    name: 'Owner',
+    description: 'Full company access and ownership safeguards.',
+    permissions: companyPermissionCodes,
+  },
+  {
+    code: companySystemRoleCodes.admin,
+    name: 'Administrator',
+    description: 'Company administration without deleting protected roles.',
+    permissions: companyPermissionCodes.filter(
+      (code) => code !== 'company_roles.delete',
+    ),
+  },
+  {
+    code: companySystemRoleCodes.operator,
+    name: 'Operator',
+    description: 'Shared catalog access for day-to-day operations.',
+    permissions: ['address_dictionaries.read', 'economic_activities.read'],
+  },
+  {
+    code: companySystemRoleCodes.readOnly,
+    name: 'Read Only',
+    description: 'Read-only access to shared business catalogs.',
+    permissions: ['address_dictionaries.read', 'economic_activities.read'],
   },
 ]);
 

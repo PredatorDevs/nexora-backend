@@ -20,4 +20,6 @@ export const entityTypes = Object.freeze({
   user: 'user',
   role: 'role',
   company: 'company',
+  companyMembership: 'company_membership',
+  companyRole: 'company_role',
 });
