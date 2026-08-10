@@ -1,0 +1,54 @@
+import { sendSuccess } from '../core/http/responses.js';
+import { createAuthRouter } from '../modules/auth/auth.routes.js';
+import { createUsersRouter } from '../modules/users/users.routes.js';
+import { createRolesRouter } from '../modules/roles/roles.routes.js';
+import { createPermissionsRouter } from '../modules/permissions/permissions.routes.js';
+import { createSessionsRouter } from '../modules/sessions/sessions.routes.js';
+import { createAuditRouter } from '../modules/audit/audit.routes.js';
+import { createEntityChangeRouter } from '../modules/entity-changes/entity-change.routes.js';
+
+export function registerRoutes(app) {
+  app.get('/api/v1/health', (_request, response) => {
+    return sendSuccess(response, { status: 'ok' });
+  });
+
+  if (app.locals.services.auth) {
+    app.use(
+      '/api/v1/auth',
+      createAuthRouter({
+        authService: app.locals.services.auth,
+        rbacService: app.locals.services.rbac,
+        auditService: app.locals.services.audit,
+        settings: app.locals.settings,
+      }),
+    );
+    app.use(
+      '/api/v1/users',
+      createUsersRouter(app.locals.services.users, app.locals.services.audit),
+    );
+    app.use(
+      '/api/v1/roles',
+      createRolesRouter(app.locals.services.roles, app.locals.services.audit),
+    );
+    app.use(
+      '/api/v1/permissions',
+      createPermissionsRouter(app.locals.services.permissions),
+    );
+    app.use(
+      '/api/v1/sessions',
+      createSessionsRouter(
+        app.locals.services.sessions,
+        app.locals.services.audit,
+      ),
+    );
+    if (app.locals.services.audit) {
+      app.use('/api/v1/audit', createAuditRouter(app.locals.services.audit));
+    }
+    if (app.locals.services.entityChanges) {
+      app.use(
+        '/api/v1/entity-changes',
+        createEntityChangeRouter(app.locals.services.entityChanges),
+      );
+    }
+  }
+}
