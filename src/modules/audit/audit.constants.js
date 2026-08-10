@@ -16,4 +16,7 @@ export const auditActions = Object.freeze({
   roleDeleted: 'ROLE.DELETED',
   rolePermissionsChanged: 'ROLE.PERMISSIONS_CHANGED',
   sessionRevoked: 'SESSION.REVOKED',
+  companyCreated: 'COMPANY.CREATED',
+  companyUpdated: 'COMPANY.UPDATED',
+  companyStatusChanged: 'COMPANY.STATUS_CHANGED',
 });

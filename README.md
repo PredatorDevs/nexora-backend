@@ -103,6 +103,11 @@ Seeded read-only business catalogs include Salvadoran address dictionaries and
 economic activities. See `docs/address-dictionaries.md` and
 `docs/economic-activities.md` for their data contracts and API endpoints.
 
+Platform administrators can create and maintain tenant roots with normalized
+economic activities and validated Salvadoran legal addresses. See
+`docs/companies.md` for the data rules, endpoints, permissions, and migration
+order.
+
 The ERP uses global user identities with company-scoped memberships, sessions,
 RBAC, auditing, and business data. See `docs/multi-company-architecture.md` for
 the ERS-aligned target model, company structure, isolation rules, and

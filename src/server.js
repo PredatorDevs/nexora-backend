@@ -30,6 +30,8 @@ import { createEntityChangeRepository } from './modules/entity-changes/entity-ch
 import { createEntityChangeService } from './modules/entity-changes/entity-change.service.js';
 import { createAddressDictionariesRepository } from './modules/address-dictionaries/address-dictionaries.repository.js';
 import { createEconomicActivitiesRepository } from './modules/economic-activities/economic-activities.repository.js';
+import { createCompaniesRepository } from './modules/companies/companies.repository.js';
+import { createCompaniesService } from './modules/companies/companies.service.js';
 import {
   configureServerTimeouts,
   createGracefulShutdown,
@@ -94,6 +96,11 @@ const rolesService = createRolesService({
 const permissionsRepository = createPermissionsRepository(prisma);
 const sessionsService = createSessionsService(createSessionsRepository(prisma));
 const auditService = createAuditService(createAuditRepository(prisma));
+const companiesService = createCompaniesService({
+  repository: createCompaniesRepository(prisma),
+  entityChangeService,
+  runInTransaction,
+});
 const app = createApp({
   trustProxy: environment.http.trustProxy,
   allowedOrigins: environment.cors.allowedOrigins,
@@ -111,6 +118,7 @@ const app = createApp({
     entityChanges: entityChangeService,
     addressDictionaries: createAddressDictionariesRepository(prisma),
     economicActivities: createEconomicActivitiesRepository(prisma),
+    companies: companiesService,
   },
   settings: {
     auth: environment.auth,

@@ -31,3 +31,35 @@ export function roleSnapshot(role) {
     updatedAt: iso(role.updatedAt),
   };
 }
+
+export function companySnapshot(company) {
+  if (!company) return null;
+  return {
+    id: company.id,
+    code: company.code,
+    legalName: company.legalName,
+    commercialName: company.commercialName,
+    nit: company.nit,
+    nrc: company.nrc,
+    countryId: company.countryId,
+    departmentId: company.departmentId,
+    municipalityId: company.municipalityId,
+    districtId: company.districtId,
+    addressLine: company.addressLine,
+    phone: company.phone,
+    email: company.email,
+    website: company.website,
+    logoStorageKey: company.logoStorageKey,
+    status: company.status,
+    defaultCurrencyCode: company.defaultCurrencyCode,
+    timezone: company.timezone,
+    locale: company.locale,
+    economicActivities:
+      company.economicActivities?.map(({ type, economicActivity }) => ({
+        type,
+        economicActivityId: economicActivity.id,
+      })) ?? [],
+    createdAt: iso(company.createdAt),
+    updatedAt: iso(company.updatedAt),
+  };
+}

@@ -38,6 +38,22 @@ enum EntityChangeSource {
   @@map("entity_change_source")
 }
 
+enum CompanyStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+
+  @@map("company_status")
+}
+
+enum CompanyEconomicActivityType {
+  PRIMARY
+  SECONDARY
+  TERTIARY
+
+  @@map("company_economic_activity_type")
+}
+
 model User {
   id                       Int               @id @default(autoincrement()) @db.UnsignedInt
   email                    String            @unique(map: "users_email_key") @db.VarChar(191)
@@ -186,13 +202,14 @@ model EntityChangeLog {
 }
 
 model Country {
-  id           Int      @id @default(autoincrement()) @db.UnsignedInt
-  name         String   @db.VarChar(128)
-  abbreviation String   @unique(map: "countries_abbreviation_key") @db.VarChar(5)
-  mhCode       String   @unique(map: "countries_mh_code_key") @map("mh_code") @db.VarChar(5)
-  isActive     Boolean  @default(true) @map("is_active")
-  createdAt    DateTime @default(now()) @map("created_at") @db.DateTime(3)
-  updatedAt    DateTime @updatedAt @map("updated_at") @db.DateTime(3)
+  id           Int       @id @default(autoincrement()) @db.UnsignedInt
+  name         String    @db.VarChar(128)
+  abbreviation String    @unique(map: "countries_abbreviation_key") @db.VarChar(5)
+  mhCode       String    @unique(map: "countries_mh_code_key") @map("mh_code") @db.VarChar(5)
+  isActive     Boolean   @default(true) @map("is_active")
+  createdAt    DateTime  @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.DateTime(3)
+  companies    Company[]
 
   @@index([isActive, name], map: "countries_active_name_idx")
   @@map("countries")
@@ -208,6 +225,7 @@ model Department {
   createdAt      DateTime       @default(now()) @map("created_at") @db.DateTime(3)
   updatedAt      DateTime       @updatedAt @map("updated_at") @db.DateTime(3)
   municipalities Municipality[]
+  companies      Company[]
 
   @@index([isActive, name], map: "departments_active_name_idx")
   @@map("departments")
@@ -223,6 +241,7 @@ model Municipality {
   updatedAt    DateTime   @updatedAt @map("updated_at") @db.DateTime(3)
   department   Department @relation(fields: [departmentId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   districts    District[]
+  companies    Company[]
 
   @@unique([departmentId, mhCode], map: "municipalities_department_mh_code_key")
   @@index([departmentId, isActive, name], map: "municipalities_department_active_name_idx")
@@ -238,6 +257,7 @@ model District {
   createdAt      DateTime     @default(now()) @map("created_at") @db.DateTime(3)
   updatedAt      DateTime     @updatedAt @map("updated_at") @db.DateTime(3)
   municipality   Municipality @relation(fields: [municipalityId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  companies      Company[]
 
   @@unique([municipalityId, mhCode], map: "districts_municipality_mh_code_key")
   @@index([municipalityId, isActive, name], map: "districts_municipality_active_name_idx")
@@ -245,13 +265,64 @@ model District {
 }
 
 model EconomicActivity {
-  id        Int      @id @default(autoincrement()) @db.UnsignedInt
-  code      String   @unique(map: "economic_activities_code_key") @db.VarChar(30)
-  name      String   @db.VarChar(512)
-  isActive  Boolean  @default(true) @map("is_active")
-  createdAt DateTime @default(now()) @map("created_at") @db.DateTime(3)
-  updatedAt DateTime @updatedAt @map("updated_at") @db.DateTime(3)
+  id        Int                       @id @default(autoincrement()) @db.UnsignedInt
+  code      String                    @unique(map: "economic_activities_code_key") @db.VarChar(30)
+  name      String                    @db.VarChar(512)
+  isActive  Boolean                   @default(true) @map("is_active")
+  createdAt DateTime                  @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt DateTime                  @updatedAt @map("updated_at") @db.DateTime(3)
+  companies CompanyEconomicActivity[]
 
   @@index([isActive, name], map: "economic_activities_active_name_idx")
   @@map("economic_activities")
+}
+
+model Company {
+  id                  Int                       @id @default(autoincrement()) @db.UnsignedInt
+  code                String                    @unique(map: "companies_code_key") @db.VarChar(50)
+  legalName           String                    @map("legal_name") @db.VarChar(191)
+  commercialName      String                    @map("commercial_name") @db.VarChar(191)
+  nit                 String                    @unique(map: "companies_nit_key") @db.VarChar(25)
+  nrc                 String                    @unique(map: "companies_nrc_key") @db.VarChar(25)
+  countryId           Int                       @map("country_id") @db.UnsignedInt
+  departmentId        Int                       @map("department_id") @db.UnsignedInt
+  municipalityId      Int                       @map("municipality_id") @db.UnsignedInt
+  districtId          Int                       @map("district_id") @db.UnsignedInt
+  addressLine         String                    @map("address_line") @db.VarChar(500)
+  phone               String?                   @db.VarChar(30)
+  email               String?                   @db.VarChar(191)
+  website             String?                   @db.VarChar(500)
+  logoStorageKey      String?                   @map("logo_storage_key") @db.VarChar(500)
+  status              CompanyStatus             @default(ACTIVE)
+  defaultCurrencyCode String                    @default("USD") @map("default_currency_code") @db.Char(3)
+  timezone            String                    @default("America/El_Salvador") @db.VarChar(100)
+  locale              String                    @default("es-SV") @db.VarChar(20)
+  createdAt           DateTime                  @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt           DateTime                  @updatedAt @map("updated_at") @db.DateTime(3)
+  country             Country                   @relation(fields: [countryId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  department          Department                @relation(fields: [departmentId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  municipality        Municipality              @relation(fields: [municipalityId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  district            District                  @relation(fields: [districtId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  economicActivities  CompanyEconomicActivity[]
+
+  @@index([status, legalName], map: "companies_status_legal_name_idx")
+  @@index([countryId], map: "companies_country_id_idx")
+  @@index([departmentId], map: "companies_department_id_idx")
+  @@index([municipalityId], map: "companies_municipality_id_idx")
+  @@index([districtId], map: "companies_district_id_idx")
+  @@map("companies")
+}
+
+model CompanyEconomicActivity {
+  companyId          Int                         @map("company_id") @db.UnsignedInt
+  economicActivityId Int                         @map("economic_activity_id") @db.UnsignedInt
+  type               CompanyEconomicActivityType
+  createdAt          DateTime                    @default(now()) @map("created_at") @db.DateTime(3)
+  company            Company                     @relation(fields: [companyId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  economicActivity   EconomicActivity            @relation(fields: [economicActivityId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@id([companyId, type])
+  @@unique([companyId, economicActivityId], map: "company_economic_activities_activity_key")
+  @@index([economicActivityId], map: "company_economic_activities_activity_id_idx")
+  @@map("company_economic_activities")
 }

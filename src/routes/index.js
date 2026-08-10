@@ -8,6 +8,7 @@ import { createAuditRouter } from '../modules/audit/audit.routes.js';
 import { createEntityChangeRouter } from '../modules/entity-changes/entity-change.routes.js';
 import { createAddressDictionariesRouter } from '../modules/address-dictionaries/address-dictionaries.routes.js';
 import { createEconomicActivitiesRouter } from '../modules/economic-activities/economic-activities.routes.js';
+import { createCompaniesRouter } from '../modules/companies/companies.routes.js';
 
 export function registerRoutes(app) {
   app.get('/api/v1/health', (_request, response) => {
@@ -55,6 +56,15 @@ export function registerRoutes(app) {
       app.use(
         '/api/v1/economic-activities',
         createEconomicActivitiesRouter(app.locals.services.economicActivities),
+      );
+    }
+    if (app.locals.services.companies) {
+      app.use(
+        '/api/v1/companies',
+        createCompaniesRouter(
+          app.locals.services.companies,
+          app.locals.services.audit,
+        ),
       );
     }
     if (app.locals.services.audit) {

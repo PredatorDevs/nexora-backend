@@ -13,9 +13,11 @@ export const entityChangeSources = Object.freeze({
 
 export const entitySchemas = Object.freeze({
   administration: 'administration',
+  companies: 'companies',
 });
 
 export const entityTypes = Object.freeze({
   user: 'user',
   role: 'role',
+  company: 'company',
 });
