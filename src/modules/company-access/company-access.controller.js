@@ -6,6 +6,8 @@ export function createCompanyAccessController(service, auditService) {
   const context = (request) => ({
     actorUserId: request.auth.userId,
     requestId: request.id,
+    companyId: request.auth.companyId,
+    membershipId: request.auth.membershipId,
   });
   const audited = (request, event, operation) =>
     auditService

@@ -11,10 +11,20 @@ export function createAccessTokenService({
   const key = new TextEncoder().encode(secret);
 
   return {
-    async sign({ userId, sessionId, securityVersion }) {
+    async sign({
+      userId,
+      sessionId,
+      securityVersion,
+      companyId = null,
+      membershipId = null,
+      membershipSecurityVersion = null,
+    }) {
       return new SignJWT({
         sid: sessionId,
         securityVersion,
+        ...(companyId == null
+          ? {}
+          : { companyId, membershipId, membershipSecurityVersion }),
       })
         .setProtectedHeader({ alg: algorithm, typ: 'JWT' })
         .setSubject(String(userId))
@@ -40,6 +50,18 @@ export function createAccessTokenService({
         throw new Error('Access token claims are invalid.');
       }
 
+      const hasCompanyContext = payload.companyId != null;
+      if (
+        hasCompanyContext !== (payload.membershipId != null) ||
+        hasCompanyContext !== (payload.membershipSecurityVersion != null) ||
+        (hasCompanyContext &&
+          (!Number.isSafeInteger(payload.companyId) ||
+            !Number.isSafeInteger(payload.membershipId) ||
+            !Number.isInteger(payload.membershipSecurityVersion)))
+      ) {
+        throw new Error('Access token company claims are invalid.');
+      }
+
       const userId = Number(payload.sub);
       if (!Number.isSafeInteger(userId) || userId < 1) {
         throw new Error('Access token subject is invalid.');
@@ -49,6 +71,11 @@ export function createAccessTokenService({
         userId,
         sessionId: payload.sid,
         securityVersion: payload.securityVersion,
+        companyId: hasCompanyContext ? payload.companyId : null,
+        membershipId: hasCompanyContext ? payload.membershipId : null,
+        membershipSecurityVersion: hasCompanyContext
+          ? payload.membershipSecurityVersion
+          : null,
       };
     },
   };

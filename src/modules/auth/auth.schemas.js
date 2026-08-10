@@ -5,6 +5,10 @@ export const loginSchema = z.object({
   password: z.string().min(1).max(1024),
 });
 
+export const switchCompanySchema = z.object({
+  companyId: z.number().int().positive(),
+});
+
 export const updateProfileSchema = z.object({
   displayName: z.string().trim().min(1).max(120),
 });

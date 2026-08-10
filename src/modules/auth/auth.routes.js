@@ -8,6 +8,7 @@ import { createAuthController } from './auth.controller.js';
 import {
   changePasswordSchema,
   loginSchema,
+  switchCompanySchema,
   updateProfileSchema,
 } from './auth.schemas.js';
 
@@ -42,6 +43,14 @@ export function createAuthRouter({
     controller.logoutAll,
   );
   router.get('/me', authenticate, controller.me);
+  router.get('/companies', authenticate, controller.companies);
+  router.post(
+    '/switch-company',
+    requireTrustedOrigin,
+    authenticate,
+    validate({ body: switchCompanySchema }),
+    controller.switchCompany,
+  );
   router.get('/permissions', authenticate, controller.permissions);
   router.put(
     '/profile',

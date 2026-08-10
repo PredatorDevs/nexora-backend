@@ -22,6 +22,7 @@ const companyData = {
 describe('companies service', () => {
   let repository;
   let entityChangeService;
+  let provisionRoles;
   let service;
 
   beforeEach(() => {
@@ -48,10 +49,12 @@ describe('companies service', () => {
       })),
     };
     entityChangeService = { record: vi.fn() };
+    provisionRoles = vi.fn();
     service = createCompaniesService({
       repository,
       entityChangeService,
       runInTransaction: (operation) => operation({ transaction: true }),
+      provisionRoles,
     });
   });
 
@@ -65,6 +68,7 @@ describe('companies service', () => {
     expect(repository.create).toHaveBeenCalledWith(companyData, {
       transaction: true,
     });
+    expect(provisionRoles).toHaveBeenCalledWith({ transaction: true }, 5, 9);
     expect(entityChangeService.record).toHaveBeenCalledWith(
       expect.objectContaining({
         schemaName: 'companies',

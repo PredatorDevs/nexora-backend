@@ -22,6 +22,7 @@ export async function provisionCompanyRoles(
     );
   }
 
+  let ownerRoleId = null;
   for (const template of companyRoleTemplates) {
     const role = await client.companyRole.upsert({
       where: {
@@ -51,6 +52,32 @@ export async function provisionCompanyRoles(
         assignedByUserId,
       })),
       skipDuplicates: true,
+    });
+    if (template.code === 'OWNER') ownerRoleId = role.id;
+  }
+
+  if (assignedByUserId != null) {
+    const membership = await client.companyMembership.upsert({
+      where: {
+        companyId_userId: { companyId, userId: assignedByUserId },
+      },
+      create: { companyId, userId: assignedByUserId },
+      update: { status: 'ACTIVE' },
+    });
+    await client.companyMembershipRole.upsert({
+      where: {
+        membershipId_roleId: {
+          membershipId: membership.id,
+          roleId: ownerRoleId,
+        },
+      },
+      create: {
+        membershipId: membership.id,
+        roleId: ownerRoleId,
+        companyId,
+        assignedByUserId,
+      },
+      update: { assignedByUserId },
     });
   }
 }

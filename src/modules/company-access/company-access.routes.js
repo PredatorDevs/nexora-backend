@@ -1,7 +1,7 @@
 import { Router } from 'express';
 
 import { authenticate } from '../../core/middleware/authenticate.js';
-import { authorize } from '../../core/middleware/authorize.js';
+import { authorizeCompany } from '../../core/middleware/authorize.js';
 import { validate } from '../../core/middleware/validate.js';
 import { createCompanyAccessController } from './company-access.controller.js';
 import {
@@ -26,68 +26,68 @@ export function createCompanyAccessRouter(service, auditService) {
 
   router.get(
     '/:companyId/members',
-    authorize('company_members.read'),
+    authorizeCompany('company_members.read'),
     validate({ params: companyAccessParams, query: membershipsListQuery }),
     controller.listMemberships,
   );
   router.get(
     '/:companyId/members/:membershipId',
-    authorize('company_members.read'),
+    authorizeCompany('company_members.read'),
     validate({ params: membershipParams }),
     controller.getMembership,
   );
   router.post(
     '/:companyId/members',
-    authorize('company_members.add'),
+    authorizeCompany('company_members.add'),
     validate({ params: companyAccessParams, body: addMembershipBody }),
     controller.addMembership,
   );
   router.patch(
     '/:companyId/members/:membershipId/status',
-    authorize('company_members.change_status'),
+    authorizeCompany('company_members.change_status'),
     validate({ params: membershipParams, body: changeMembershipStatusBody }),
     controller.changeMembershipStatus,
   );
   router.put(
     '/:companyId/members/:membershipId/roles',
-    authorize('company_members.assign_roles'),
+    authorizeCompany('company_members.assign_roles'),
     validate({ params: membershipParams, body: replaceMembershipRolesBody }),
     controller.replaceMembershipRoles,
   );
 
   router.get(
     '/:companyId/roles',
-    authorize('company_roles.read'),
+    authorizeCompany('company_roles.read'),
     validate({ params: companyAccessParams, query: companyRolesListQuery }),
     controller.listRoles,
   );
   router.get(
     '/:companyId/roles/:roleId',
-    authorize('company_roles.read'),
+    authorizeCompany('company_roles.read'),
     validate({ params: companyRoleParams }),
     controller.getRole,
   );
   router.post(
     '/:companyId/roles',
-    authorize('company_roles.create'),
+    authorizeCompany('company_roles.create'),
     validate({ params: companyAccessParams, body: createCompanyRoleBody }),
     controller.createRole,
   );
   router.put(
     '/:companyId/roles/:roleId',
-    authorize('company_roles.update'),
+    authorizeCompany('company_roles.update'),
     validate({ params: companyRoleParams, body: updateCompanyRoleBody }),
     controller.updateRole,
   );
   router.delete(
     '/:companyId/roles/:roleId',
-    authorize('company_roles.delete'),
+    authorizeCompany('company_roles.delete'),
     validate({ params: companyRoleParams, query: deleteCompanyRoleQuery }),
     controller.deleteRole,
   );
   router.put(
     '/:companyId/roles/:roleId/permissions',
-    authorize('company_roles.assign_permissions'),
+    authorizeCompany('company_roles.assign_permissions'),
     validate({
       params: companyRoleParams,
       body: replaceCompanyRolePermissionsBody,

@@ -1,18 +1,19 @@
 # Authentication and sessions
 
-> **Migration status:** the claims and endpoints below describe the current
-> global-session implementation. Company-bound sessions and switching are part
-> of the next architecture milestone.
+> **Migration status:** company-bound sessions, selection, switching, and tenant
+> claims are implemented. Branch selection remains outside session authority.
 
 Passwords are hashed with Argon2id. Login responses contain a short-lived access
 token while refresh credentials are sent only through an HttpOnly cookie.
 
 ## Access tokens
 
-Access tokens are signed HS256 JWTs containing only `sub`, `sid`, and
-`securityVersion`, plus standard issuer, audience, issued-at, and expiration
-claims. Every authenticated request verifies the signature and claims, then
-checks the referenced MySQL session, user status, and current security version.
+Access tokens are signed HS256 JWTs containing `sub`, `sid`, and
+`securityVersion`. A company-bound token additionally contains `companyId`,
+`membershipId`, and `membershipSecurityVersion`. The three company claims are
+accepted only as one complete unit. Every request verifies the token against the
+MySQL session, user, company, membership, and both security versions.
+
 Permissions are deliberately not authoritative JWT claims.
 
 ## Refresh tokens
@@ -35,12 +36,21 @@ clients may omit Origin.
 - `POST /api/v1/auth/logout-all`
 - `GET /api/v1/auth/me`
 - `GET /api/v1/auth/permissions`
+- `GET /api/v1/auth/companies`
+- `POST /api/v1/auth/switch-company`
 
-The target multi-company flow adds `POST /api/v1/auth/switch-company`, company
-selection, `companyId` and `membershipId` on business sessions, and
-`membershipSecurityVersion` validation. One session has one active company. A
-branch is selected per operation or as a client preference and is always
-validated against that company.
+Login selects the only active membership automatically. With several active
+memberships it creates a global authenticated selection session and returns
+`requiresCompanySelection: true` plus the available companies. The user then
+switches without submitting credentials again.
+
+Switching verifies the target membership, current refresh credential, and
+authenticated session. It updates context atomically, rotates the refresh token,
+issues a new access token, and audits the transition. The frontend must discard
+company-scoped caches after success.
+
+One session has one active company. A branch is selected per operation or as a
+client preference and is always validated against that company.
 
 Login has a dedicated rate limit and always returns the same credential error for
 unknown users, incorrect passwords, and inactive accounts.

@@ -8,6 +8,21 @@ export function createAuthRepository(prisma) {
     mustChangePassword: true,
   };
   const credentialUserSelect = { ...sessionUserSelect, passwordHash: true };
+  const membershipSelect = {
+    id: true,
+    companyId: true,
+    status: true,
+    securityVersion: true,
+    company: {
+      select: {
+        id: true,
+        code: true,
+        legalName: true,
+        commercialName: true,
+        status: true,
+      },
+    },
+  };
 
   return {
     findUserByEmail(email) {
@@ -22,13 +37,47 @@ export function createAuthRepository(prisma) {
         select: sessionUserSelect,
       });
     },
+    findActiveMemberships(userId) {
+      return prisma.companyMembership.findMany({
+        where: {
+          userId,
+          status: 'ACTIVE',
+          company: { status: 'ACTIVE' },
+        },
+        select: membershipSelect,
+        orderBy: { company: { legalName: 'asc' } },
+      });
+    },
+    findActiveMembership(userId, companyId) {
+      return prisma.companyMembership.findFirst({
+        where: {
+          userId,
+          companyId,
+          status: 'ACTIVE',
+          company: { status: 'ACTIVE' },
+        },
+        select: membershipSelect,
+      });
+    },
     createSession(data) {
       return prisma.authSession.create({ data });
     },
     findSessionById(sessionId) {
       return prisma.authSession.findUnique({
         where: { id: sessionId },
-        include: { user: { select: sessionUserSelect } },
+        include: {
+          user: { select: sessionUserSelect },
+          company: { select: { id: true, status: true } },
+          membership: {
+            select: {
+              id: true,
+              companyId: true,
+              userId: true,
+              status: true,
+              securityVersion: true,
+            },
+          },
+        },
       });
     },
     async rotateSession({ sessionId, currentHash, nextHash, now }) {
@@ -60,6 +109,32 @@ export function createAuthRepository(prisma) {
         where: { userId, revokedAt: null },
         data: { revokedAt: now, revokedReason: reason },
       });
+    },
+    async switchCompany({
+      sessionId,
+      userId,
+      currentHash,
+      nextHash,
+      companyId,
+      membershipId,
+      now,
+    }) {
+      const result = await prisma.authSession.updateMany({
+        where: {
+          id: sessionId,
+          userId,
+          refreshTokenHash: currentHash,
+          revokedAt: null,
+          expiresAt: { gt: now },
+        },
+        data: {
+          companyId,
+          membershipId,
+          refreshTokenHash: nextHash,
+          lastUsedAt: now,
+        },
+      });
+      return result.count === 1;
     },
     updateProfile(userId, displayName) {
       return prisma.user.update({

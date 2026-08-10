@@ -20,6 +20,14 @@ export async function authenticate(request, _response, next) {
 
   try {
     request.auth = await authService.authenticate(token);
+    request.tenant = request.auth.companyId
+      ? Object.freeze({
+          userId: request.auth.userId,
+          sessionId: request.auth.sessionId,
+          companyId: request.auth.companyId,
+          membershipId: request.auth.membershipId,
+        })
+      : null;
     return next();
   } catch (error) {
     return next(error);

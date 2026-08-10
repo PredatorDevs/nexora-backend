@@ -26,4 +26,5 @@ export const auditActions = Object.freeze({
   companyRoleUpdated: 'COMPANY_ROLE.UPDATED',
   companyRoleDeleted: 'COMPANY_ROLE.DELETED',
   companyRolePermissionsChanged: 'COMPANY_ROLE.PERMISSIONS_CHANGED',
+  companySwitched: 'AUTH.COMPANY_SWITCHED',
 });

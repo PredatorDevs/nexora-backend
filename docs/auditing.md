@@ -1,7 +1,7 @@
 # Auditing
 
-> **Migration status:** the current audit API is installation-wide. Company
-> context and tenant-scoped queries are part of the multi-company milestone.
+> **Migration status:** company and actor-membership context is persisted and
+> indexed. A dedicated company-scoped read API remains a later UI milestone.
 
 The audit module records security and administrative events in `audit_logs`.
 Application code writes entries through the audit service; the public API is
@@ -35,11 +35,10 @@ for investigation; never pass request bodies, credentials, cookies, or tokens.
 
 ## Multi-company audit contract
 
-The target `AuditLog` adds nullable `companyId`, `actorMembershipId`, operational
-`branchId`, and correlation `operationId`. Company operations require
-server-derived company context; platform and pre-company authentication events
-may leave it null. Company administrators query only their active company, while
-cross-company queries require explicit platform permission.
+`AuditLog` contains nullable `companyId` and `actorMembershipId`, derived from
+the authenticated request. Platform and pre-selection authentication events may
+leave them null. Operational `branchId` and bulk correlation `operationId` will
+be introduced when their first domains require them.
 
 The ERS phrase "all accesses" is interpreted as security-relevant access, not
 unbounded logging of every GET request. Sensitive reads, exports, authentication

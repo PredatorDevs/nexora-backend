@@ -6,6 +6,16 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { seedPermissions } from '../../prisma/seed/permissions.seed.js';
 import { loadEnvironment } from '../../src/config/environment.js';
 import { createPrismaClient } from '../../src/database/prisma.js';
+import { createAccessTokenService } from '../../src/core/security/access-token.js';
+import {
+  generateRefreshToken,
+  hashRefreshToken,
+  matchesRefreshToken,
+  parseRefreshCookie,
+  serializeRefreshCookie,
+} from '../../src/core/security/refresh-token.js';
+import { createAuthRepository } from '../../src/modules/auth/auth.repository.js';
+import { createAuthService } from '../../src/modules/auth/auth.service.js';
 import { createCompanyAccessRepository } from '../../src/modules/company-access/company-access.repository.js';
 import { createCompanyAccessService } from '../../src/modules/company-access/company-access.service.js';
 import { provisionCompanyRoles } from '../../src/modules/company-access/company-role-templates.js';
@@ -16,6 +26,7 @@ databaseSuite('company access database isolation', () => {
   const suffix = randomUUID().replaceAll('-', '').slice(0, 10).toUpperCase();
   let prisma;
   let service;
+  let authService;
   let user;
   let country;
   let department;
@@ -91,10 +102,31 @@ databaseSuite('company access database isolation', () => {
       runInTransaction: (operation, options) =>
         prisma.$transaction(operation, options),
     });
+    authService = createAuthService({
+      repository: createAuthRepository(prisma),
+      accessTokens: createAccessTokenService({
+        secret: 'company-session-test-secret-longer-than-32-characters',
+        expiresIn: '10m',
+        issuer: 'nexora-test',
+        audience: 'nexora-test-api',
+      }),
+      refreshTokens: {
+        generate: generateRefreshToken,
+        hash: hashRefreshToken,
+        matches: matchesRefreshToken,
+        parse: parseRefreshCookie,
+        serialize: serializeRefreshCookie,
+      },
+      passwordVerifier: async () => true,
+      passwordHasher: async () => 'not-used',
+      refreshTokenExpiresInDays: 1,
+    });
   }, 60_000);
 
   afterAll(async () => {
     if (!prisma) return;
+    if (user)
+      await prisma.authSession.deleteMany({ where: { userId: user.id } });
     await prisma.companyMembership.deleteMany({
       where: {
         companyId: { in: [companyA?.id, companyB?.id].filter(Boolean) },
@@ -158,5 +190,40 @@ databaseSuite('company access database isolation', () => {
         { actorUserId: user.id, requestId: `suspend-${suffix}` },
       ),
     ).rejects.toMatchObject({ code: 'RESOURCE_CONFLICT' });
+  }, 30_000);
+
+  it('creates a selection session and securely switches tenant context', async () => {
+    const ownerB = await prisma.companyRole.findUniqueOrThrow({
+      where: { companyId_code: { companyId: companyB.id, code: 'OWNER' } },
+    });
+    await service.addMembership(
+      companyB.id,
+      { email: user.email, roleIds: [ownerB.id] },
+      user.id,
+      { actorUserId: user.id, requestId: `owner-b-${suffix}` },
+    );
+
+    const login = await authService.login({
+      email: user.email,
+      password: 'not-checked',
+      ipAddress: '127.0.0.1',
+      userAgent: 'vitest',
+    });
+    expect(login.requiresCompanySelection).toBe(true);
+    expect(login.activeMembership).toBeNull();
+
+    const initialAuth = await authService.authenticate(login.accessToken);
+    expect(initialAuth.companyId).toBeNull();
+    const switched = await authService.switchCompany({
+      userId: user.id,
+      sessionId: initialAuth.sessionId,
+      companyId: companyB.id,
+      refreshCookie: login.refreshCookie,
+    });
+    const companyAuth = await authService.authenticate(switched.accessToken);
+    expect(companyAuth).toMatchObject({
+      companyId: companyB.id,
+      membershipId: switched.activeMembership.id,
+    });
   }, 30_000);
 });

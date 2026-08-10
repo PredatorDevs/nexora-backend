@@ -3,14 +3,12 @@
 ## Implementation status
 
 This milestone implements company membership persistence, company-owned roles,
-permission scope metadata, role templates, platform-administered APIs, and
+permission scopes, role templates, company-bound authorization, and
 cross-company database constraints.
 
-Authentication sessions are not company-bound yet. Consequently, the endpoints
-in this document are temporarily authorized through the existing global RBAC
-layer and are intended for platform administrators. The next milestone will add
-active membership context and replace these transitional checks with
-`authorizeCompany` for company administrators.
+Authentication sessions carry one active membership. The endpoints in this
+document use `authorizeCompany` and reject a route company ID that differs from
+the authenticated tenant.
 
 ## Persistence model
 
@@ -70,11 +68,10 @@ Platform permissions are rejected by the company-role service.
 
 ## Permission scopes
 
-`Permission.scope` is now `PLATFORM` or `COMPANY`. Company permissions currently
-include shared catalog reads and company access administration. The global
-`SUPER_ADMIN` and `ADMIN` roles temporarily receive the administration codes so
-the migration can be operated before company-bound sessions exist. This is a
-documented transitional exception and will be removed in the session milestone.
+`Permission.scope` is `PLATFORM` or `COMPANY`. Company permissions include
+shared catalog reads and company access administration. Runtime resolution
+filters by scope: global roles cannot supply company authority and memberships
+cannot supply platform authority.
 
 ## Endpoints
 
@@ -105,8 +102,8 @@ Assignment replacement and owner checks run in serializable transactions.
 ## Audit and history
 
 Membership and role mutations emit stable audit actions and transactional entity
-snapshots. Until audit columns are tenant-aware, `companyId` is stored in safe
-metadata. The later audit migration will promote it to an indexed foreign key.
+snapshots. `companyId` and `actorMembershipId` are indexed relational columns on
+both histories and are derived from the authenticated session.
 
 ## Verification requirements
 

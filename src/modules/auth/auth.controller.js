@@ -58,6 +58,9 @@ export function createAuthController({
       return sendSuccess(response, {
         accessToken: result.accessToken,
         user: result.user,
+        activeMembership: result.activeMembership,
+        memberships: result.memberships,
+        requiresCompanySelection: result.requiresCompanySelection,
       });
     },
 
@@ -108,15 +111,69 @@ export function createAuthController({
     },
 
     async me(request, response) {
+      return sendSuccess(response, {
+        ...(await authService.getUser(request.auth.userId)),
+        activeContext: request.auth.companyId
+          ? {
+              companyId: request.auth.companyId,
+              membershipId: request.auth.membershipId,
+            }
+          : null,
+      });
+    },
+
+    async companies(request, response) {
       return sendSuccess(
         response,
-        await authService.getUser(request.auth.userId),
+        await authService.listCompanies(request.auth.userId),
       );
     },
 
-    async permissions(request, response) {
+    async switchCompany(request, response) {
+      const result = await audited(
+        {
+          action: auditActions.companySwitched,
+          actorUserId: request.auth.userId,
+          resourceType: 'auth_session',
+          resourceId: request.auth.sessionId,
+          context: auditRequestContext(request),
+          metadata: {
+            previousCompanyId: request.auth.companyId,
+            targetCompanyId: request.validated.body.companyId,
+          },
+        },
+        () =>
+          authService.switchCompany({
+            userId: request.auth.userId,
+            sessionId: request.auth.sessionId,
+            companyId: request.validated.body.companyId,
+            refreshCookie: request.cookies[settings.auth.refreshCookieName],
+          }),
+      );
+      setRefreshCookie(response, result.refreshCookie, result.refreshExpiresAt);
       return sendSuccess(response, {
-        permissions: await rbacService.getPermissionCodes(request.auth.userId),
+        accessToken: result.accessToken,
+        activeMembership: result.activeMembership,
+      });
+    },
+
+    async permissions(request, response) {
+      const platformPermissions = await rbacService.getPlatformPermissionCodes(
+        request.auth.userId,
+      );
+      const companyPermissions = request.auth.membershipId
+        ? await rbacService.getCompanyPermissionCodes(
+            request.auth.membershipId,
+            request.auth.companyId,
+          )
+        : [];
+      return sendSuccess(response, {
+        scope: request.auth.membershipId ? 'COMPANY' : 'PLATFORM',
+        permissions: request.auth.membershipId
+          ? companyPermissions
+          : platformPermissions,
+        platformPermissions,
+        companyPermissions,
       });
     },
 

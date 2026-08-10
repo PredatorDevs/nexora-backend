@@ -108,7 +108,7 @@ matrices idempotently.
 
 ## Next milestone
 
-The next implementation binds authentication sessions and access tokens to an
-active `CompanyMembership`, introduces company switching and `authorizeCompany`,
-and promotes company context into audit storage. Company-owned business modules
-must wait until those isolation controls and their negative tests pass.
+Company-bound sessions, switching, `authorizeCompany`, and audit tenant context
+are implemented. The next business milestone introduces branches as operating
+points, followed by warehouses and locations. Each module must retain the tenant
+isolation and negative-test requirements established here.

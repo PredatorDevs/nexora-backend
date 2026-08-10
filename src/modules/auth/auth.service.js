@@ -18,6 +18,14 @@ function publicUser(user) {
   };
 }
 
+function publicMembership(membership) {
+  return {
+    id: membership.id,
+    companyId: membership.companyId,
+    company: membership.company,
+  };
+}
+
 export function createAuthService({
   repository,
   accessTokens,
@@ -27,11 +35,17 @@ export function createAuthService({
   refreshTokenExpiresInDays,
   now = () => new Date(),
 }) {
-  const createAccessToken = (user, sessionId) =>
+  const createAccessToken = (user, session) =>
     accessTokens.sign({
       userId: user.id,
-      sessionId,
+      sessionId: session.id,
       securityVersion: user.securityVersion,
+      companyId: session.companyId ?? null,
+      membershipId: session.membershipId ?? null,
+      membershipSecurityVersion:
+        session.membership?.securityVersion ??
+        session.membershipSecurityVersion ??
+        null,
     });
 
   return {
@@ -55,6 +69,8 @@ export function createAuthService({
       const expiresAt = new Date(issuedAt);
       expiresAt.setUTCDate(expiresAt.getUTCDate() + refreshTokenExpiresInDays);
 
+      const memberships = await repository.findActiveMemberships(user.id);
+      const activeMembership = memberships.length === 1 ? memberships[0] : null;
       await repository.createSession({
         id: sessionId,
         familyId: sessionId,
@@ -63,13 +79,27 @@ export function createAuthService({
         ipAddress,
         userAgent,
         expiresAt,
+        companyId: activeMembership?.companyId ?? null,
+        membershipId: activeMembership?.id ?? null,
       });
 
+      const sessionContext = {
+        id: sessionId,
+        companyId: activeMembership?.companyId ?? null,
+        membershipId: activeMembership?.id ?? null,
+        membershipSecurityVersion: activeMembership?.securityVersion ?? null,
+      };
+
       return {
-        accessToken: await createAccessToken(user, sessionId),
+        accessToken: await createAccessToken(user, sessionContext),
         refreshCookie: refreshTokens.serialize(sessionId, refreshToken),
         refreshExpiresAt: expiresAt,
         user: publicUser(user),
+        activeMembership: activeMembership
+          ? publicMembership(activeMembership)
+          : null,
+        memberships: memberships.map(publicMembership),
+        requiresCompanySelection: memberships.length > 1,
       };
     },
 
@@ -126,6 +156,24 @@ export function createAuthService({
           'Authentication is required.',
         );
       }
+      if (
+        session.membershipId != null &&
+        (!session.membership ||
+          session.membership.userId !== session.userId ||
+          session.membership.companyId !== session.companyId ||
+          session.membership.status !== 'ACTIVE' ||
+          session.company?.status !== 'ACTIVE')
+      ) {
+        await repository.revokeFamily(
+          session.familyId,
+          'MEMBERSHIP_INACTIVE',
+          currentTime,
+        );
+        throw authError(
+          errorCodes.authenticationRequired,
+          'Authentication is required.',
+        );
+      }
 
       const nextToken = refreshTokens.generate();
       const rotated = await repository.rotateSession({
@@ -148,11 +196,13 @@ export function createAuthService({
       }
 
       return {
-        accessToken: await createAccessToken(session.user, session.id),
+        accessToken: await createAccessToken(session.user, session),
         refreshCookie: refreshTokens.serialize(session.id, nextToken),
         refreshExpiresAt: session.expiresAt,
         userId: session.userId,
         sessionId: session.id,
+        companyId: session.companyId,
+        membershipId: session.membershipId,
       };
     },
 
@@ -175,7 +225,17 @@ export function createAuthService({
         session.revokedAt ||
         session.expiresAt <= currentTime ||
         session.user.status !== 'ACTIVE' ||
-        session.user.securityVersion !== claims.securityVersion
+        session.user.securityVersion !== claims.securityVersion ||
+        session.companyId !== claims.companyId ||
+        session.membershipId !== claims.membershipId ||
+        (session.membershipId != null &&
+          (!session.membership ||
+            session.membership.userId !== session.userId ||
+            session.membership.companyId !== session.companyId ||
+            session.membership.status !== 'ACTIVE' ||
+            session.company?.status !== 'ACTIVE' ||
+            session.membership.securityVersion !==
+              claims.membershipSecurityVersion))
       ) {
         throw authError(
           errorCodes.authenticationRequired,
@@ -188,6 +248,90 @@ export function createAuthService({
         sessionId: session.id,
         securityVersion: session.user.securityVersion,
         mustChangePassword: session.user.mustChangePassword,
+        companyId: session.companyId,
+        membershipId: session.membershipId,
+        membershipSecurityVersion: session.membership?.securityVersion ?? null,
+      };
+    },
+
+    async listCompanies(userId) {
+      return (await repository.findActiveMemberships(userId)).map(
+        publicMembership,
+      );
+    },
+
+    async switchCompany({ userId, sessionId, companyId, refreshCookie }) {
+      const parsed = refreshTokens.parse(refreshCookie);
+      if (!parsed || parsed.sessionId !== sessionId) {
+        throw authError(
+          errorCodes.sessionExpired,
+          'The refresh session is invalid or expired.',
+        );
+      }
+      const session = await repository.findSessionById(sessionId);
+      const currentTime = now();
+      if (
+        !session ||
+        session.userId !== userId ||
+        session.revokedAt ||
+        session.expiresAt <= currentTime
+      ) {
+        throw authError(
+          errorCodes.sessionExpired,
+          'The refresh session is invalid or expired.',
+        );
+      }
+      if (!refreshTokens.matches(parsed.token, session.refreshTokenHash)) {
+        await repository.revokeFamily(
+          session.familyId,
+          'REFRESH_TOKEN_REUSE',
+          currentTime,
+        );
+        throw authError(
+          errorCodes.sessionRevoked,
+          'The refresh session has been revoked.',
+        );
+      }
+      const membership = await repository.findActiveMembership(
+        userId,
+        companyId,
+      );
+      if (!membership) {
+        throw new AppError({
+          code: errorCodes.forbidden,
+          message: 'The requested company is not available to this user.',
+          statusCode: 403,
+        });
+      }
+      const nextToken = refreshTokens.generate();
+      const switched = await repository.switchCompany({
+        sessionId,
+        userId,
+        currentHash: session.refreshTokenHash,
+        nextHash: refreshTokens.hash(nextToken),
+        companyId: membership.companyId,
+        membershipId: membership.id,
+        now: currentTime,
+      });
+      if (!switched) {
+        throw authError(
+          errorCodes.sessionRevoked,
+          'The refresh session has been revoked.',
+        );
+      }
+      return {
+        accessToken: await createAccessToken(session.user, {
+          id: session.id,
+          companyId: membership.companyId,
+          membershipId: membership.id,
+          membershipSecurityVersion: membership.securityVersion,
+        }),
+        refreshCookie: refreshTokens.serialize(session.id, nextToken),
+        refreshExpiresAt: session.expiresAt,
+        userId,
+        sessionId,
+        previousCompanyId: session.companyId,
+        activeMembership: publicMembership(membership),
       };
     },
 
@@ -234,7 +378,10 @@ export function createAuthService({
       });
       return {
         user: publicUser(updated),
-        accessToken: await createAccessToken(updated, sessionId),
+        accessToken: await createAccessToken(
+          updated,
+          await repository.findSessionById(sessionId),
+        ),
       };
     },
   };

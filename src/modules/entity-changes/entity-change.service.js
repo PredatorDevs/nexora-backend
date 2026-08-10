@@ -76,6 +76,8 @@ export function createEntityChangeService(repository) {
           operation,
           source,
           actorUserId: context.actorUserId ?? null,
+          companyId: context.companyId ?? null,
+          actorMembershipId: context.membershipId ?? null,
           requestId: context.requestId,
           oldValues: snapshots.oldValues,
           newValues: snapshots.newValues,

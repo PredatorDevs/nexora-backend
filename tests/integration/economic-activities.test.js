@@ -25,10 +25,14 @@ function createEconomicActivitiesApp(
           userId: 1,
           sessionId: 'test-session',
           mustChangePassword: false,
-          permissionCodes,
+          companyId: 11,
+          membershipId: 22,
+          companyPermissionCodes: permissionCodes,
         }),
       },
-      rbac: { getPermissionCodes: vi.fn().mockResolvedValue(permissionCodes) },
+      rbac: {
+        getCompanyPermissionCodes: vi.fn().mockResolvedValue(permissionCodes),
+      },
       economicActivities: repository,
     },
     settings: {

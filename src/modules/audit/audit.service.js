@@ -25,6 +25,9 @@ export function createAuditService(repository) {
     record(event) {
       return repository.create({
         actorUserId: event.actorUserId ?? null,
+        companyId: event.companyId ?? event.context.companyId ?? null,
+        actorMembershipId:
+          event.actorMembershipId ?? event.context.membershipId ?? null,
         action: event.action,
         resourceType: event.resourceType,
         resourceId:

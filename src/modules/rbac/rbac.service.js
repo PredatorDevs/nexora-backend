@@ -26,6 +26,15 @@ export function createRbacService({
   entityChangeService,
 }) {
   return {
+    getPlatformPermissionCodes(userId) {
+      return repository.findPermissionCodesForUser(userId);
+    },
+    getCompanyPermissionCodes(membershipId, companyId) {
+      return repository.findPermissionCodesForMembership(
+        membershipId,
+        companyId,
+      );
+    },
     getPermissionCodes(userId) {
       return repository.findPermissionCodesForUser(userId);
     },

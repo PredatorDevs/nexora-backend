@@ -154,63 +154,79 @@ model RolePermission {
 }
 
 model AuthSession {
-  id               String    @id @db.Char(36)
-  familyId         String    @map("family_id") @db.Char(36)
-  userId           Int       @map("user_id") @db.UnsignedInt
-  refreshTokenHash String    @unique(map: "auth_sessions_refresh_token_hash_key") @map("refresh_token_hash") @db.Char(64)
-  ipAddress        String?   @map("ip_address") @db.VarChar(45)
-  userAgent        String?   @map("user_agent") @db.VarChar(512)
-  expiresAt        DateTime  @map("expires_at") @db.DateTime(3)
-  lastUsedAt       DateTime? @map("last_used_at") @db.DateTime(3)
-  revokedAt        DateTime? @map("revoked_at") @db.DateTime(3)
-  revokedReason    String?   @map("revoked_reason") @db.VarChar(100)
-  createdAt        DateTime  @default(now()) @map("created_at") @db.DateTime(3)
-  updatedAt        DateTime  @updatedAt @map("updated_at") @db.DateTime(3)
-  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id               String             @id @db.Char(36)
+  familyId         String             @map("family_id") @db.Char(36)
+  userId           Int                @map("user_id") @db.UnsignedInt
+  companyId        Int?               @map("company_id") @db.UnsignedInt
+  membershipId     Int?               @map("membership_id") @db.UnsignedInt
+  refreshTokenHash String             @unique(map: "auth_sessions_refresh_token_hash_key") @map("refresh_token_hash") @db.Char(64)
+  ipAddress        String?            @map("ip_address") @db.VarChar(45)
+  userAgent        String?            @map("user_agent") @db.VarChar(512)
+  expiresAt        DateTime           @map("expires_at") @db.DateTime(3)
+  lastUsedAt       DateTime?          @map("last_used_at") @db.DateTime(3)
+  revokedAt        DateTime?          @map("revoked_at") @db.DateTime(3)
+  revokedReason    String?            @map("revoked_reason") @db.VarChar(100)
+  createdAt        DateTime           @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt        DateTime           @updatedAt @map("updated_at") @db.DateTime(3)
+  user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company          Company?           @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  membership       CompanyMembership? @relation(fields: [membershipId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
 
   @@index([userId, revokedAt, expiresAt], map: "auth_sessions_user_state_idx")
   @@index([familyId], map: "auth_sessions_family_id_idx")
   @@index([expiresAt], map: "auth_sessions_expires_at_idx")
+  @@index([companyId, revokedAt, expiresAt], map: "auth_sessions_company_state_idx")
+  @@index([membershipId, companyId], map: "auth_sessions_membership_company_idx")
   @@map("auth_sessions")
 }
 
 model AuditLog {
-  id           BigInt      @id @default(autoincrement()) @db.UnsignedBigInt
-  actorUserId  Int?        @map("actor_user_id") @db.UnsignedInt
-  action       String      @db.VarChar(150)
-  resourceType String      @map("resource_type") @db.VarChar(100)
-  resourceId   String?     @map("resource_id") @db.VarChar(191)
-  result       AuditResult
-  requestId    String      @map("request_id") @db.VarChar(128)
-  ipAddress    String?     @map("ip_address") @db.VarChar(45)
-  userAgent    String?     @map("user_agent") @db.VarChar(512)
-  metadata     Json?
-  createdAt    DateTime    @default(now()) @map("created_at") @db.DateTime(3)
-  actor        User?       @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  id                BigInt             @id @default(autoincrement()) @db.UnsignedBigInt
+  actorUserId       Int?               @map("actor_user_id") @db.UnsignedInt
+  companyId         Int?               @map("company_id") @db.UnsignedInt
+  actorMembershipId Int?               @map("actor_membership_id") @db.UnsignedInt
+  action            String             @db.VarChar(150)
+  resourceType      String             @map("resource_type") @db.VarChar(100)
+  resourceId        String?            @map("resource_id") @db.VarChar(191)
+  result            AuditResult
+  requestId         String             @map("request_id") @db.VarChar(128)
+  ipAddress         String?            @map("ip_address") @db.VarChar(45)
+  userAgent         String?            @map("user_agent") @db.VarChar(512)
+  metadata          Json?
+  createdAt         DateTime           @default(now()) @map("created_at") @db.DateTime(3)
+  actor             User?              @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  company           Company?           @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  actorMembership   CompanyMembership? @relation(fields: [actorMembershipId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
 
   @@index([actorUserId, createdAt], map: "audit_logs_actor_created_at_idx")
   @@index([action, createdAt], map: "audit_logs_action_created_at_idx")
   @@index([resourceType, resourceId], map: "audit_logs_resource_idx")
   @@index([requestId], map: "audit_logs_request_id_idx")
   @@index([createdAt], map: "audit_logs_created_at_idx")
+  @@index([companyId, createdAt], map: "audit_logs_company_created_at_idx")
+  @@index([companyId, actorUserId, createdAt], map: "audit_logs_company_actor_idx")
   @@map("audit_logs")
 }
 
 model EntityChangeLog {
-  id            BigInt                @id @default(autoincrement()) @db.UnsignedBigInt
-  schemaName    String                @map("schema_name") @db.VarChar(100)
-  entityType    String                @map("entity_type") @db.VarChar(100)
-  entityId      String                @map("entity_id") @db.VarChar(191)
-  operation     EntityChangeOperation
-  source        EntityChangeSource    @default(APPLICATION)
-  actorUserId   Int?                  @map("actor_user_id") @db.UnsignedInt
-  requestId     String                @map("request_id") @db.VarChar(128)
-  oldValues     Json?                 @map("old_values")
-  newValues     Json?                 @map("new_values")
-  changedFields Json?                 @map("changed_fields")
-  metadata      Json?
-  createdAt     DateTime              @default(now()) @map("created_at") @db.DateTime(3)
-  actor         User?                 @relation("EntityChangeActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  id                BigInt                @id @default(autoincrement()) @db.UnsignedBigInt
+  schemaName        String                @map("schema_name") @db.VarChar(100)
+  entityType        String                @map("entity_type") @db.VarChar(100)
+  entityId          String                @map("entity_id") @db.VarChar(191)
+  operation         EntityChangeOperation
+  source            EntityChangeSource    @default(APPLICATION)
+  actorUserId       Int?                  @map("actor_user_id") @db.UnsignedInt
+  companyId         Int?                  @map("company_id") @db.UnsignedInt
+  actorMembershipId Int?                  @map("actor_membership_id") @db.UnsignedInt
+  requestId         String                @map("request_id") @db.VarChar(128)
+  oldValues         Json?                 @map("old_values")
+  newValues         Json?                 @map("new_values")
+  changedFields     Json?                 @map("changed_fields")
+  metadata          Json?
+  createdAt         DateTime              @default(now()) @map("created_at") @db.DateTime(3)
+  actor             User?                 @relation("EntityChangeActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  company           Company?              @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  actorMembership   CompanyMembership?    @relation(fields: [actorMembershipId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
 
   @@index([schemaName, entityType, entityId, createdAt], map: "entity_change_logs_entity_idx")
   @@index([schemaName, createdAt], map: "entity_change_logs_schema_date_idx")
@@ -218,6 +234,8 @@ model EntityChangeLog {
   @@index([actorUserId, createdAt], map: "entity_change_logs_actor_idx")
   @@index([requestId], map: "entity_change_logs_request_id_idx")
   @@index([createdAt], map: "entity_change_logs_created_at_idx")
+  @@index([companyId, createdAt], map: "entity_change_logs_company_date_idx")
+  @@index([companyId, entityType, entityId, createdAt], map: "entity_change_logs_company_entity_idx")
   @@map("entity_change_logs")
 }
 
@@ -326,6 +344,9 @@ model Company {
   economicActivities  CompanyEconomicActivity[]
   memberships         CompanyMembership[]
   roles               CompanyRole[]
+  sessions            AuthSession[]
+  auditLogs           AuditLog[]
+  entityChanges       EntityChangeLog[]
 
   @@index([status, legalName], map: "companies_status_legal_name_idx")
   @@index([countryId], map: "companies_country_id_idx")
@@ -347,6 +368,9 @@ model CompanyMembership {
   company         Company                 @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   user            User                    @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   roles           CompanyMembershipRole[]
+  sessions        AuthSession[]
+  auditLogs       AuditLog[]
+  entityChanges   EntityChangeLog[]
 
   @@unique([companyId, userId], map: "company_memberships_company_user_key")
   @@unique([id, companyId], map: "company_memberships_id_company_key")

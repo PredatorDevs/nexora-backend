@@ -2,40 +2,81 @@ import { isPermissionCode } from '../../modules/rbac/rbac.constants.js';
 import { AppError } from '../errors/app-error.js';
 import { errorCodes } from '../errors/error-codes.js';
 
-export function authorize(permissionCode) {
+const authenticationRequired = () =>
+  new AppError({
+    code: errorCodes.authenticationRequired,
+    message: 'Authentication is required.',
+    statusCode: 401,
+  });
+const forbidden = (
+  message = 'You do not have permission to perform this operation.',
+) => new AppError({ code: errorCodes.forbidden, message, statusCode: 403 });
+
+function validateRequest(request) {
+  if (!request.auth?.userId) throw authenticationRequired();
+  if (request.auth.mustChangePassword) {
+    throw new AppError({
+      code: errorCodes.passwordChangeRequired,
+      message: 'You must change your password before continuing.',
+      statusCode: 403,
+    });
+  }
+}
+
+function middleware(permissionCode, scope) {
   if (!isPermissionCode(permissionCode))
     throw new TypeError(`Invalid permission code: ${permissionCode}`);
   return async function authorizationMiddleware(request, _response, next) {
-    if (!request.auth?.userId)
-      return next(
-        new AppError({
-          code: errorCodes.authenticationRequired,
-          message: 'Authentication is required.',
-          statusCode: 401,
-        }),
-      );
-    if (request.auth.mustChangePassword)
-      return next(
-        new AppError({
-          code: errorCodes.passwordChangeRequired,
-          message: 'You must change your password before continuing.',
-          statusCode: 403,
-        }),
-      );
-    const rbacService = request.app.locals.services?.rbac;
-    if (!rbacService) return next(new Error('RBAC service is not configured.'));
-    const permissions =
-      request.auth.permissionCodes ??
-      (await rbacService.getPermissionCodes(request.auth.userId));
-    request.auth.permissionCodes = permissions;
-    if (!permissions.includes(permissionCode))
-      return next(
-        new AppError({
-          code: errorCodes.forbidden,
-          message: 'You do not have permission to perform this operation.',
-          statusCode: 403,
-        }),
-      );
-    return next();
+    try {
+      validateRequest(request);
+      const rbacService = request.app.locals.services?.rbac;
+      if (!rbacService) throw new Error('RBAC service is not configured.');
+
+      let permissions;
+      if (scope === 'PLATFORM') {
+        permissions =
+          request.auth.platformPermissionCodes ??
+          request.auth.permissionCodes ??
+          (await (
+            rbacService.getPlatformPermissionCodes ??
+            rbacService.getPermissionCodes
+          )(request.auth.userId));
+        request.auth.platformPermissionCodes = permissions;
+      } else {
+        if (!request.tenant) {
+          throw forbidden('Select an active company before continuing.');
+        }
+        const requestedCompanyId = request.params?.companyId;
+        if (
+          requestedCompanyId != null &&
+          Number(requestedCompanyId) !== request.tenant.companyId
+        ) {
+          throw forbidden('The requested company is not the active company.');
+        }
+        permissions =
+          request.auth.companyPermissionCodes ??
+          (await rbacService.getCompanyPermissionCodes(
+            request.tenant.membershipId,
+            request.tenant.companyId,
+          ));
+        request.auth.companyPermissionCodes = permissions;
+      }
+
+      if (!permissions.includes(permissionCode)) throw forbidden();
+      return next();
+    } catch (error) {
+      return next(error);
+    }
   };
 }
+
+export function authorizePlatform(permissionCode) {
+  return middleware(permissionCode, 'PLATFORM');
+}
+
+export function authorizeCompany(permissionCode) {
+  return middleware(permissionCode, 'COMPANY');
+}
+
+// Backward-compatible alias while platform administration routes are renamed.
+export const authorize = authorizePlatform;

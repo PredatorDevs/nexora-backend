@@ -2,6 +2,8 @@ const select = {
   id: true,
   familyId: true,
   userId: true,
+  companyId: true,
+  membershipId: true,
   ipAddress: true,
   userAgent: true,
   expiresAt: true,
@@ -11,6 +13,9 @@ const select = {
   createdAt: true,
   updatedAt: true,
   user: { select: { id: true, email: true, displayName: true } },
+  company: {
+    select: { id: true, code: true, legalName: true, commercialName: true },
+  },
 };
 export function createSessionsRepository(prisma) {
   return {

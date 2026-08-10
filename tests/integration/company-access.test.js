@@ -32,11 +32,13 @@ function appWith(permissionCodes) {
             userId: 1,
             sessionId: 'session',
             mustChangePassword: false,
-            permissionCodes,
+            companyId: 11,
+            membershipId: 22,
+            companyPermissionCodes: permissionCodes,
           }),
         },
         rbac: {
-          getPermissionCodes: vi.fn().mockResolvedValue(permissionCodes),
+          getCompanyPermissionCodes: vi.fn().mockResolvedValue(permissionCodes),
         },
         companyAccess,
       },
@@ -72,13 +74,13 @@ describe('company access API', () => {
     expect(response.status).toBe(403);
   });
 
-  it('rejects malformed company identifiers before the service', async () => {
+  it('rejects malformed company identifiers at the tenant boundary', async () => {
     const { app, companyAccess } = appWith(['company_members.read']);
     const response = await request(app)
       .get('/api/v1/companies/not-an-id/members')
       .set('authorization', 'Bearer token');
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(403);
     expect(companyAccess.listMemberships).not.toHaveBeenCalled();
   });
 });

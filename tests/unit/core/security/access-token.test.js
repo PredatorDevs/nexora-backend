@@ -22,6 +22,27 @@ describe('access token service', () => {
       userId: 12,
       sessionId: 'session-id',
       securityVersion: 3,
+      companyId: null,
+      membershipId: null,
+      membershipSecurityVersion: null,
+    });
+  });
+
+  it('signs and verifies company authority claims as one unit', async () => {
+    const service = createAccessTokenService(options);
+    const token = await service.sign({
+      userId: 12,
+      sessionId: 'session-id',
+      securityVersion: 3,
+      companyId: 4,
+      membershipId: 8,
+      membershipSecurityVersion: 2,
+    });
+
+    await expect(service.verify(token)).resolves.toMatchObject({
+      companyId: 4,
+      membershipId: 8,
+      membershipSecurityVersion: 2,
     });
   });
 

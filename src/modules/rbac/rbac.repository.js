@@ -2,7 +2,28 @@ export function createRbacRepository(prisma) {
   return {
     async findPermissionCodesForUser(userId) {
       const permissions = await prisma.permission.findMany({
-        where: { roles: { some: { role: { users: { some: { userId } } } } } },
+        where: {
+          scope: 'PLATFORM',
+          roles: { some: { role: { users: { some: { userId } } } } },
+        },
+        select: { code: true },
+        orderBy: { code: 'asc' },
+      });
+      return permissions.map(({ code }) => code);
+    },
+    async findPermissionCodesForMembership(membershipId, companyId) {
+      const permissions = await prisma.permission.findMany({
+        where: {
+          scope: 'COMPANY',
+          companyRoles: {
+            some: {
+              companyId,
+              role: {
+                memberships: { some: { membershipId, companyId } },
+              },
+            },
+          },
+        },
         select: { code: true },
         orderBy: { code: 'asc' },
       });

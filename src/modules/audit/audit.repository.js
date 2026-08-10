@@ -1,6 +1,8 @@
 const auditSelect = {
   id: true,
   actorUserId: true,
+  companyId: true,
+  actorMembershipId: true,
   action: true,
   resourceType: true,
   resourceId: true,
