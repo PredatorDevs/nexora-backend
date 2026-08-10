@@ -5,7 +5,7 @@ npm lockfile, MySQL `8.4.10`, and the Docker base tag are fixed in source.
 Pull requests and `main` run formatting, lint, Prisma validation/generation,
 migrations against disposable MySQL, all tests, and the production image build.
 
-After verification, CI creates `predator-backend-<commit>.tar.gz`. Archive
+After verification, CI creates `nexora-backend-<commit>.tar.gz`. Archive
 entries are sorted, ownership is normalized, modification times use the source
 commit timestamp, and gzip timestamps are disabled. CI builds it twice and
 requires byte-for-byte equality.
@@ -19,8 +19,8 @@ archive because generator metadata may vary.
 Verify a downloaded release before deployment:
 
 ```bash
-sha256sum --check predator-backend-<commit>.tar.gz.sha256
-tar -xzf predator-backend-<commit>.tar.gz
+sha256sum --check nexora-backend-<commit>.tar.gz.sha256
+tar -xzf nexora-backend-<commit>.tar.gz
 cd release-bundle
 npm ci --omit=dev
 node scripts/verify-artifact-manifest.mjs .

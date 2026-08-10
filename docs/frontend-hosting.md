@@ -55,12 +55,12 @@ Depending on the framework, the generated directory is commonly named `dist`,
 Given this structure:
 
 ```text
-PredatorBusiness/
-├── predator-backend/
+NexoraERP/
+├── nexora-backend/
 │   ├── src/
 │   ├── .env
 │   └── package.json
-└── predator-frontend/
+└── nexora-frontend/
     ├── src/
     ├── dist/
     │   ├── index.html
@@ -74,7 +74,7 @@ The backend can use an absolute path:
 
 ```env
 SERVE_FRONTEND=true
-FRONTEND_DIST_PATH=C:/Users/PredatorDev/Desktop/PredatorBusiness/predator-frontend/dist
+FRONTEND_DIST_PATH=C:/Users/NexoraDev/Desktop/NexoraERP/nexora-frontend/dist
 ```
 
 Alternatively, when the backend process is always started from its project
@@ -82,17 +82,17 @@ directory, it can use a relative path:
 
 ```env
 SERVE_FRONTEND=true
-FRONTEND_DIST_PATH=../predator-frontend/dist
+FRONTEND_DIST_PATH=../nexora-frontend/dist
 ```
 
 An absolute path is usually clearer for initial local testing. Build the
 frontend and then start the backend:
 
 ```bash
-cd predator-frontend
+cd nexora-frontend
 npm run build
 
-cd ../predator-backend
+cd ../nexora-backend
 npm start
 ```
 
@@ -108,7 +108,7 @@ fetch('/api/v1/health');
 The compiled files may instead be copied into a backend directory:
 
 ```text
-predator-backend/
+nexora-backend/
 ├── public/
 │   ├── index.html
 │   └── assets/

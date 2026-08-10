@@ -1,4 +1,4 @@
-# Predator Backend Boilerplate
+# Nexora Backend Boilerplate
 
 Reusable backend foundation built with Node.js, Express, and ESM.
 
@@ -137,3 +137,6 @@ The multi-stage Dockerfile provides development, migration, and non-root
 production targets. Docker Compose supplies local MySQL and health checks, while
 GitHub Actions verifies quality, migrations, tests, and the production image.
 See `docs/deployment.md` for release order and rollback guidance.
+
+For a combined Vercel deployment of the Express API and the compiled SPA from
+`public/`, see `docs/vercel-deployment.md`.

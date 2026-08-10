@@ -4,6 +4,9 @@ The project ships provider-neutral container targets for development, database
 migrations, and production. Deployments must keep schema migration separate from
 normal application startup so multiple replicas never race to modify the schema.
 
+For the Vercel-specific serverless and bundled-SPA deployment path, see
+`vercel-deployment.md`.
+
 ## Local Docker Compose
 
 Start MySQL, apply migrations, and run the API:
@@ -59,7 +62,7 @@ The Dockerfile exposes three operational targets:
 Build the production image:
 
 ```bash
-docker build --target production -t predator-backend:release .
+docker build --target production -t nexora-backend:release .
 ```
 
 If the backend should host a real frontend build, replace the contents of
@@ -80,8 +83,8 @@ variable from `.env.example`.
 Build both operational targets from the same commit:
 
 ```bash
-docker build --target migrations -t predator-backend-migrations:release .
-docker build --target production -t predator-backend:release .
+docker build --target migrations -t nexora-backend-migrations:release .
+docker build --target production -t nexora-backend:release .
 ```
 
 Then release in this order:
@@ -96,12 +99,12 @@ Example commands for a single Docker host:
 
 ```bash
 docker run --rm --env-file .env.production \
-  predator-backend-migrations:release
+  nexora-backend-migrations:release
 
-docker run -d --name predator-backend \
+docker run -d --name nexora-backend \
   --env-file .env.production \
   -p 3000:3000 \
-  predator-backend:release
+  nexora-backend:release
 ```
 
 The database must be reachable from the container. `localhost` inside a

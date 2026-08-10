@@ -28,13 +28,13 @@ const optionalString = (schema) =>
 const environmentSchema = z
   .object({
     NODE_ENV: z.enum(['development', 'test', 'production']),
-    PORT: z.coerce.number().int().min(1).max(65535),
+    PORT: z.coerce.number().int().min(1).max(65535).default(3000),
     DATABASE_URL: mysqlUrl,
-    TEST_DATABASE_URL: mysqlUrl,
+    TEST_DATABASE_URL: optionalString(mysqlUrl),
     ACCESS_TOKEN_SECRET: z.string().min(32),
     ACCESS_TOKEN_EXPIRES_IN: durationString,
-    ACCESS_TOKEN_ISSUER: z.string().min(1).default('predator-backend'),
-    ACCESS_TOKEN_AUDIENCE: z.string().min(1).default('predator-clients'),
+    ACCESS_TOKEN_ISSUER: z.string().min(1).default('nexora-backend'),
+    ACCESS_TOKEN_AUDIENCE: z.string().min(1).default('nexora-clients'),
     REFRESH_TOKEN_EXPIRES_IN_DAYS: z.coerce.number().int().positive(),
     REFRESH_COOKIE_NAME: z.string().min(1),
     COOKIE_SECURE: booleanString,
@@ -120,7 +120,18 @@ const environmentSchema = z
       });
     }
 
-    if (environment.DATABASE_URL === environment.TEST_DATABASE_URL) {
+    if (environment.NODE_ENV === 'test' && !environment.TEST_DATABASE_URL) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Is required when NODE_ENV is test',
+        path: ['TEST_DATABASE_URL'],
+      });
+    }
+
+    if (
+      environment.TEST_DATABASE_URL &&
+      environment.DATABASE_URL === environment.TEST_DATABASE_URL
+    ) {
       context.addIssue({
         code: z.ZodIssueCode.custom,
         message: 'Must be different from DATABASE_URL',

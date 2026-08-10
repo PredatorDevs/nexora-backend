@@ -2,7 +2,7 @@ import 'dotenv/config';
 import { randomUUID } from 'node:crypto';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { createApp } from '../../src/app.js';
+import { createApp } from '../../src/create-app.js';
 import { loadEnvironment } from '../../src/config/environment.js';
 import { createPrismaClient } from '../../src/database/prisma.js';
 import { createAccessTokenService } from '../../src/core/security/access-token.js';

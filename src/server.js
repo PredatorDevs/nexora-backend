@@ -1,4 +1,4 @@
-import { createApp } from './app.js';
+import { createApp } from './create-app.js';
 import { loadEnvironment } from './config/environment.js';
 import { createLogger } from './config/logger.js';
 import { initializePrisma } from './database/prisma.js';
@@ -34,7 +34,16 @@ import {
   registerShutdownSignals,
 } from './core/server/lifecycle.js';
 
-const environment = loadEnvironment();
+const isVercel = process.env.VERCEL === '1';
+const environment = loadEnvironment(
+  isVercel
+    ? {
+        ...process.env,
+        SERVE_FRONTEND: 'false',
+        FRONTEND_DIST_PATH: '',
+      }
+    : process.env,
+);
 const logger = createLogger({ level: environment.logging.level });
 const prisma = initializePrisma({ databaseUrl: environment.databaseUrl });
 const entityChangeService = createEntityChangeService(
@@ -104,30 +113,39 @@ const app = createApp({
     cookie: environment.cookie,
     http: { loginRateLimit: environment.http.loginRateLimit },
   },
-  frontend: environment.frontend,
+  // Vercel serves public/** from its CDN instead of the Function filesystem.
+  frontend: isVercel
+    ? { enabled: false, distPath: null }
+    : environment.frontend,
+  rootRedirectPath: isVercel ? '/login' : null,
 });
 
-try {
-  await prisma.$connect();
-  const server = app.listen(environment.port, () => {
-    logger.info({ port: environment.port }, 'HTTP server started');
-  });
-  configureServerTimeouts(server, environment.http.serverTimeouts);
-  const shutdown = createGracefulShutdown({
-    server,
-    disconnect: () => prisma.$disconnect(),
-    logger,
-    timeoutMs: environment.http.serverTimeouts.shutdownTimeoutMs,
-  });
-  registerShutdownSignals(shutdown);
-  server.on('error', (error) => {
-    logger.fatal({ errorName: error?.name }, 'HTTP server failed');
-    void shutdown('SERVER_ERROR');
-  });
-} catch (error) {
-  logger.fatal(
-    { errorName: error?.name },
-    'Database connection failed during startup',
-  );
-  process.exitCode = 1;
+// Vercel owns the HTTP listener and reuses this exported Express application.
+if (!isVercel) {
+  try {
+    await prisma.$connect();
+    const server = app.listen(environment.port, () => {
+      logger.info({ port: environment.port }, 'HTTP server started');
+    });
+    configureServerTimeouts(server, environment.http.serverTimeouts);
+    const shutdown = createGracefulShutdown({
+      server,
+      disconnect: () => prisma.$disconnect(),
+      logger,
+      timeoutMs: environment.http.serverTimeouts.shutdownTimeoutMs,
+    });
+    registerShutdownSignals(shutdown);
+    server.on('error', (error) => {
+      logger.fatal({ errorName: error?.name }, 'HTTP server failed');
+      void shutdown('SERVER_ERROR');
+    });
+  } catch (error) {
+    logger.fatal(
+      { errorName: error?.name },
+      'Database connection failed during startup',
+    );
+    process.exitCode = 1;
+  }
 }
+
+export default app;

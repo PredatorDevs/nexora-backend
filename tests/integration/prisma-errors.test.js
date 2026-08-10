@@ -2,7 +2,7 @@ import { Prisma } from '@prisma/client';
 import request from 'supertest';
 import { describe, expect, it } from 'vitest';
 
-import { createApp } from '../../src/app.js';
+import { createApp } from '../../src/create-app.js';
 
 function appThrowing(error) {
   return createApp({
