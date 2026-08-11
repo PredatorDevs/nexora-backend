@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { authenticate } from '../../core/middleware/authenticate.js';
-import { authorizeCompany } from '../../core/middleware/authorize.js';
+import { authorizeCompanyOrPlatform } from '../../core/middleware/authorize.js';
 import { validate } from '../../core/middleware/validate.js';
 import { sendSuccess } from '../../core/http/responses.js';
 import { paginationMeta } from '../../core/validation/pagination.js';
@@ -8,7 +8,10 @@ import { economicActivitiesListQuery } from './economic-activities.schemas.js';
 
 export function createEconomicActivitiesRouter(repository) {
   const router = Router();
-  router.use(authenticate, authorizeCompany('economic_activities.read'));
+  router.use(
+    authenticate,
+    authorizeCompanyOrPlatform('economic_activities.read'),
+  );
 
   router.get(
     '/',

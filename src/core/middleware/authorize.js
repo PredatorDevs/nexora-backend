@@ -78,5 +78,14 @@ export function authorizeCompany(permissionCode) {
   return middleware(permissionCode, 'COMPANY');
 }
 
+export function authorizeCompanyOrPlatform(permissionCode) {
+  const companyAuthorization = middleware(permissionCode, 'COMPANY');
+  const platformAuthorization = middleware(permissionCode, 'PLATFORM');
+  return (request, response, next) =>
+    request.tenant
+      ? companyAuthorization(request, response, next)
+      : platformAuthorization(request, response, next);
+}
+
 // Backward-compatible alias while platform administration routes are renamed.
 export const authorize = authorizePlatform;
