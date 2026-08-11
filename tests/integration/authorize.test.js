@@ -2,7 +2,10 @@ import request from 'supertest';
 import { describe, expect, it, vi } from 'vitest';
 
 import { createApp } from '../../src/create-app.js';
-import { authorize } from '../../src/core/middleware/authorize.js';
+import {
+  authorize,
+  authorizeCompanyOrPlatform,
+} from '../../src/core/middleware/authorize.js';
 import { sendSuccess } from '../../src/core/http/responses.js';
 
 function createAuthorizationApp({ auth, permissionCodes = [] } = {}) {
@@ -70,5 +73,32 @@ describe('authorize', () => {
 
   it('rejects malformed permission codes during route registration', () => {
     expect(() => authorize('ADMIN')).toThrow(TypeError);
+  });
+
+  it('permite consultar catálogos con permiso de plataforma sin tenant activo', async () => {
+    const rbac = {
+      getPlatformPermissionCodes: vi
+        .fn()
+        .mockResolvedValue(['address_dictionaries.read']),
+    };
+    const app = createApp({
+      services: { rbac },
+      routes(expressApp) {
+        expressApp.use((request_, _response, next) => {
+          request_.auth = { userId: 1 };
+          next();
+        });
+        expressApp.get(
+          '/api/v1/catalog',
+          authorizeCompanyOrPlatform('address_dictionaries.read'),
+          (_request, response) => sendSuccess(response, { allowed: true }),
+        );
+      },
+    });
+
+    const response = await request(app).get('/api/v1/catalog');
+
+    expect(response.status).toBe(200);
+    expect(rbac.getPlatformPermissionCodes).toHaveBeenCalledWith(1);
   });
 });
