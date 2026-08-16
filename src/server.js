@@ -35,6 +35,8 @@ import { createCompaniesService } from './modules/companies/companies.service.js
 import { provisionCompanyRoles } from './modules/company-access/company-role-templates.js';
 import { createCompanyAccessRepository } from './modules/company-access/company-access.repository.js';
 import { createCompanyAccessService } from './modules/company-access/company-access.service.js';
+import { createBranchesRepository } from './modules/branches/branches.repository.js';
+import { createBranchesService } from './modules/branches/branches.service.js';
 import {
   configureServerTimeouts,
   createGracefulShutdown,
@@ -104,9 +106,15 @@ const companiesService = createCompaniesService({
   repository: createCompaniesRepository(prisma),
   entityChangeService,
   runInTransaction,
+  provisionRoles: provisionCompanyRoles,
 });
 const companyAccessService = createCompanyAccessService({
   repository: createCompanyAccessRepository(prisma),
+  entityChangeService,
+  runInTransaction,
+});
+const branchesService = createBranchesService({
+  repository: createBranchesRepository(prisma),
   entityChangeService,
   runInTransaction,
 });
@@ -129,6 +137,7 @@ const app = createApp({
     economicActivities: createEconomicActivitiesRepository(prisma),
     companies: companiesService,
     companyAccess: companyAccessService,
+    branches: branchesService,
   },
   settings: {
     auth: environment.auth,

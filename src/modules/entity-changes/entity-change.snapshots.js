@@ -94,3 +94,24 @@ export function companyRoleSnapshot(role) {
     updatedAt: iso(role.updatedAt),
   };
 }
+
+export function branchSnapshot(branch) {
+  if (!branch) return null;
+  return {
+    id: branch.id,
+    companyId: branch.companyId,
+    code: branch.code,
+    name: branch.name,
+    isHeadquarters: branch.isHeadquarters,
+    countryId: branch.countryId,
+    departmentId: branch.departmentId,
+    municipalityId: branch.municipalityId,
+    districtId: branch.districtId,
+    addressLine: branch.addressLine,
+    phone: branch.phone,
+    email: branch.email,
+    status: branch.status,
+    createdAt: iso(branch.createdAt),
+    updatedAt: iso(branch.updatedAt),
+  };
+}

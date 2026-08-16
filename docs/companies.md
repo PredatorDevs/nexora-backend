@@ -3,11 +3,8 @@
 ## Purpose and current scope
 
 `Company` is the tenant root for Nexora business data. This implementation
-provides platform-level company administration and normalized economic
-activities. Company memberships and private company roles are now implemented;
-company-scoped sessions are the next architecture milestone. Until then, these
-endpoints use the existing global authorization middleware with
-platform-intended permissions.
+provides platform-level company administration, normalized economic activities,
+company memberships, private roles, and company-scoped sessions.
 
 ## Data contract
 

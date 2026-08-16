@@ -46,6 +46,14 @@ enum CompanyStatus {
   @@map("company_status")
 }
 
+enum BranchStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+
+  @@map("branch_status")
+}
+
 enum CompanyEconomicActivityType {
   PRIMARY
   SECONDARY
@@ -248,6 +256,7 @@ model Country {
   createdAt    DateTime  @default(now()) @map("created_at") @db.DateTime(3)
   updatedAt    DateTime  @updatedAt @map("updated_at") @db.DateTime(3)
   companies    Company[]
+  branches     Branch[]
 
   @@index([isActive, name], map: "countries_active_name_idx")
   @@map("countries")
@@ -264,6 +273,7 @@ model Department {
   updatedAt      DateTime       @updatedAt @map("updated_at") @db.DateTime(3)
   municipalities Municipality[]
   companies      Company[]
+  branches       Branch[]
 
   @@index([isActive, name], map: "departments_active_name_idx")
   @@map("departments")
@@ -280,6 +290,7 @@ model Municipality {
   department   Department @relation(fields: [departmentId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   districts    District[]
   companies    Company[]
+  branches     Branch[]
 
   @@unique([departmentId, mhCode], map: "municipalities_department_mh_code_key")
   @@index([departmentId, isActive, name], map: "municipalities_department_active_name_idx")
@@ -296,6 +307,7 @@ model District {
   updatedAt      DateTime     @updatedAt @map("updated_at") @db.DateTime(3)
   municipality   Municipality @relation(fields: [municipalityId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   companies      Company[]
+  branches       Branch[]
 
   @@unique([municipalityId, mhCode], map: "districts_municipality_mh_code_key")
   @@index([municipalityId, isActive, name], map: "districts_municipality_active_name_idx")
@@ -347,6 +359,7 @@ model Company {
   sessions            AuthSession[]
   auditLogs           AuditLog[]
   entityChanges       EntityChangeLog[]
+  branches            Branch[]
 
   @@index([status, legalName], map: "companies_status_legal_name_idx")
   @@index([countryId], map: "companies_country_id_idx")
@@ -354,6 +367,40 @@ model Company {
   @@index([municipalityId], map: "companies_municipality_id_idx")
   @@index([districtId], map: "companies_district_id_idx")
   @@map("companies")
+}
+
+model Branch {
+  id             Int          @id @default(autoincrement()) @db.UnsignedInt
+  companyId      Int          @map("company_id") @db.UnsignedInt
+  code           String       @db.VarChar(50)
+  name           String       @db.VarChar(191)
+  isHeadquarters Boolean      @default(false) @map("is_headquarters")
+  countryId      Int          @map("country_id") @db.UnsignedInt
+  departmentId   Int          @map("department_id") @db.UnsignedInt
+  municipalityId Int          @map("municipality_id") @db.UnsignedInt
+  districtId     Int          @map("district_id") @db.UnsignedInt
+  addressLine    String       @map("address_line") @db.VarChar(500)
+  phone          String?      @db.VarChar(30)
+  email          String?      @db.VarChar(191)
+  status         BranchStatus @default(ACTIVE)
+  createdAt      DateTime     @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt      DateTime     @updatedAt @map("updated_at") @db.DateTime(3)
+  company        Company      @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  country        Country      @relation(fields: [countryId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  department     Department   @relation(fields: [departmentId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  municipality   Municipality @relation(fields: [municipalityId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  district       District     @relation(fields: [districtId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([companyId, code], map: "branches_company_code_key")
+  @@unique([companyId, name], map: "branches_company_name_key")
+  @@unique([id, companyId], map: "branches_id_company_key")
+  @@index([companyId, status, name], map: "branches_company_status_name_idx")
+  @@index([companyId, isHeadquarters], map: "branches_company_headquarters_idx")
+  @@index([countryId], map: "branches_country_id_idx")
+  @@index([departmentId], map: "branches_department_id_idx")
+  @@index([municipalityId], map: "branches_municipality_id_idx")
+  @@index([districtId], map: "branches_district_id_idx")
+  @@map("branches")
 }
 
 model CompanyMembership {

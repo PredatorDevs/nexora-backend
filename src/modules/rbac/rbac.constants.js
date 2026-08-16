@@ -29,6 +29,10 @@ export const permissionCodes = Object.freeze([
   'company_roles.update',
   'company_roles.delete',
   'company_roles.assign_permissions',
+  'branches.read',
+  'branches.create',
+  'branches.update',
+  'branches.change_status',
 ]);
 
 export const companyPermissionCodes = Object.freeze([
@@ -43,6 +47,10 @@ export const companyPermissionCodes = Object.freeze([
   'company_roles.update',
   'company_roles.delete',
   'company_roles.assign_permissions',
+  'branches.read',
+  'branches.create',
+  'branches.update',
+  'branches.change_status',
 ]);
 
 const companyPermissions = new Set(companyPermissionCodes);
@@ -131,13 +139,21 @@ export const companyRoleTemplates = Object.freeze([
     code: companySystemRoleCodes.operator,
     name: 'Operator',
     description: 'Shared catalog access for day-to-day operations.',
-    permissions: ['address_dictionaries.read', 'economic_activities.read'],
+    permissions: [
+      'address_dictionaries.read',
+      'economic_activities.read',
+      'branches.read',
+    ],
   },
   {
     code: companySystemRoleCodes.readOnly,
     name: 'Read Only',
     description: 'Read-only access to shared business catalogs.',
-    permissions: ['address_dictionaries.read', 'economic_activities.read'],
+    permissions: [
+      'address_dictionaries.read',
+      'economic_activities.read',
+      'branches.read',
+    ],
   },
 ]);
 
