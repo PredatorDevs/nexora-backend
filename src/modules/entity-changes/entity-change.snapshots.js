@@ -149,3 +149,23 @@ export function warehouseSnapshot(value) {
     updatedAt: iso(value.updatedAt),
   };
 }
+
+export function locationSnapshot(value) {
+  if (!value) return null;
+  return {
+    id: value.id,
+    companyId: value.companyId,
+    warehouseId: value.warehouseId,
+    code: value.code,
+    aisle: value.aisle,
+    rack: value.rack,
+    level: value.level,
+    position: value.position,
+    capacity: value.capacity?.toString() ?? null,
+    capacityUnit: value.capacityUnit,
+    notes: value.notes,
+    isActive: value.isActive,
+    createdAt: iso(value.createdAt),
+    updatedAt: iso(value.updatedAt),
+  };
+}

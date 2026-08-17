@@ -13,6 +13,7 @@ import { createCompanyAccessRouter } from '../modules/company-access/company-acc
 import { createBranchesRouter } from '../modules/branches/branches.routes.js';
 import { createWarehouseCategoriesRouter } from '../modules/warehouse-categories/warehouse-categories.routes.js';
 import { createWarehousesRouter } from '../modules/warehouses/warehouses.routes.js';
+import { createLocationsRouter } from '../modules/locations/locations.routes.js';
 import {
   createCompanyInvitationsManagementRouter,
   createCompanyInvitationsPublicRouter,
@@ -107,6 +108,15 @@ export function registerRoutes(app) {
         '/api/v1/warehouses',
         createWarehousesRouter(
           app.locals.services.warehouses,
+          app.locals.services.audit,
+        ),
+      );
+    }
+    if (app.locals.services.locations) {
+      app.use(
+        '/api/v1/locations',
+        createLocationsRouter(
+          app.locals.services.locations,
           app.locals.services.audit,
         ),
       );

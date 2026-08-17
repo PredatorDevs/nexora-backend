@@ -12,6 +12,7 @@ Los códigos visibles de las entidades operativas son asignados exclusivamente p
 | Sucursal | `BR-000001` | Empresa |
 | Categoría personalizada de almacén | `WCT-000001` | Empresa |
 | Almacén | `WH-000001` | Empresa |
+| Ubicación | `LOC-000001` | Almacén |
 | Rol personalizado de plataforma | `ROL-000001` | Plataforma |
 | Rol personalizado de empresa | `CRL-000001` | Empresa |
 
@@ -25,4 +26,4 @@ Las categorías predeterminadas mantienen códigos semánticos como `QUARANTINE`
 
 ## Exclusiones
 
-No son códigos automáticos los identificadores definidos por estándares o por la aplicación: permisos RBAC, roles del sistema, países, monedas y actividades económicas. Para las futuras ubicaciones físicas, el código se derivará de su estructura de pasillo, estante, nivel y posición, una vez que ese contrato sea implementado.
+No son códigos automáticos los identificadores definidos por estándares o por la aplicación: permisos RBAC, roles del sistema, países, monedas y actividades económicas. Las ubicaciones utilizan un código estable por almacén; su referencia formada por pasillo, estante, nivel y posición puede cambiar sin alterar la identidad histórica.

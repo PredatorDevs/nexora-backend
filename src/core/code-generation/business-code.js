@@ -5,6 +5,7 @@ export const businessCodeEntities = Object.freeze({
   warehouse: 'warehouse',
   platformRole: 'platform_role',
   companyRole: 'company_role',
+  location: 'location',
 });
 
 const definitions = Object.freeze({
@@ -14,15 +15,25 @@ const definitions = Object.freeze({
   [businessCodeEntities.warehouse]: { prefix: 'WH', scope: 'company' },
   [businessCodeEntities.platformRole]: { prefix: 'ROL', scope: 'platform' },
   [businessCodeEntities.companyRole]: { prefix: 'CRL', scope: 'company' },
+  [businessCodeEntities.location]: { prefix: 'LOC', scope: 'warehouse' },
 });
 
-export async function generateBusinessCode(client, entityType, { companyId } = {}) {
+export async function generateBusinessCode(
+  client,
+  entityType,
+  { companyId, warehouseId } = {},
+) {
   const definition = definitions[entityType];
   if (!definition) throw new TypeError(`Unknown business code entity: ${entityType}`);
   if (definition.scope === 'company' && !companyId) {
     throw new TypeError(`companyId is required for ${entityType} codes.`);
   }
-  const namespace = definition.scope === 'platform' ? entityType : `${entityType}:${companyId}`;
+  if (definition.scope === 'warehouse' && !warehouseId) {
+    throw new TypeError(`warehouseId is required for ${entityType} codes.`);
+  }
+  const scopeId = definition.scope === 'company' ? companyId : warehouseId;
+  const namespace =
+    definition.scope === 'platform' ? entityType : `${entityType}:${scopeId}`;
   const sequence = await client.codeSequence.upsert({
     where: { namespace },
     create: { namespace, nextValue: 2n },

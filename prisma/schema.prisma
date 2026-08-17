@@ -54,6 +54,13 @@ enum BranchStatus {
   @@map("branch_status")
 }
 
+enum LocationCapacityUnit {
+  UNITS
+  KG
+  M3
+  PALLETS
+}
+
 enum CompanyEconomicActivityType {
   PRIMARY
   SECONDARY
@@ -375,6 +382,7 @@ model Company {
   invitations               CompanyInvitation[]
   warehouseCategories       WarehouseCategory[]
   warehouses                Warehouse[]
+  locations                 Location[]
 
   @@index([status, legalName], map: "companies_status_legal_name_idx")
   @@index([countryId], map: "companies_country_id_idx")
@@ -464,6 +472,7 @@ model Warehouse {
   company             Company           @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   branch              Branch            @relation(fields: [branchId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
   warehouseCategory   WarehouseCategory @relation(fields: [warehouseCategoryId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  locations           Location[]
 
   @@unique([companyId, code], map: "warehouses_company_code_key")
   @@unique([companyId, branchId, name], map: "warehouses_company_branch_name_key")
@@ -471,6 +480,31 @@ model Warehouse {
   @@index([companyId, branchId, isActive, name], map: "warehouses_company_branch_active_name_idx")
   @@index([companyId, warehouseCategoryId], map: "warehouses_company_category_idx")
   @@map("warehouses")
+}
+
+model Location {
+  id           Int                   @id @default(autoincrement()) @db.UnsignedInt
+  companyId    Int                   @map("company_id") @db.UnsignedInt
+  warehouseId  Int                   @map("warehouse_id") @db.UnsignedInt
+  code         String                @db.VarChar(50)
+  aisle        String                @db.VarChar(50)
+  rack         String                @db.VarChar(50)
+  level        String                @db.VarChar(50)
+  position     String                @db.VarChar(50)
+  capacity     Decimal?              @db.Decimal(18, 4)
+  capacityUnit LocationCapacityUnit? @map("capacity_unit")
+  notes        String?               @db.Text
+  isActive     Boolean               @default(true) @map("is_active")
+  createdAt    DateTime              @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt    DateTime              @updatedAt @map("updated_at") @db.DateTime(3)
+  company      Company               @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  warehouse    Warehouse             @relation(fields: [warehouseId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([companyId, warehouseId, code], map: "locations_company_warehouse_code_key")
+  @@unique([companyId, warehouseId, aisle, rack, level, position], map: "locations_physical_coordinates_key")
+  @@unique([id, companyId], map: "locations_id_company_key")
+  @@index([companyId, warehouseId, isActive, code], map: "locations_company_warehouse_active_code_idx")
+  @@map("locations")
 }
 
 model CompanyMembership {

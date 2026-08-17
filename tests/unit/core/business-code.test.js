@@ -28,4 +28,18 @@ describe('business code generator', () => {
       expect.objectContaining({ where: { namespace: 'branch:7' } }),
     );
   });
+
+  it('isolates location sequences by warehouse', async () => {
+    const upsert = vi.fn().mockResolvedValue({ nextValue: 8n });
+    await expect(
+      generateBusinessCode(
+        { codeSequence: { upsert } },
+        businessCodeEntities.location,
+        { warehouseId: 15 },
+      ),
+    ).resolves.toBe('LOC-000007');
+    expect(upsert).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { namespace: 'location:15' } }),
+    );
+  });
 });

@@ -40,4 +40,7 @@ export const auditActions = Object.freeze({
   warehouseCreated: 'WAREHOUSE.CREATED',
   warehouseUpdated: 'WAREHOUSE.UPDATED',
   warehouseStatusChanged: 'WAREHOUSE.STATUS_CHANGED',
+  locationCreated: 'LOCATION.CREATED',
+  locationUpdated: 'LOCATION.UPDATED',
+  locationStatusChanged: 'LOCATION.STATUS_CHANGED',
 });
