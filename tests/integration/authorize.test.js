@@ -77,9 +77,7 @@ describe('authorize', () => {
 
   it('permite consultar catálogos con permiso de plataforma sin tenant activo', async () => {
     const rbac = {
-      getPlatformPermissionCodes: vi
-        .fn()
-        .mockResolvedValue(['address_dictionaries.read']),
+      getPlatformPermissionCodes: vi.fn().mockResolvedValue(['companies.read']),
     };
     const app = createApp({
       services: { rbac },
@@ -90,7 +88,10 @@ describe('authorize', () => {
         });
         expressApp.get(
           '/api/v1/catalog',
-          authorizeCompanyOrPlatform('address_dictionaries.read'),
+          authorizeCompanyOrPlatform(
+            'address_dictionaries.read',
+            'companies.read',
+          ),
           (_request, response) => sendSuccess(response, { allowed: true }),
         );
       },

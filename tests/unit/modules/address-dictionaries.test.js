@@ -117,6 +117,10 @@ describe('address dictionary query schemas', () => {
     expect(districtsListQuery.parse({ municipalityId: '12' })).toMatchObject({
       municipalityId: 12,
     });
+    expect(districtsListQuery.parse({ departmentId: '3' })).toMatchObject({
+      departmentId: 3,
+    });
     expect(() => districtsListQuery.parse({ municipalityId: '0' })).toThrow();
+    expect(() => districtsListQuery.parse({ departmentId: '0' })).toThrow();
   });
 });

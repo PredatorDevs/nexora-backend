@@ -136,6 +136,30 @@ export function createAuthRepository(prisma) {
       });
       return result.count === 1;
     },
+    async switchPlatform({
+      sessionId,
+      userId,
+      currentHash,
+      nextHash,
+      now,
+    }) {
+      const result = await prisma.authSession.updateMany({
+        where: {
+          id: sessionId,
+          userId,
+          refreshTokenHash: currentHash,
+          revokedAt: null,
+          expiresAt: { gt: now },
+        },
+        data: {
+          companyId: null,
+          membershipId: null,
+          refreshTokenHash: nextHash,
+          lastUsedAt: now,
+        },
+      });
+      return result.count === 1;
+    },
     updateProfile(userId, displayName) {
       return prisma.user.update({
         where: { id: userId },

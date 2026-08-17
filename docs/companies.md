@@ -13,7 +13,8 @@ A company contains:
 - immutable internal `code`;
 - legal and commercial names;
 - globally unique NIT and NRC;
-- legal address using the shared country and Salvadoran territorial catalogs;
+- legal address using the shared country catalog and either Salvadoran
+  territorial catalogs or foreign free-form administrative fields;
 - optional contact, website, and logo storage reference;
 - `ACTIVE`, `INACTIVE`, or `SUSPENDED` lifecycle status;
 - ISO currency code, IANA timezone, and locale defaults;
@@ -31,16 +32,19 @@ the same activity from filling two types.
 - A primary economic activity is required.
 - Activity types and activity IDs cannot repeat.
 - Every selected economic activity must exist and be active.
-- The country must be the active El Salvador catalog entry (`SV`) while the
-  address model uses Salvadoran departments, municipalities, and districts.
-- District, municipality, and department must form one active hierarchy.
+- Salvadoran addresses require an active department, municipality, and district
+  forming one valid hierarchy; foreign addresses instead require free-form
+  administrative area and locality and must not reference Salvadoran divisions.
+- The user flow for El Salvador is department, district, and automatically
+  derived municipality. The API still validates all three identifiers instead
+  of trusting the client-side derivation.
 - NIT, NRC, and company code remain reserved after deactivation.
 - URLs and emails are validated before persistence.
 - Currency uses a three-letter uppercase ISO-style code.
 
-The territorial catalog currently models subdivisions only for El Salvador.
-Supporting foreign legal addresses will require country-specific subdivision
-catalogs or a separate free-form foreign-address contract.
+The territorial catalog models subdivisions only for El Salvador. Foreign
+companies retain an active catalog `countryId` and use `foreignAdministrativeArea`
+and `foreignLocality` until country-specific subdivision catalogs are introduced.
 
 ## Endpoints
 

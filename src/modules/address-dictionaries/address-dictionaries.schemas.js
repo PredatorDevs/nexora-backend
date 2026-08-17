@@ -31,4 +31,5 @@ export const municipalitiesListQuery = baseDictionaryQuery.extend({
 
 export const districtsListQuery = baseDictionaryQuery.extend({
   municipalityId: z.coerce.number().int().positive().optional(),
+  departmentId: z.coerce.number().int().positive().optional(),
 });

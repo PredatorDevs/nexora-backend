@@ -38,6 +38,7 @@ clients may omit Origin.
 - `GET /api/v1/auth/permissions`
 - `GET /api/v1/auth/companies`
 - `POST /api/v1/auth/switch-company`
+- `POST /api/v1/auth/switch-platform`
 
 Login selects the only active membership automatically. With several active
 memberships it creates a global authenticated selection session and returns
@@ -48,6 +49,10 @@ Switching verifies the target membership, current refresh credential, and
 authenticated session. It updates context atomically, rotates the refresh token,
 issues a new access token, and audits the transition. The frontend must discard
 company-scoped caches after success.
+
+`switch-platform` is available only to users with current platform permissions.
+It rotates both tokens, clears `companyId` and `membershipId` from the session,
+and restores platform permissions as the effective navigation scope.
 
 One session has one active company. A branch is selected per operation or as a
 client preference and is always validated against that company.

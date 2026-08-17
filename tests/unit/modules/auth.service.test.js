@@ -121,4 +121,52 @@ describe('multi-company authentication service', () => {
     expect(result.activeMembership).toMatchObject({ companyId: 200 });
     expect(result.refreshCookie).toBe('refresh-cookie');
   });
+
+  it('clears the company context while switching to platform administration', async () => {
+    const repository = {
+      findSessionById: vi.fn().mockResolvedValue({
+        id: 'session-id',
+        familyId: 'session-id',
+        userId: 1,
+        companyId: 100,
+        membershipId: 10,
+        refreshTokenHash: 'refresh-hash',
+        revokedAt: null,
+        expiresAt: new Date('2026-08-11T12:00:00.000Z'),
+        user,
+      }),
+      switchPlatform: vi.fn().mockResolvedValue(true),
+    };
+
+    const result = await createService(repository).switchPlatform({
+      userId: 1,
+      sessionId: 'session-id',
+      refreshCookie: 'refresh-cookie',
+      hasPlatformAccess: true,
+    });
+
+    expect(repository.switchPlatform).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sessionId: 'session-id',
+        userId: 1,
+        currentHash: 'refresh-hash',
+        nextHash: 'refresh-hash',
+      }),
+    );
+    expect(result.activeMembership).toBeNull();
+  });
+
+  it('rejects platform context for a company-only user', async () => {
+    const repository = { switchPlatform: vi.fn() };
+
+    await expect(
+      createService(repository).switchPlatform({
+        userId: 1,
+        sessionId: 'session-id',
+        refreshCookie: 'refresh-cookie',
+        hasPlatformAccess: false,
+      }),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN', statusCode: 403 });
+    expect(repository.switchPlatform).not.toHaveBeenCalled();
+  });
 });

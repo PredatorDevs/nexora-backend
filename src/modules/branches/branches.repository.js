@@ -8,6 +8,8 @@ const branchSelect = {
   departmentId: true,
   municipalityId: true,
   districtId: true,
+  foreignAdministrativeArea: true,
+  foreignLocality: true,
   addressLine: true,
   phone: true,
   email: true,
@@ -72,7 +74,8 @@ export function createBranchesRepository(prisma) {
           where: { id: countryId, isActive: true },
           select: { id: true, abbreviation: true },
         }),
-        client.district.findFirst({
+        departmentId && municipalityId && districtId
+          ? client.district.findFirst({
           where: {
             id: districtId,
             municipalityId,
@@ -84,7 +87,8 @@ export function createBranchesRepository(prisma) {
             },
           },
           select: { id: true },
-        }),
+            })
+          : Promise.resolve(null),
       ]);
       return { country, district };
     },

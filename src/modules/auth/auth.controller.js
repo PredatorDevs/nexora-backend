@@ -157,6 +157,34 @@ export function createAuthController({
       });
     },
 
+    async switchPlatform(request, response) {
+      const platformPermissions = await rbacService.getPlatformPermissionCodes(
+        request.auth.userId,
+      );
+      const result = await audited(
+        {
+          action: auditActions.platformSwitched,
+          actorUserId: request.auth.userId,
+          resourceType: 'auth_session',
+          resourceId: request.auth.sessionId,
+          context: auditRequestContext(request),
+          metadata: { previousCompanyId: request.auth.companyId },
+        },
+        () =>
+          authService.switchPlatform({
+            userId: request.auth.userId,
+            sessionId: request.auth.sessionId,
+            refreshCookie: request.cookies[settings.auth.refreshCookieName],
+            hasPlatformAccess: platformPermissions.length > 0,
+          }),
+      );
+      setRefreshCookie(response, result.refreshCookie, result.refreshExpiresAt);
+      return sendSuccess(response, {
+        accessToken: result.accessToken,
+        activeMembership: null,
+      });
+    },
+
     async permissions(request, response) {
       const platformPermissions = await rbacService.getPlatformPermissionCodes(
         request.auth.userId,

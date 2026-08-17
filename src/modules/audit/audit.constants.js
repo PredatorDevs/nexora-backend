@@ -27,6 +27,7 @@ export const auditActions = Object.freeze({
   companyRoleDeleted: 'COMPANY_ROLE.DELETED',
   companyRolePermissionsChanged: 'COMPANY_ROLE.PERMISSIONS_CHANGED',
   companySwitched: 'AUTH.COMPANY_SWITCHED',
+  platformSwitched: 'AUTH.PLATFORM_SWITCHED',
   branchCreated: 'BRANCH.CREATED',
   branchUpdated: 'BRANCH.UPDATED',
   branchStatusChanged: 'BRANCH.STATUS_CHANGED',

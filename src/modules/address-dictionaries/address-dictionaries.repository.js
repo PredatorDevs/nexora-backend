@@ -93,6 +93,9 @@ export function createAddressDictionariesRepository(prisma) {
         ...(query.municipalityId
           ? { municipalityId: query.municipalityId }
           : {}),
+        ...(query.departmentId
+          ? { municipality: { departmentId: query.departmentId } }
+          : {}),
       };
       return list(prisma.district, query, where, districtSelect);
     },

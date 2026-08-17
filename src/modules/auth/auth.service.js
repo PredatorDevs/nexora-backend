@@ -335,6 +335,80 @@ export function createAuthService({
       };
     },
 
+    async switchPlatform({
+      userId,
+      sessionId,
+      refreshCookie,
+      hasPlatformAccess,
+    }) {
+      if (!hasPlatformAccess) {
+        throw new AppError({
+          code: errorCodes.forbidden,
+          message: 'Platform administration is not available to this user.',
+          statusCode: 403,
+        });
+      }
+      const parsed = refreshTokens.parse(refreshCookie);
+      if (!parsed || parsed.sessionId !== sessionId) {
+        throw authError(
+          errorCodes.sessionExpired,
+          'The refresh session is invalid or expired.',
+        );
+      }
+      const session = await repository.findSessionById(sessionId);
+      const currentTime = now();
+      if (
+        !session ||
+        session.userId !== userId ||
+        session.revokedAt ||
+        session.expiresAt <= currentTime
+      ) {
+        throw authError(
+          errorCodes.sessionExpired,
+          'The refresh session is invalid or expired.',
+        );
+      }
+      if (!refreshTokens.matches(parsed.token, session.refreshTokenHash)) {
+        await repository.revokeFamily(
+          session.familyId,
+          'REFRESH_TOKEN_REUSE',
+          currentTime,
+        );
+        throw authError(
+          errorCodes.sessionRevoked,
+          'The refresh session has been revoked.',
+        );
+      }
+      const nextToken = refreshTokens.generate();
+      const switched = await repository.switchPlatform({
+        sessionId,
+        userId,
+        currentHash: session.refreshTokenHash,
+        nextHash: refreshTokens.hash(nextToken),
+        now: currentTime,
+      });
+      if (!switched) {
+        throw authError(
+          errorCodes.sessionRevoked,
+          'The refresh session has been revoked.',
+        );
+      }
+      return {
+        accessToken: await createAccessToken(session.user, {
+          id: session.id,
+          companyId: null,
+          membershipId: null,
+          membershipSecurityVersion: null,
+        }),
+        refreshCookie: refreshTokens.serialize(session.id, nextToken),
+        refreshExpiresAt: session.expiresAt,
+        userId,
+        sessionId,
+        previousCompanyId: session.companyId,
+        activeMembership: null,
+      };
+    },
+
     async logout(sessionId) {
       await repository.revokeSession(sessionId, 'USER_LOGOUT', now());
     },

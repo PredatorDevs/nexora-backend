@@ -23,6 +23,7 @@ describe('companies service', () => {
   let repository;
   let entityChangeService;
   let provisionRoles;
+  let runInTransaction;
   let service;
 
   beforeEach(() => {
@@ -50,10 +51,13 @@ describe('companies service', () => {
     };
     entityChangeService = { record: vi.fn() };
     provisionRoles = vi.fn();
+    runInTransaction = vi.fn((operation) =>
+      operation({ transaction: true }),
+    );
     service = createCompaniesService({
       repository,
       entityChangeService,
-      runInTransaction: (operation) => operation({ transaction: true }),
+      runInTransaction,
       provisionRoles,
     });
   });
@@ -77,6 +81,10 @@ describe('companies service', () => {
       }),
       { transaction: true },
     );
+    expect(runInTransaction).toHaveBeenCalledWith(expect.any(Function), {
+      maxWait: 10_000,
+      timeout: 30_000,
+    });
   });
 
   it('rejects a broken territorial hierarchy', async () => {
@@ -92,6 +100,30 @@ describe('companies service', () => {
       }),
     ).rejects.toMatchObject({ code: 'VALIDATION_ERROR', statusCode: 400 });
     expect(repository.create).not.toHaveBeenCalled();
+  });
+
+  it('creates a foreign company with a free-form administrative area', async () => {
+    repository.findAddressContext.mockResolvedValue({
+      country: { id: 2, abbreviation: 'GT' },
+      district: null,
+    });
+    const foreignCompany = {
+      ...companyData,
+      countryId: 2,
+      departmentId: null,
+      municipalityId: null,
+      districtId: null,
+      foreignAdministrativeArea: 'Guatemala',
+      foreignLocality: 'Ciudad de Guatemala',
+    };
+
+    await expect(service.create(foreignCompany, {})).resolves.toMatchObject({
+      countryId: 2,
+      foreignLocality: 'Ciudad de Guatemala',
+    });
+    expect(repository.create).toHaveBeenCalledWith(foreignCompany, {
+      transaction: true,
+    });
   });
 
   it('rejects inactive or unknown economic activities', async () => {

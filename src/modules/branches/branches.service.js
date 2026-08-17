@@ -33,15 +33,42 @@ export function createBranchesService({
     ]);
     if (!company || (requireActiveCompany && company.status !== 'ACTIVE'))
       throw invalid('An active company is required.');
+    if (!value.country)
+      throw invalid(
+        'The selected country does not exist or is inactive.',
+        { fields: ['countryId'] },
+      );
+    if (value.country.abbreviation === 'SV' && !value.district)
+      throw invalid(
+        'Department, municipality, and district are required and must form an active valid hierarchy for El Salvador.',
+        { fields: ['departmentId', 'municipalityId', 'districtId'] },
+      );
     if (
-      !value.country ||
-      value.country.abbreviation !== 'SV' ||
-      !value.district
+      value.country.abbreviation === 'SV' &&
+      (address.foreignAdministrativeArea || address.foreignLocality)
     )
       throw invalid(
-        'The selected address catalogs do not form an active valid hierarchy.',
+        'Foreign administrative fields do not apply to an address in El Salvador.',
+        { fields: ['foreignAdministrativeArea', 'foreignLocality'] },
+      );
+    if (
+      value.country.abbreviation !== 'SV' &&
+      (!address.foreignAdministrativeArea ||
+        !address.foreignLocality ||
+        address.departmentId ||
+        address.municipalityId ||
+        address.districtId)
+    )
+      throw invalid(
+        'A foreign address requires administrative area and locality and cannot use El Salvador subdivision catalogs.',
         {
-          fields: ['countryId', 'departmentId', 'municipalityId', 'districtId'],
+          fields: [
+            'departmentId',
+            'municipalityId',
+            'districtId',
+            'foreignAdministrativeArea',
+            'foreignLocality',
+          ],
         },
       );
   }
@@ -93,13 +120,29 @@ export function createBranchesService({
       const { expectedUpdatedAt, ...changes } = data;
       return runInTransaction(
         async (client) => {
+          const supplied = (field) =>
+            Object.prototype.hasOwnProperty.call(changes, field);
           await validate(
             companyId,
             {
               countryId: changes.countryId ?? existing.countryId,
-              departmentId: changes.departmentId ?? existing.departmentId,
-              municipalityId: changes.municipalityId ?? existing.municipalityId,
-              districtId: changes.districtId ?? existing.districtId,
+              departmentId: supplied('departmentId')
+                ? changes.departmentId
+                : existing.departmentId,
+              municipalityId: supplied('municipalityId')
+                ? changes.municipalityId
+                : existing.municipalityId,
+              districtId: supplied('districtId')
+                ? changes.districtId
+                : existing.districtId,
+              foreignAdministrativeArea: supplied(
+                'foreignAdministrativeArea',
+              )
+                ? changes.foreignAdministrativeArea
+                : existing.foreignAdministrativeArea,
+              foreignLocality: supplied('foreignLocality')
+                ? changes.foreignLocality
+                : existing.foreignLocality,
             },
             false,
             client,

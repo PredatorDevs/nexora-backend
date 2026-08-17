@@ -25,7 +25,7 @@ export function createAddressDictionariesRouter(repository) {
   const router = Router();
   router.use(
     authenticate,
-    authorizeCompanyOrPlatform('address_dictionaries.read'),
+    authorizeCompanyOrPlatform('address_dictionaries.read', 'companies.read'),
   );
 
   router.get(

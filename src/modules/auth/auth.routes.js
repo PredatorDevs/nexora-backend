@@ -51,6 +51,12 @@ export function createAuthRouter({
     validate({ body: switchCompanySchema }),
     controller.switchCompany,
   );
+  router.post(
+    '/switch-platform',
+    requireTrustedOrigin,
+    authenticate,
+    controller.switchPlatform,
+  );
   router.get('/permissions', authenticate, controller.permissions);
   router.put(
     '/profile',

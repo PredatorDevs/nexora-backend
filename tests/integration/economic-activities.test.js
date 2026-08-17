@@ -4,6 +4,7 @@ import { createApp } from '../../src/create-app.js';
 
 function createEconomicActivitiesApp(
   permissionCodes = ['economic_activities.read'],
+  { tenant = true } = {},
 ) {
   const repository = {
     list: vi.fn().mockResolvedValue({
@@ -25,13 +26,18 @@ function createEconomicActivitiesApp(
           userId: 1,
           sessionId: 'test-session',
           mustChangePassword: false,
-          companyId: 11,
-          membershipId: 22,
-          companyPermissionCodes: permissionCodes,
+          ...(tenant
+            ? {
+                companyId: 11,
+                membershipId: 22,
+                companyPermissionCodes: permissionCodes,
+              }
+            : { platformPermissionCodes: permissionCodes }),
         }),
       },
       rbac: {
         getCompanyPermissionCodes: vi.fn().mockResolvedValue(permissionCodes),
+        getPlatformPermissionCodes: vi.fn().mockResolvedValue(permissionCodes),
       },
       economicActivities: repository,
     },
@@ -72,5 +78,17 @@ describe('economic activities API', () => {
 
     expect(response.status).toBe(403);
     expect(response.body.error.code).toBe('FORBIDDEN');
+  });
+
+  it('allows company administration to read activities without a tenant', async () => {
+    const { app } = createEconomicActivitiesApp(['companies.read'], {
+      tenant: false,
+    });
+    const response = await request(app)
+      .get('/api/v1/economic-activities')
+      .set('Authorization', 'Bearer platform-token');
+
+    expect(response.status).toBe(200);
+    expect(response.body.data[0].code).toBe('01111');
   });
 });

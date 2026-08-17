@@ -9,6 +9,8 @@ const companySelect = {
   departmentId: true,
   municipalityId: true,
   districtId: true,
+  foreignAdministrativeArea: true,
+  foreignLocality: true,
   addressLine: true,
   phone: true,
   email: true,
@@ -79,7 +81,8 @@ export function createCompaniesRepository(prisma) {
           where: { id: countryId, isActive: true },
           select: { id: true, abbreviation: true },
         }),
-        client.district.findFirst({
+        departmentId && municipalityId && districtId
+          ? client.district.findFirst({
           where: {
             id: districtId,
             municipalityId,
@@ -91,7 +94,8 @@ export function createCompaniesRepository(prisma) {
             },
           },
           select: { id: true },
-        }),
+            })
+          : Promise.resolve(null),
       ]);
       return { country, district };
     },

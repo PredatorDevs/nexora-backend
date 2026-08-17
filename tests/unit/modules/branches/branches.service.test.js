@@ -71,4 +71,25 @@ describe('branches service', () => {
     });
     expect(repository.create).not.toHaveBeenCalled();
   });
+  it('creates a foreign branch without Salvador subdivision ids', async () => {
+    repository.findAddress.mockResolvedValue({
+      country: { abbreviation: 'GT' },
+      district: null,
+    });
+    const foreign = {
+      ...data,
+      countryId: 2,
+      departmentId: null,
+      municipalityId: null,
+      districtId: null,
+      foreignAdministrativeArea: 'Guatemala',
+      foreignLocality: 'Ciudad de Guatemala',
+    };
+    repository.create.mockResolvedValue({ id: 10, companyId: 8, ...foreign });
+
+    await expect(service.create(8, foreign, {})).resolves.toMatchObject({
+      id: 10,
+      countryId: 2,
+    });
+  });
 });

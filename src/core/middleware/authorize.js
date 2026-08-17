@@ -78,13 +78,53 @@ export function authorizeCompany(permissionCode) {
   return middleware(permissionCode, 'COMPANY');
 }
 
-export function authorizeCompanyOrPlatform(permissionCode) {
-  const companyAuthorization = middleware(permissionCode, 'COMPANY');
-  const platformAuthorization = middleware(permissionCode, 'PLATFORM');
-  return (request, response, next) =>
-    request.tenant
-      ? companyAuthorization(request, response, next)
-      : platformAuthorization(request, response, next);
+export function authorizeCompanyOrPlatform(
+  permissionCode,
+  platformPermissionCode = permissionCode,
+) {
+  if (
+    !isPermissionCode(permissionCode) ||
+    !isPermissionCode(platformPermissionCode)
+  ) {
+    throw new TypeError('Invalid permission code.');
+  }
+  return async function companyOrPlatformAuthorization(
+    request,
+    _response,
+    next,
+  ) {
+    try {
+      validateRequest(request);
+      const rbacService = request.app.locals.services?.rbac;
+      if (!rbacService) throw new Error('RBAC service is not configured.');
+
+      if (request.tenant) {
+        const companyPermissions =
+          request.auth.companyPermissionCodes ??
+          (await rbacService.getCompanyPermissionCodes(
+            request.tenant.membershipId,
+            request.tenant.companyId,
+          ));
+        request.auth.companyPermissionCodes = companyPermissions;
+        if (companyPermissions.includes(permissionCode)) return next();
+      }
+
+      const platformPermissions =
+        request.auth.platformPermissionCodes ??
+        request.auth.permissionCodes ??
+        (await (
+          rbacService.getPlatformPermissionCodes ??
+          rbacService.getPermissionCodes
+        )(request.auth.userId));
+      request.auth.platformPermissionCodes = platformPermissions;
+      if (!platformPermissions.includes(platformPermissionCode)) {
+        throw forbidden();
+      }
+      return next();
+    } catch (error) {
+      return next(error);
+    }
+  };
 }
 
 // Backward-compatible alias while platform administration routes are renamed.

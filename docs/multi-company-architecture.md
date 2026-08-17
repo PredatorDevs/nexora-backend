@@ -122,12 +122,17 @@ Company switching uses an authenticated operation such as:
 
 ```text
 POST /api/v1/auth/switch-company
+POST /api/v1/auth/switch-platform
 ```
 
 The server verifies the target membership, rotates the refresh token, changes
 the session context atomically, issues an access token for the new company, and
 records the event. The client must clear all company-scoped query caches after a
 successful switch.
+
+Platform administrators can leave a company context through `switch-platform`.
+The operation requires live platform permissions, clears both tenant identifiers,
+rotates the refresh credential, and records the transition in the audit log.
 
 Using a caller-provided `X-Company-Id` as the authority for company context is
 forbidden. Route parameters or request bodies may identify a requested company,

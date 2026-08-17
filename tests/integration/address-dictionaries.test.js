@@ -2,7 +2,10 @@ import request from 'supertest';
 import { describe, expect, it, vi } from 'vitest';
 import { createApp } from '../../src/create-app.js';
 
-function createDictionaryApp(permissionCodes = ['address_dictionaries.read']) {
+function createDictionaryApp(
+  permissionCodes = ['address_dictionaries.read'],
+  { tenant = true, platformPermissionCodes = permissionCodes } = {},
+) {
   const repository = {
     listCountries: vi.fn().mockResolvedValue({
       items: [
@@ -27,13 +30,21 @@ function createDictionaryApp(permissionCodes = ['address_dictionaries.read']) {
           userId: 1,
           sessionId: 'test-session',
           mustChangePassword: false,
-          companyId: 11,
-          membershipId: 22,
-          companyPermissionCodes: permissionCodes,
+          ...(tenant
+            ? {
+                companyId: 11,
+                membershipId: 22,
+                companyPermissionCodes: permissionCodes,
+              }
+            : { platformPermissionCodes }),
+          ...(tenant ? { platformPermissionCodes } : {}),
         }),
       },
       rbac: {
         getCompanyPermissionCodes: vi.fn().mockResolvedValue(permissionCodes),
+        getPlatformPermissionCodes: vi
+          .fn()
+          .mockResolvedValue(platformPermissionCodes),
       },
       addressDictionaries: repository,
     },
@@ -86,5 +97,26 @@ describe('address dictionary API', () => {
     expect(repository.listMunicipalities).toHaveBeenCalledWith(
       expect.objectContaining({ departmentId: 7 }),
     );
+  });
+
+  it('allows company administration to read catalogs before selecting a tenant', async () => {
+    const { app } = createDictionaryApp(['companies.read'], { tenant: false });
+    const response = await request(app)
+      .get('/api/v1/address-dictionaries/countries')
+      .set('Authorization', 'Bearer platform-token');
+
+    expect(response.status).toBe(200);
+    expect(response.body.data[0].abbreviation).toBe('SV');
+  });
+
+  it('allows platform company administration even when the active company role lacks catalog access', async () => {
+    const { app } = createDictionaryApp([], {
+      platformPermissionCodes: ['companies.read'],
+    });
+    const response = await request(app)
+      .get('/api/v1/address-dictionaries/departments')
+      .set('Authorization', 'Bearer platform-token');
+
+    expect(response.status).toBe(200);
   });
 });

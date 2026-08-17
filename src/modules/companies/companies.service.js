@@ -39,15 +39,45 @@ export function createCompaniesService({
 }) {
   async function validateReferences(data, client) {
     const address = await repository.findAddressContext(data, client);
+    if (!address.country) {
+      throw validationError(
+        'The selected country does not exist or is inactive.',
+        { fields: ['countryId'] },
+      );
+    }
+    if (address.country.abbreviation === 'SV' && !address.district) {
+      throw validationError(
+        'Department, municipality, and district are required and must form an active valid hierarchy for El Salvador.',
+        { fields: ['departmentId', 'municipalityId', 'districtId'] },
+      );
+    }
     if (
-      !address.country ||
-      address.country.abbreviation !== 'SV' ||
-      !address.district
+      address.country.abbreviation === 'SV' &&
+      (data.foreignAdministrativeArea || data.foreignLocality)
     ) {
       throw validationError(
-        'The selected address catalogs do not form an active valid hierarchy.',
+        'Foreign administrative fields do not apply to an address in El Salvador.',
+        { fields: ['foreignAdministrativeArea', 'foreignLocality'] },
+      );
+    }
+    if (
+      address.country.abbreviation !== 'SV' &&
+      (!data.foreignAdministrativeArea ||
+        !data.foreignLocality ||
+        data.departmentId ||
+        data.municipalityId ||
+        data.districtId)
+    ) {
+      throw validationError(
+        'A foreign address requires administrative area and locality and cannot use El Salvador subdivision catalogs.',
         {
-          fields: ['countryId', 'departmentId', 'municipalityId', 'districtId'],
+          fields: [
+            'departmentId',
+            'municipalityId',
+            'districtId',
+            'foreignAdministrativeArea',
+            'foreignLocality',
+          ],
         },
       );
     }
@@ -106,26 +136,29 @@ export function createCompaniesService({
     },
 
     create(data, context) {
-      return runInTransaction(async (client) => {
-        await validateReferences(data, client);
-        const created = await repository.create(
-          {
-            ...data,
-            economicActivities: activityRows(data.economicActivities),
-          },
-          client,
-        );
-        await provisionRoles(client, created.id, context.actorUserId);
-        await recordChange(
-          {
-            operation: entityChangeOperations.create,
-            context,
-            newCompany: created,
-          },
-          client,
-        );
-        return created;
-      });
+      return runInTransaction(
+        async (client) => {
+          await validateReferences(data, client);
+          const created = await repository.create(
+            {
+              ...data,
+              economicActivities: activityRows(data.economicActivities),
+            },
+            client,
+          );
+          await provisionRoles(client, created.id, context.actorUserId);
+          await recordChange(
+            {
+              operation: entityChangeOperations.create,
+              context,
+              newCompany: created,
+            },
+            client,
+          );
+          return created;
+        },
+        { maxWait: 10_000, timeout: 30_000 },
+      );
     },
 
     async update(id, data, context) {
@@ -133,11 +166,25 @@ export function createCompaniesService({
       if (!existing) throw notFound();
       const { expectedUpdatedAt, ...changes } = data;
       return runInTransaction(async (client) => {
+        const supplied = (field) =>
+          Object.prototype.hasOwnProperty.call(changes, field);
         const effective = {
           countryId: changes.countryId ?? existing.countryId,
-          departmentId: changes.departmentId ?? existing.departmentId,
-          municipalityId: changes.municipalityId ?? existing.municipalityId,
-          districtId: changes.districtId ?? existing.districtId,
+          departmentId: supplied('departmentId')
+            ? changes.departmentId
+            : existing.departmentId,
+          municipalityId: supplied('municipalityId')
+            ? changes.municipalityId
+            : existing.municipalityId,
+          districtId: supplied('districtId')
+            ? changes.districtId
+            : existing.districtId,
+          foreignAdministrativeArea: supplied('foreignAdministrativeArea')
+            ? changes.foreignAdministrativeArea
+            : existing.foreignAdministrativeArea,
+          foreignLocality: supplied('foreignLocality')
+            ? changes.foreignLocality
+            : existing.foreignLocality,
           economicActivities:
             changes.economicActivities ??
             existing.economicActivities.map(({ type, economicActivity }) => ({

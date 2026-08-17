@@ -10,7 +10,7 @@ export function createEconomicActivitiesRouter(repository) {
   const router = Router();
   router.use(
     authenticate,
-    authorizeCompanyOrPlatform('economic_activities.read'),
+    authorizeCompanyOrPlatform('economic_activities.read', 'companies.read'),
   );
 
   router.get(
