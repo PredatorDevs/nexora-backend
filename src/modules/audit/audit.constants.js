@@ -37,4 +37,7 @@ export const auditActions = Object.freeze({
   warehouseCategoryCreated: 'WAREHOUSE_CATEGORY.CREATED',
   warehouseCategoryUpdated: 'WAREHOUSE_CATEGORY.UPDATED',
   warehouseCategoryStatusChanged: 'WAREHOUSE_CATEGORY.STATUS_CHANGED',
+  warehouseCreated: 'WAREHOUSE.CREATED',
+  warehouseUpdated: 'WAREHOUSE.UPDATED',
+  warehouseStatusChanged: 'WAREHOUSE.STATUS_CHANGED',
 });

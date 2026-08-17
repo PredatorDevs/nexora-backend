@@ -374,6 +374,7 @@ model Company {
   branches                  Branch[]
   invitations               CompanyInvitation[]
   warehouseCategories       WarehouseCategory[]
+  warehouses                Warehouse[]
 
   @@index([status, legalName], map: "companies_status_legal_name_idx")
   @@index([countryId], map: "companies_country_id_idx")
@@ -416,6 +417,7 @@ model Branch {
   department                Department?   @relation(fields: [departmentId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   municipality              Municipality? @relation(fields: [municipalityId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   district                  District?     @relation(fields: [districtId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  warehouses                Warehouse[]
 
   @@unique([companyId, code], map: "branches_company_code_key")
   @@unique([companyId, name], map: "branches_company_name_key")
@@ -439,12 +441,36 @@ model WarehouseCategory {
   createdAt   DateTime @default(now()) @map("created_at") @db.DateTime(3)
   updatedAt   DateTime @updatedAt @map("updated_at") @db.DateTime(3)
   company     Company  @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  warehouses  Warehouse[]
 
   @@unique([companyId, code], map: "warehouse_categories_company_code_key")
   @@unique([companyId, name], map: "warehouse_categories_company_name_key")
   @@unique([id, companyId], map: "warehouse_categories_id_company_key")
   @@index([companyId, isActive, name], map: "warehouse_categories_company_active_name_idx")
   @@map("warehouse_categories")
+}
+
+model Warehouse {
+  id                  Int               @id @default(autoincrement()) @db.UnsignedInt
+  companyId           Int               @map("company_id") @db.UnsignedInt
+  branchId            Int               @map("branch_id") @db.UnsignedInt
+  warehouseCategoryId Int               @map("warehouse_category_id") @db.UnsignedInt
+  code                String            @db.VarChar(50)
+  name                String            @db.VarChar(191)
+  description         String?           @db.VarChar(500)
+  isActive            Boolean           @default(true) @map("is_active")
+  createdAt           DateTime          @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt           DateTime          @updatedAt @map("updated_at") @db.DateTime(3)
+  company             Company           @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  branch              Branch            @relation(fields: [branchId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  warehouseCategory   WarehouseCategory @relation(fields: [warehouseCategoryId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([companyId, code], map: "warehouses_company_code_key")
+  @@unique([companyId, branchId, name], map: "warehouses_company_branch_name_key")
+  @@unique([id, companyId], map: "warehouses_id_company_key")
+  @@index([companyId, branchId, isActive, name], map: "warehouses_company_branch_active_name_idx")
+  @@index([companyId, warehouseCategoryId], map: "warehouses_company_category_idx")
+  @@map("warehouses")
 }
 
 model CompanyMembership {

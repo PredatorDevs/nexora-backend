@@ -37,6 +37,10 @@ export const permissionCodes = Object.freeze([
   'warehouse_categories.create',
   'warehouse_categories.update',
   'warehouse_categories.change_status',
+  'warehouses.read',
+  'warehouses.create',
+  'warehouses.update',
+  'warehouses.change_status',
 ]);
 
 export const companyPermissionCodes = Object.freeze([
@@ -59,6 +63,10 @@ export const companyPermissionCodes = Object.freeze([
   'warehouse_categories.create',
   'warehouse_categories.update',
   'warehouse_categories.change_status',
+  'warehouses.read',
+  'warehouses.create',
+  'warehouses.update',
+  'warehouses.change_status',
 ]);
 
 const companyPermissions = new Set(companyPermissionCodes);
@@ -152,6 +160,7 @@ export const companyRoleTemplates = Object.freeze([
       'economic_activities.read',
       'branches.read',
       'warehouse_categories.read',
+      'warehouses.read',
     ],
   },
   {
@@ -163,6 +172,7 @@ export const companyRoleTemplates = Object.freeze([
       'economic_activities.read',
       'branches.read',
       'warehouse_categories.read',
+      'warehouses.read',
     ],
   },
 ]);

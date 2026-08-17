@@ -133,3 +133,19 @@ export function warehouseCategorySnapshot(value) {
     updatedAt: iso(value.updatedAt),
   };
 }
+
+export function warehouseSnapshot(value) {
+  if (!value) return null;
+  return {
+    id: value.id,
+    companyId: value.companyId,
+    branchId: value.branchId,
+    warehouseCategoryId: value.warehouseCategoryId,
+    code: value.code,
+    name: value.name,
+    description: value.description,
+    isActive: value.isActive,
+    createdAt: iso(value.createdAt),
+    updatedAt: iso(value.updatedAt),
+  };
+}
