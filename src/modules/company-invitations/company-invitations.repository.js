@@ -41,7 +41,30 @@ export function createCompanyInvitationsRepository(prisma) {
     findUser: (email, client = prisma) => client.user.findUnique({ where: { email }, select: { id: true, status: true } }),
     createUser: (data, client = prisma) => client.user.create({ data, select: { id: true, status: true } }),
     findMembership: (companyId, userId, client = prisma) => client.companyMembership.findUnique({ where: { companyId_userId: { companyId, userId } }, select: { id: true, status: true } }),
-    createMembership: (companyId, userId, roleIds, invitedByUserId, client = prisma) => client.companyMembership.create({ data: { companyId, userId, roles: { create: roleIds.map((roleId) => ({ companyId, roleId, assignedByUserId: invitedByUserId })) } }, select: { id: true, companyId: true } }),
+    createMembership: (
+      companyId,
+      userId,
+      roleIds,
+      invitedByUserId,
+      client = prisma,
+    ) =>
+      client.companyMembership.create({
+        data: {
+          companyId,
+          userId,
+          roles: {
+            create: roleIds.map((roleId) => ({
+              assignedBy: { connect: { id: invitedByUserId } },
+              role: {
+                connect: {
+                  id_companyId: { id: roleId, companyId },
+                },
+              },
+            })),
+          },
+        },
+        select: { id: true, companyId: true },
+      }),
     accept: (id, userId, now, client = prisma) => client.companyInvitation.updateMany({ where: { id, status: 'PENDING', expiresAt: { gt: now } }, data: { status: 'ACCEPTED', acceptedByUserId: userId, acceptedAt: now } }),
   };
 }

@@ -31,4 +31,29 @@ describe('company invitations repository', () => {
       }),
     );
   });
+
+  it('connects membership roles and their assigner without writing derived keys', async () => {
+    const create = vi.fn().mockResolvedValue({ id: 2, companyId: 6 });
+    const repository = createCompanyInvitationsRepository({
+      companyMembership: { create },
+    });
+    await repository.createMembership(6, 12, [22], 1);
+    expect(create).toHaveBeenCalledWith({
+      data: {
+        companyId: 6,
+        userId: 12,
+        roles: {
+          create: [
+            {
+              assignedBy: { connect: { id: 1 } },
+              role: {
+                connect: { id_companyId: { id: 22, companyId: 6 } },
+              },
+            },
+          ],
+        },
+      },
+      select: { id: true, companyId: true },
+    });
+  });
 });
