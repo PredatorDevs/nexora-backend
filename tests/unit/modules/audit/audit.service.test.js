@@ -69,6 +69,27 @@ describe('audit service', () => {
     );
   });
 
+  it('does not evaluate result-dependent resource ids after a failure', async () => {
+    const error = new Error('creation failed');
+    await expect(
+      service.execute(
+        {
+          action: 'COMPANY_INVITATION.CREATED',
+          actorUserId: 1,
+          resourceType: 'company_invitation',
+          resourceId: (invitation) => invitation.id,
+          context,
+        },
+        async () => {
+          throw error;
+        },
+      ),
+    ).rejects.toBe(error);
+    expect(repository.create).toHaveBeenCalledWith(
+      expect.objectContaining({ resourceId: null, result: 'FAILURE' }),
+    );
+  });
+
   it('removes secrets from nested metadata', async () => {
     await service.record({
       action: 'TEST',

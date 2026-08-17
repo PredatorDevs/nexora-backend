@@ -130,6 +130,25 @@ describe('loadEnvironment', () => {
     });
   });
 
+  it('requires Resend credentials and sender configuration together', () => {
+    expect(() =>
+      loadEnvironment({ ...validEnvironment, MAIL_TRANSPORT: 'resend' }),
+    ).toThrow('RESEND_API_KEY, MAIL_FROM_EMAIL, and PUBLIC_APP_URL');
+    expect(
+      loadEnvironment({
+        ...validEnvironment,
+        MAIL_TRANSPORT: 'resend',
+        RESEND_API_KEY: 're_test_key',
+        MAIL_FROM_EMAIL: 'noreply@example.com',
+        PUBLIC_APP_URL: 'https://erp.example.com',
+      }).mail,
+    ).toMatchObject({
+      transport: 'resend',
+      resendApiKey: 're_test_key',
+      fromEmail: 'noreply@example.com',
+    });
+  });
+
   it('returns immutable configuration and does not leak secret values in errors', () => {
     const environment = loadEnvironment(validEnvironment);
 

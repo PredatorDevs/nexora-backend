@@ -7,7 +7,7 @@ const invalid = (message, details) => new AppError({ code: errorCodes.validation
 const conflict = (message) => new AppError({ code: errorCodes.conflict, message, statusCode: 409 });
 const unavailable = () => new AppError({ code: errorCodes.notFound, message: 'The invitation is invalid, expired, or unavailable.', statusCode: 404 });
 
-export function createCompanyInvitationsService({ repository, runInTransaction, passwordHasher, frontendBaseUrl, exposeLinks = false, now = () => new Date() }) {
+export function createCompanyInvitationsService({ repository, runInTransaction, passwordHasher, mailer = { sendCompanyInvitation: async () => {} }, frontendBaseUrl, exposeLinks = false, now = () => new Date() }) {
   async function requireRoles(companyId, roleIds, client) {
     const ids = [...new Set(roleIds)];
     const roles = await repository.findRoles(companyId, ids, client);
@@ -24,8 +24,8 @@ export function createCompanyInvitationsService({ repository, runInTransaction, 
       const result = await repository.list(companyId, query);
       return { invitations: result.items, pagination: paginationMeta({ ...query, total: result.total }) };
     },
-    invite(companyId, { email, roleIds }, actorUserId) {
-      return runInTransaction(async (client) => {
+    async invite(companyId, { email, roleIds }, actorUserId) {
+      const issued = await runInTransaction(async (client) => {
         if (!(await repository.findCompany(companyId, client))) throw unavailable();
         const ids = await requireRoles(companyId, roleIds, client);
         const existingUser = await repository.findUser(email, client);
@@ -35,8 +35,19 @@ export function createCompanyInvitationsService({ repository, runInTransaction, 
         const token = generateInvitationToken();
         await repository.revokePending(companyId, email, issuedAt, client);
         const invitation = await repository.create({ companyId, email, roleIds: ids, tokenHash: hashInvitationToken(token), invitedByUserId: actorUserId, expiresAt }, client);
-        return { ...invitation, ...(exposeLinks ? { acceptanceUrl: `${frontendBaseUrl}/accept-invitation?token=${encodeURIComponent(token)}` } : {}) };
+        return { invitation, token };
       }, { maxWait: 10_000, timeout: 30_000 });
+      const acceptanceUrl = `${frontendBaseUrl}/accept-invitation?token=${encodeURIComponent(issued.token)}`;
+      const companyName = issued.invitation.company.commercialName || issued.invitation.company.legalName;
+      await mailer.sendCompanyInvitation({
+        invitationId: issued.invitation.id,
+        to: issued.invitation.email,
+        companyName,
+        inviterName: issued.invitation.invitedBy.displayName,
+        acceptanceUrl,
+        expiresAt: issued.invitation.expiresAt,
+      });
+      return { ...issued.invitation, ...(exposeLinks ? { acceptanceUrl } : {}) };
     },
     async preview(token) {
       const invitation = await validInvitation(token);

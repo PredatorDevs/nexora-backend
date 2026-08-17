@@ -56,6 +56,13 @@ SHUTDOWN_TIMEOUT_MS=10000
 
 SERVE_FRONTEND=false
 FRONTEND_DIST_PATH=
+
+PUBLIC_APP_URL=https://YOUR_PROJECT.vercel.app
+MAIL_TRANSPORT=resend
+RESEND_API_KEY=re_REPLACE_WITH_YOUR_RESEND_API_KEY
+MAIL_FROM_EMAIL=noreply@YOUR_VERIFIED_DOMAIN
+MAIL_FROM_NAME=Nexora ERP
+MAIL_REPLY_TO=support@YOUR_VERIFIED_DOMAIN
 ```
 
 `PORT` defaults to `3000` and `TEST_DATABASE_URL` is required only when
@@ -64,6 +71,12 @@ FRONTEND_DIST_PATH=
 If the frontend uses another domain, include its exact origin in
 `CORS_ALLOWED_ORIGINS`. Multiple origins are comma-separated. For a cross-site
 frontend, use `COOKIE_SAME_SITE=none` together with `COOKIE_SECURE=true`.
+
+Transactional invitation email uses Nodemailer over Resend SMTP. Resend uses
+`smtp.resend.com:465`, username `resend`, and `RESEND_API_KEY` as the SMTP
+password. `MAIL_FROM_EMAIL` must belong to a domain verified in Resend.
+`MAIL_REPLY_TO` is optional. Use `MAIL_TRANSPORT=log` locally; invitation links
+are then logged and returned by the development API instead of being emailed.
 
 ## Database
 

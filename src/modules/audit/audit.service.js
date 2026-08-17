@@ -17,8 +17,10 @@ function sanitizeMetadata(value, depth = 0) {
   return value;
 }
 
-const resolve = (value, result) =>
-  typeof value === 'function' ? value(result) : value;
+const resolve = (value, result) => {
+  if (typeof value !== 'function') return value;
+  return result === undefined ? null : value(result);
+};
 
 export function createAuditService(repository) {
   const service = {

@@ -17,6 +17,7 @@ const invitation = {
 describe('company invitations service', () => {
   let repository;
   let service;
+  let mailer;
   beforeEach(() => {
     repository = {
       findCompany: vi.fn().mockResolvedValue({ id: 6 }),
@@ -30,10 +31,12 @@ describe('company invitations service', () => {
       createMembership: vi.fn().mockResolvedValue({ id: 15, companyId: 6 }),
       accept: vi.fn().mockResolvedValue({ count: 1 }),
     };
+    mailer = { sendCompanyInvitation: vi.fn() };
     service = createCompanyInvitationsService({
       repository,
       runInTransaction: (operation) => operation({ tx: true }),
       passwordHasher: vi.fn().mockResolvedValue('password-hash'),
+      mailer,
       frontendBaseUrl: 'http://localhost:5173',
       exposeLinks: true,
       now: () => now,
@@ -48,6 +51,12 @@ describe('company invitations service', () => {
       { tx: true },
     );
     expect(repository.create.mock.calls[0][0]).not.toHaveProperty('token');
+    expect(mailer.sendCompanyInvitation).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: invitation.email,
+        acceptanceUrl: result.acceptanceUrl,
+      }),
+    );
   });
 
   it('creates an account and membership atomically when accepted', async () => {

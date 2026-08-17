@@ -52,9 +52,9 @@ the same company and email. Acceptance creates the user, membership, and role
 assignments atomically. Expired, revoked, accepted, and unknown tokens return the
 same unavailable response.
 
-In development, the API returns `acceptanceUrl` so the flow can be tested
-without an email provider. Production intentionally omits the link from the API;
-an email delivery adapter must send it to the invited address.
+With `MAIL_TRANSPORT=log`, the API returns `acceptanceUrl` in development and
+logs the simulated delivery. With `MAIL_TRANSPORT=resend`, Nodemailer sends the
+link through Resend SMTP and the API never returns the bearer link.
 
 ## Default company roles
 

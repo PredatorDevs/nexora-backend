@@ -39,6 +39,7 @@ import { createBranchesRepository } from './modules/branches/branches.repository
 import { createBranchesService } from './modules/branches/branches.service.js';
 import { createCompanyInvitationsRepository } from './modules/company-invitations/company-invitations.repository.js';
 import { createCompanyInvitationsService } from './modules/company-invitations/company-invitations.service.js';
+import { createMailer } from './core/mail/mailer.js';
 import {
   configureServerTimeouts,
   createGracefulShutdown,
@@ -124,8 +125,9 @@ const companyInvitationsService = createCompanyInvitationsService({
   repository: createCompanyInvitationsRepository(prisma),
   runInTransaction,
   passwordHasher: hashPassword,
-  frontendBaseUrl: environment.cors.allowedOrigins[0],
-  exposeLinks: environment.isDevelopment,
+  mailer: createMailer({ settings: environment.mail, logger }),
+  frontendBaseUrl: environment.publicAppUrl,
+  exposeLinks: environment.isDevelopment && environment.mail.transport === 'log',
 });
 const app = createApp({
   trustProxy: environment.http.trustProxy,

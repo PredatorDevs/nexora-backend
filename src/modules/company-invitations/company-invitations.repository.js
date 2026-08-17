@@ -20,7 +20,21 @@ export function createCompanyInvitationsRepository(prisma) {
     revokePending: (companyId, email, now, client = prisma) => client.companyInvitation.updateMany({ where: { companyId, email, status: 'PENDING' }, data: { status: 'REVOKED', revokedAt: now } }),
     create(data, client = prisma) {
       const { roleIds, ...invitation } = data;
-      return client.companyInvitation.create({ data: { ...invitation, roles: { create: roleIds.map((roleId) => ({ roleId, companyId: invitation.companyId })) } }, select: invitationSelect });
+      return client.companyInvitation.create({
+        data: {
+          ...invitation,
+          roles: {
+            create: roleIds.map((roleId) => ({
+              role: {
+                connect: {
+                  id_companyId: { id: roleId, companyId: invitation.companyId },
+                },
+              },
+            })),
+          },
+        },
+        select: invitationSelect,
+      });
     },
     findByTokenHash: (tokenHash, client = prisma) => client.companyInvitation.findUnique({ where: { tokenHash }, select: { ...invitationSelect, tokenHash: true } }),
     revoke: (companyId, id, now, client = prisma) => client.companyInvitation.updateMany({ where: { id, companyId, status: 'PENDING' }, data: { status: 'REVOKED', revokedAt: now } }),

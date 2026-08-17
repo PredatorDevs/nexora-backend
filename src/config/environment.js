@@ -77,6 +77,12 @@ const environmentSchema = z
       .default(10_000),
     SERVE_FRONTEND: booleanString,
     FRONTEND_DIST_PATH: z.string().default(''),
+    PUBLIC_APP_URL: optionalString(z.string().url()),
+    MAIL_TRANSPORT: z.enum(['log', 'resend']).default('log'),
+    RESEND_API_KEY: optionalString(z.string().min(1)),
+    MAIL_FROM_EMAIL: optionalString(z.string().email().max(191)),
+    MAIL_FROM_NAME: z.string().trim().min(1).max(120).default('Nexora ERP'),
+    MAIL_REPLY_TO: optionalString(z.string().email().max(191)),
     INITIAL_ADMIN_EMAIL: optionalString(
       z.string().trim().toLowerCase().email().max(191),
     ),
@@ -136,6 +142,19 @@ const environmentSchema = z
         code: z.ZodIssueCode.custom,
         message: 'Must be different from DATABASE_URL',
         path: ['TEST_DATABASE_URL'],
+      });
+    }
+    if (
+      environment.MAIL_TRANSPORT === 'resend' &&
+      (!environment.RESEND_API_KEY ||
+        !environment.MAIL_FROM_EMAIL ||
+        !environment.PUBLIC_APP_URL)
+    ) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          'RESEND_API_KEY, MAIL_FROM_EMAIL, and PUBLIC_APP_URL are required when MAIL_TRANSPORT is resend',
+        path: ['MAIL_TRANSPORT'],
       });
     }
 
@@ -226,6 +245,14 @@ export function loadEnvironment(input = process.env) {
     frontend: {
       enabled: values.SERVE_FRONTEND,
       distPath: values.FRONTEND_DIST_PATH.trim() || null,
+    },
+    publicAppUrl: values.PUBLIC_APP_URL ?? values.CORS_ALLOWED_ORIGINS[0],
+    mail: {
+      transport: values.MAIL_TRANSPORT,
+      resendApiKey: values.RESEND_API_KEY,
+      fromEmail: values.MAIL_FROM_EMAIL,
+      fromName: values.MAIL_FROM_NAME,
+      replyTo: values.MAIL_REPLY_TO,
     },
     initialAdmin: values.INITIAL_ADMIN_EMAIL
       ? {
