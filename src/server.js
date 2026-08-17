@@ -30,6 +30,7 @@ import { createEntityChangeRepository } from './modules/entity-changes/entity-ch
 import { createEntityChangeService } from './modules/entity-changes/entity-change.service.js';
 import { createAddressDictionariesRepository } from './modules/address-dictionaries/address-dictionaries.repository.js';
 import { createEconomicActivitiesRepository } from './modules/economic-activities/economic-activities.repository.js';
+import { createMeasurementUnitsRepository } from './modules/measurement-units/measurement-units.repository.js';
 import { createCompaniesRepository } from './modules/companies/companies.repository.js';
 import { createCompaniesService } from './modules/companies/companies.service.js';
 import { provisionCompanyRoles } from './modules/company-access/company-role-templates.js';
@@ -157,7 +158,8 @@ const companyInvitationsService = createCompanyInvitationsService({
   passwordHasher: hashPassword,
   mailer: createMailer({ settings: environment.mail, logger }),
   frontendBaseUrl: environment.publicAppUrl,
-  exposeLinks: environment.isDevelopment && environment.mail.transport === 'log',
+  exposeLinks:
+    environment.isDevelopment && environment.mail.transport === 'log',
 });
 const app = createApp({
   trustProxy: environment.http.trustProxy,
@@ -176,6 +178,7 @@ const app = createApp({
     entityChanges: entityChangeService,
     addressDictionaries: createAddressDictionariesRepository(prisma),
     economicActivities: createEconomicActivitiesRepository(prisma),
+    measurementUnits: createMeasurementUnitsRepository(prisma),
     companies: companiesService,
     companyAccess: companyAccessService,
     branches: branchesService,

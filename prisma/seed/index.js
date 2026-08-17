@@ -5,6 +5,7 @@ import { seedRoles } from './roles.seed.js';
 import { seedAdmin } from './admin.seed.js';
 import { seedAddressDictionaries } from './address-dictionaries.seed.js';
 import { seedEconomicActivities } from './economic-activities.seed.js';
+import { seedMeasurementUnits } from './measurement-units.seed.js';
 import { seedCompanyRoles } from './company-roles.seed.js';
 
 const environment = loadEnvironment();
@@ -16,10 +17,11 @@ try {
   await seedRoles(prisma);
   const addressDictionaryCounts = await seedAddressDictionaries(prisma);
   const economicActivities = await seedEconomicActivities(prisma);
+  const measurementUnits = await seedMeasurementUnits(prisma);
   const companiesWithRoles = await seedCompanyRoles(prisma);
   await seedAdmin(prisma, environment.initialAdmin);
   process.stdout.write(
-    `Seed completed successfully: ${JSON.stringify({ ...addressDictionaryCounts, economicActivities, companiesWithRoles })}.\n`,
+    `Seed completed successfully: ${JSON.stringify({ ...addressDictionaryCounts, economicActivities, measurementUnits, companiesWithRoles })}.\n`,
   );
 } finally {
   await prisma.$disconnect();

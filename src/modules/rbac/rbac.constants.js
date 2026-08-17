@@ -16,6 +16,7 @@ export const permissionCodes = Object.freeze([
   'sessions.revoke',
   'address_dictionaries.read',
   'economic_activities.read',
+  'measurement_units.read',
   'companies.read',
   'companies.create',
   'companies.update',
@@ -59,6 +60,7 @@ export const permissionCodes = Object.freeze([
 export const companyPermissionCodes = Object.freeze([
   'address_dictionaries.read',
   'economic_activities.read',
+  'measurement_units.read',
   'company_members.read',
   'company_members.add',
   'company_members.change_status',
@@ -135,6 +137,7 @@ export const systemRoleDefinitions = Object.freeze([
       'sessions.revoke',
       'address_dictionaries.read',
       'economic_activities.read',
+      'measurement_units.read',
       'companies.read',
     ],
   },
@@ -150,6 +153,7 @@ export const systemRoleDefinitions = Object.freeze([
       'sessions.read',
       'address_dictionaries.read',
       'economic_activities.read',
+      'measurement_units.read',
       'companies.read',
     ],
   },
@@ -184,6 +188,7 @@ export const companyRoleTemplates = Object.freeze([
     permissions: [
       'address_dictionaries.read',
       'economic_activities.read',
+      'measurement_units.read',
       'branches.read',
       'warehouse_categories.read',
       'warehouses.read',
@@ -199,6 +204,7 @@ export const companyRoleTemplates = Object.freeze([
     permissions: [
       'address_dictionaries.read',
       'economic_activities.read',
+      'measurement_units.read',
       'branches.read',
       'warehouse_categories.read',
       'warehouses.read',

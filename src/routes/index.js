@@ -8,6 +8,7 @@ import { createAuditRouter } from '../modules/audit/audit.routes.js';
 import { createEntityChangeRouter } from '../modules/entity-changes/entity-change.routes.js';
 import { createAddressDictionariesRouter } from '../modules/address-dictionaries/address-dictionaries.routes.js';
 import { createEconomicActivitiesRouter } from '../modules/economic-activities/economic-activities.routes.js';
+import { createMeasurementUnitsRouter } from '../modules/measurement-units/measurement-units.routes.js';
 import { createCompaniesRouter } from '../modules/companies/companies.routes.js';
 import { createCompanyAccessRouter } from '../modules/company-access/company-access.routes.js';
 import { createBranchesRouter } from '../modules/branches/branches.routes.js';
@@ -66,6 +67,12 @@ export function registerRoutes(app) {
       app.use(
         '/api/v1/economic-activities',
         createEconomicActivitiesRouter(app.locals.services.economicActivities),
+      );
+    }
+    if (app.locals.services.measurementUnits) {
+      app.use(
+        '/api/v1/measurement-units',
+        createMeasurementUnitsRouter(app.locals.services.measurementUnits),
       );
     }
     if (app.locals.services.companies) {

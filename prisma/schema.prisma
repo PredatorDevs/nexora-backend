@@ -265,13 +265,13 @@ model EntityChangeLog {
 }
 
 model Country {
-  id           Int       @id @default(autoincrement()) @db.UnsignedInt
-  name         String    @db.VarChar(128)
-  abbreviation String    @unique(map: "countries_abbreviation_key") @db.VarChar(5)
-  mhCode       String    @unique(map: "countries_mh_code_key") @map("mh_code") @db.VarChar(5)
-  isActive     Boolean   @default(true) @map("is_active")
-  createdAt    DateTime  @default(now()) @map("created_at") @db.DateTime(3)
-  updatedAt    DateTime  @updatedAt @map("updated_at") @db.DateTime(3)
+  id           Int        @id @default(autoincrement()) @db.UnsignedInt
+  name         String     @db.VarChar(128)
+  abbreviation String     @unique(map: "countries_abbreviation_key") @db.VarChar(5)
+  mhCode       String     @unique(map: "countries_mh_code_key") @map("mh_code") @db.VarChar(5)
+  isActive     Boolean    @default(true) @map("is_active")
+  createdAt    DateTime   @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt    DateTime   @updatedAt @map("updated_at") @db.DateTime(3)
   companies    Company[]
   branches     Branch[]
   suppliers    Supplier[]
@@ -346,6 +346,21 @@ model EconomicActivity {
 
   @@index([isActive, name], map: "economic_activities_active_name_idx")
   @@map("economic_activities")
+}
+
+model MeasurementUnit {
+  id         Int      @id @default(autoincrement()) @db.UnsignedInt
+  name       String   @unique(map: "measurement_units_name_key") @db.VarChar(64)
+  pluralName String?  @map("plural_name") @db.VarChar(64)
+  symbol     String?  @db.VarChar(32)
+  mhCode     String?  @unique(map: "measurement_units_mh_code_key") @map("mh_code") @db.VarChar(3)
+  comments   String?  @db.VarChar(1024)
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.DateTime(3)
+
+  @@index([isActive, name], map: "measurement_units_active_name_idx")
+  @@map("measurement_units")
 }
 
 model Company {
@@ -446,15 +461,15 @@ model Branch {
 }
 
 model WarehouseCategory {
-  id          Int      @id @default(autoincrement()) @db.UnsignedInt
-  companyId   Int      @map("company_id") @db.UnsignedInt
-  code        String   @db.VarChar(50)
-  name        String   @db.VarChar(120)
-  description String?  @db.VarChar(500)
-  isActive    Boolean  @default(true) @map("is_active")
-  createdAt   DateTime @default(now()) @map("created_at") @db.DateTime(3)
-  updatedAt   DateTime @updatedAt @map("updated_at") @db.DateTime(3)
-  company     Company  @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  id          Int         @id @default(autoincrement()) @db.UnsignedInt
+  companyId   Int         @map("company_id") @db.UnsignedInt
+  code        String      @db.VarChar(50)
+  name        String      @db.VarChar(120)
+  description String?     @db.VarChar(500)
+  isActive    Boolean     @default(true) @map("is_active")
+  createdAt   DateTime    @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt   DateTime    @updatedAt @map("updated_at") @db.DateTime(3)
+  company     Company     @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   warehouses  Warehouse[]
 
   @@unique([companyId, code], map: "warehouse_categories_company_code_key")
@@ -553,23 +568,23 @@ model Supplier {
 }
 
 model SupplierContact {
-  id           Int       @id @default(autoincrement()) @db.UnsignedInt
-  companyId    Int       @map("company_id") @db.UnsignedInt
-  supplierId   Int       @map("supplier_id") @db.UnsignedInt
-  fullName     String    @map("full_name") @db.VarChar(191)
-  jobTitle     String?   @map("job_title") @db.VarChar(120)
-  department   String?   @db.VarChar(120)
-  phone        String?   @db.VarChar(30)
-  email        String?   @db.VarChar(191)
-  isPrimary    Boolean   @default(false) @map("is_primary")
-  validFrom    DateTime  @default(now()) @map("valid_from") @db.DateTime(3)
-  validUntil   DateTime? @map("valid_until") @db.DateTime(3)
-  notes        String?   @db.Text
-  isActive     Boolean   @default(true) @map("is_active")
-  createdAt    DateTime  @default(now()) @map("created_at") @db.DateTime(3)
-  updatedAt    DateTime  @updatedAt @map("updated_at") @db.DateTime(3)
-  company      Company   @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  supplier     Supplier  @relation(fields: [supplierId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  id         Int       @id @default(autoincrement()) @db.UnsignedInt
+  companyId  Int       @map("company_id") @db.UnsignedInt
+  supplierId Int       @map("supplier_id") @db.UnsignedInt
+  fullName   String    @map("full_name") @db.VarChar(191)
+  jobTitle   String?   @map("job_title") @db.VarChar(120)
+  department String?   @db.VarChar(120)
+  phone      String?   @db.VarChar(30)
+  email      String?   @db.VarChar(191)
+  isPrimary  Boolean   @default(false) @map("is_primary")
+  validFrom  DateTime  @default(now()) @map("valid_from") @db.DateTime(3)
+  validUntil DateTime? @map("valid_until") @db.DateTime(3)
+  notes      String?   @db.Text
+  isActive   Boolean   @default(true) @map("is_active")
+  createdAt  DateTime  @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt  DateTime  @updatedAt @map("updated_at") @db.DateTime(3)
+  company    Company   @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  supplier   Supplier  @relation(fields: [supplierId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
 
   @@unique([id, companyId], map: "supplier_contacts_id_company_key")
   @@index([companyId, supplierId, isActive, isPrimary], map: "supplier_contacts_supplier_active_primary_idx")

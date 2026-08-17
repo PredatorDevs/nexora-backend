@@ -28,6 +28,7 @@ import { createEntityChangeRepository } from '../../src/modules/entity-changes/e
 import { createEntityChangeService } from '../../src/modules/entity-changes/entity-change.service.js';
 import { createAddressDictionariesRepository } from '../../src/modules/address-dictionaries/address-dictionaries.repository.js';
 import { createEconomicActivitiesRepository } from '../../src/modules/economic-activities/economic-activities.repository.js';
+import { createMeasurementUnitsRepository } from '../../src/modules/measurement-units/measurement-units.repository.js';
 import { createCompaniesRepository } from '../../src/modules/companies/companies.repository.js';
 import { createCompaniesService } from '../../src/modules/companies/companies.service.js';
 import { provisionCompanyRoles } from '../../src/modules/company-access/company-role-templates.js';
@@ -96,6 +97,7 @@ export function createTestApplication({
       sessions: createSessionsService(createSessionsRepository(prisma)),
       addressDictionaries: createAddressDictionariesRepository(prisma),
       economicActivities: createEconomicActivitiesRepository(prisma),
+      measurementUnits: createMeasurementUnitsRepository(prisma),
       companies: createCompaniesService({
         repository: createCompaniesRepository(prisma),
         entityChangeService,
