@@ -11,6 +11,10 @@ import { createEconomicActivitiesRouter } from '../modules/economic-activities/e
 import { createCompaniesRouter } from '../modules/companies/companies.routes.js';
 import { createCompanyAccessRouter } from '../modules/company-access/company-access.routes.js';
 import { createBranchesRouter } from '../modules/branches/branches.routes.js';
+import {
+  createCompanyInvitationsManagementRouter,
+  createCompanyInvitationsPublicRouter,
+} from '../modules/company-invitations/company-invitations.routes.js';
 
 export function registerRoutes(app) {
   app.get('/api/v1/health', (_request, response) => {
@@ -83,6 +87,22 @@ export function registerRoutes(app) {
         '/api/v1/branches',
         createBranchesRouter(
           app.locals.services.branches,
+          app.locals.services.audit,
+        ),
+      );
+    }
+    if (app.locals.services.companyInvitations) {
+      app.use(
+        '/api/v1/companies',
+        createCompanyInvitationsManagementRouter(
+          app.locals.services.companyInvitations,
+          app.locals.services.audit,
+        ),
+      );
+      app.use(
+        '/api/v1/invitations',
+        createCompanyInvitationsPublicRouter(
+          app.locals.services.companyInvitations,
           app.locals.services.audit,
         ),
       );

@@ -37,6 +37,8 @@ import { createCompanyAccessRepository } from './modules/company-access/company-
 import { createCompanyAccessService } from './modules/company-access/company-access.service.js';
 import { createBranchesRepository } from './modules/branches/branches.repository.js';
 import { createBranchesService } from './modules/branches/branches.service.js';
+import { createCompanyInvitationsRepository } from './modules/company-invitations/company-invitations.repository.js';
+import { createCompanyInvitationsService } from './modules/company-invitations/company-invitations.service.js';
 import {
   configureServerTimeouts,
   createGracefulShutdown,
@@ -118,6 +120,13 @@ const branchesService = createBranchesService({
   entityChangeService,
   runInTransaction,
 });
+const companyInvitationsService = createCompanyInvitationsService({
+  repository: createCompanyInvitationsRepository(prisma),
+  runInTransaction,
+  passwordHasher: hashPassword,
+  frontendBaseUrl: environment.cors.allowedOrigins[0],
+  exposeLinks: environment.isDevelopment,
+});
 const app = createApp({
   trustProxy: environment.http.trustProxy,
   allowedOrigins: environment.cors.allowedOrigins,
@@ -138,6 +147,7 @@ const app = createApp({
     companies: companiesService,
     companyAccess: companyAccessService,
     branches: branchesService,
+    companyInvitations: companyInvitationsService,
   },
   settings: {
     auth: environment.auth,

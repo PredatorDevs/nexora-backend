@@ -77,6 +77,14 @@ enum CompanyMembershipStatus {
   @@map("company_membership_status")
 }
 
+enum CompanyInvitationStatus {
+  PENDING
+  ACCEPTED
+  REVOKED
+
+  @@map("company_invitation_status")
+}
+
 model User {
   id                         Int                     @id @default(autoincrement()) @db.UnsignedInt
   email                      String                  @unique(map: "users_email_key") @db.VarChar(191)
@@ -96,6 +104,8 @@ model User {
   companyMemberships         CompanyMembership[]
   companyRolesAssigned       CompanyMembershipRole[] @relation("CompanyMembershipRoleAssignedBy")
   companyPermissionsAssigned CompanyRolePermission[] @relation("CompanyRolePermissionAssignedBy")
+  companyInvitationsSent     CompanyInvitation[]     @relation("CompanyInvitationInvitedBy")
+  companyInvitationsAccepted CompanyInvitation[]     @relation("CompanyInvitationAcceptedBy")
 
   @@index([status], map: "users_status_idx")
   @@map("users")
@@ -362,6 +372,7 @@ model Company {
   auditLogs                 AuditLog[]
   entityChanges             EntityChangeLog[]
   branches                  Branch[]
+  invitations               CompanyInvitation[]
 
   @@index([status, legalName], map: "companies_status_legal_name_idx")
   @@index([countryId], map: "companies_country_id_idx")
@@ -430,6 +441,44 @@ model CompanyMembership {
   @@map("company_memberships")
 }
 
+model CompanyInvitation {
+  id               Int                     @id @default(autoincrement()) @db.UnsignedInt
+  companyId        Int                     @map("company_id") @db.UnsignedInt
+  email            String                  @db.VarChar(191)
+  tokenHash        String                  @unique(map: "company_invitations_token_hash_key") @map("token_hash") @db.Char(64)
+  status           CompanyInvitationStatus @default(PENDING)
+  expiresAt        DateTime                @map("expires_at") @db.DateTime(3)
+  invitedByUserId  Int                     @map("invited_by_user_id") @db.UnsignedInt
+  acceptedByUserId Int?                    @map("accepted_by_user_id") @db.UnsignedInt
+  acceptedAt       DateTime?               @map("accepted_at") @db.DateTime(3)
+  revokedAt        DateTime?               @map("revoked_at") @db.DateTime(3)
+  createdAt        DateTime                @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt        DateTime                @updatedAt @map("updated_at") @db.DateTime(3)
+  company          Company                 @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  invitedBy        User                    @relation("CompanyInvitationInvitedBy", fields: [invitedByUserId], references: [id], onDelete: Restrict)
+  acceptedBy       User?                   @relation("CompanyInvitationAcceptedBy", fields: [acceptedByUserId], references: [id], onDelete: SetNull)
+  roles            CompanyInvitationRole[]
+
+  @@unique([id, companyId], map: "company_invitations_id_company_key")
+  @@index([companyId, status, createdAt], map: "company_invitations_company_status_idx")
+  @@index([email, status], map: "company_invitations_email_status_idx")
+  @@index([expiresAt, status], map: "company_invitations_expiry_status_idx")
+  @@map("company_invitations")
+}
+
+model CompanyInvitationRole {
+  invitationId Int               @map("invitation_id") @db.UnsignedInt
+  roleId       Int               @map("role_id") @db.UnsignedInt
+  companyId    Int               @map("company_id") @db.UnsignedInt
+  invitation   CompanyInvitation @relation(fields: [invitationId, companyId], references: [id, companyId], onDelete: Cascade, onUpdate: Cascade)
+  role         CompanyRole       @relation(fields: [roleId, companyId], references: [id, companyId], onDelete: Cascade, onUpdate: Cascade)
+
+  @@id([invitationId, roleId])
+  @@index([roleId, companyId], map: "company_invitation_roles_role_company_idx")
+  @@index([companyId], map: "company_invitation_roles_company_idx")
+  @@map("company_invitation_roles")
+}
+
 model CompanyRole {
   id          Int                     @id @default(autoincrement()) @db.UnsignedInt
   companyId   Int                     @map("company_id") @db.UnsignedInt
@@ -442,6 +491,7 @@ model CompanyRole {
   company     Company                 @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   memberships CompanyMembershipRole[]
   permissions CompanyRolePermission[]
+  invitations CompanyInvitationRole[]
 
   @@unique([companyId, code], map: "company_roles_company_code_key")
   @@unique([id, companyId], map: "company_roles_id_company_key")

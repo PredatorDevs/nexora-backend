@@ -4,7 +4,8 @@
 
 This milestone implements company membership persistence, company-owned roles,
 permission scopes, role templates, company-bound authorization, and
-cross-company database constraints.
+cross-company database constraints. Company owners can also invite an email
+address through a seven-day, single-use token.
 
 Authentication sessions carry one active membership. The endpoints in this
 document use `authorizeCompany` and reject a route company ID that differs from
@@ -36,7 +37,8 @@ another.
 
 - A user has at most one membership in a company.
 - A membership always has at least one role.
-- Only an existing active global user can be added in this milestone.
+- Existing active global users can be added directly. New identities are
+  created by accepting a company invitation and choosing their own password.
 - The first active membership in a company must have `OWNER`.
 - An active company always retains at least one active owner after onboarding.
 - Suspending or deactivating a membership increments `securityVersion`.
@@ -44,9 +46,15 @@ another.
 - Membership reads and mutations always include both company and membership ID.
 - A resource that exists in another company is reported as not found.
 
-The future invitation flow will create pending identities or invitations without
-requiring an administrator to set a password. It is intentionally separate from
-the current operation that adds an existing user by email.
+Invitation tokens are random bearer credentials and only their SHA-256 hashes
+are persisted. Reissuing an invitation revokes previous pending invitations for
+the same company and email. Acceptance creates the user, membership, and role
+assignments atomically. Expired, revoked, accepted, and unknown tokens return the
+same unavailable response.
+
+In development, the API returns `acceptanceUrl` so the flow can be tested
+without an email provider. Production intentionally omits the link from the API;
+an email delivery adapter must send it to the invited address.
 
 ## Default company roles
 
@@ -83,6 +91,16 @@ GET   /api/v1/companies/:companyId/members/:membershipId
 POST  /api/v1/companies/:companyId/members
 PATCH /api/v1/companies/:companyId/members/:membershipId/status
 PUT   /api/v1/companies/:companyId/members/:membershipId/roles
+```
+
+Invitations:
+
+```text
+GET    /api/v1/companies/:companyId/invitations
+POST   /api/v1/companies/:companyId/invitations
+DELETE /api/v1/companies/:companyId/invitations/:invitationId
+GET    /api/v1/invitations/:token
+POST   /api/v1/invitations/:token/accept
 ```
 
 Company roles:
