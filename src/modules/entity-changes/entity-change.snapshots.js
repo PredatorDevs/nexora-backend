@@ -169,3 +169,49 @@ export function locationSnapshot(value) {
     updatedAt: iso(value.updatedAt),
   };
 }
+
+export function supplierSnapshot(value) {
+  if (!value) return null;
+  return {
+    id: value.id,
+    companyId: value.companyId,
+    code: value.code,
+    name: value.name,
+    nit: value.nit,
+    nrc: value.nrc,
+    countryId: value.countryId,
+    departmentId: value.departmentId,
+    municipalityId: value.municipalityId,
+    districtId: value.districtId,
+    foreignAdministrativeArea: value.foreignAdministrativeArea,
+    foreignLocality: value.foreignLocality,
+    addressLine: value.addressLine,
+    phone: value.phone,
+    email: value.email,
+    website: value.website,
+    isActive: value.isActive,
+    createdAt: iso(value.createdAt),
+    updatedAt: iso(value.updatedAt),
+  };
+}
+
+export function supplierContactSnapshot(value) {
+  if (!value) return null;
+  return {
+    id: value.id,
+    companyId: value.companyId,
+    supplierId: value.supplierId,
+    fullName: value.fullName,
+    jobTitle: value.jobTitle,
+    department: value.department,
+    phone: value.phone,
+    email: value.email,
+    isPrimary: value.isPrimary,
+    validFrom: iso(value.validFrom),
+    validUntil: iso(value.validUntil),
+    notes: value.notes,
+    isActive: value.isActive,
+    createdAt: iso(value.createdAt),
+    updatedAt: iso(value.updatedAt),
+  };
+}

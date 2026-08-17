@@ -42,4 +42,18 @@ describe('business code generator', () => {
       expect.objectContaining({ where: { namespace: 'location:15' } }),
     );
   });
+
+  it('generates supplier codes per company', async () => {
+    const upsert = vi.fn().mockResolvedValue({ nextValue: 4n });
+    await expect(
+      generateBusinessCode(
+        { codeSequence: { upsert } },
+        businessCodeEntities.supplier,
+        { companyId: 12 },
+      ),
+    ).resolves.toBe('SUP-000003');
+    expect(upsert).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { namespace: 'supplier:12' } }),
+    );
+  });
 });

@@ -6,6 +6,7 @@ export const businessCodeEntities = Object.freeze({
   platformRole: 'platform_role',
   companyRole: 'company_role',
   location: 'location',
+  supplier: 'supplier',
 });
 
 const definitions = Object.freeze({
@@ -16,6 +17,7 @@ const definitions = Object.freeze({
   [businessCodeEntities.platformRole]: { prefix: 'ROL', scope: 'platform' },
   [businessCodeEntities.companyRole]: { prefix: 'CRL', scope: 'company' },
   [businessCodeEntities.location]: { prefix: 'LOC', scope: 'warehouse' },
+  [businessCodeEntities.supplier]: { prefix: 'SUP', scope: 'company' },
 });
 
 export async function generateBusinessCode(

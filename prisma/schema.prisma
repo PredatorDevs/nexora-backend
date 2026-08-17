@@ -274,6 +274,7 @@ model Country {
   updatedAt    DateTime  @updatedAt @map("updated_at") @db.DateTime(3)
   companies    Company[]
   branches     Branch[]
+  suppliers    Supplier[]
 
   @@index([isActive, name], map: "countries_active_name_idx")
   @@map("countries")
@@ -291,6 +292,7 @@ model Department {
   municipalities Municipality[]
   companies      Company[]
   branches       Branch[]
+  suppliers      Supplier[]
 
   @@index([isActive, name], map: "departments_active_name_idx")
   @@map("departments")
@@ -308,6 +310,7 @@ model Municipality {
   districts    District[]
   companies    Company[]
   branches     Branch[]
+  suppliers    Supplier[]
 
   @@unique([departmentId, mhCode], map: "municipalities_department_mh_code_key")
   @@index([departmentId, isActive, name], map: "municipalities_department_active_name_idx")
@@ -325,6 +328,7 @@ model District {
   municipality   Municipality @relation(fields: [municipalityId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   companies      Company[]
   branches       Branch[]
+  suppliers      Supplier[]
 
   @@unique([municipalityId, mhCode], map: "districts_municipality_mh_code_key")
   @@index([municipalityId, isActive, name], map: "districts_municipality_active_name_idx")
@@ -383,6 +387,8 @@ model Company {
   warehouseCategories       WarehouseCategory[]
   warehouses                Warehouse[]
   locations                 Location[]
+  suppliers                 Supplier[]
+  supplierContacts          SupplierContact[]
 
   @@index([status, legalName], map: "companies_status_legal_name_idx")
   @@index([countryId], map: "companies_country_id_idx")
@@ -505,6 +511,70 @@ model Location {
   @@unique([id, companyId], map: "locations_id_company_key")
   @@index([companyId, warehouseId, isActive, code], map: "locations_company_warehouse_active_code_idx")
   @@map("locations")
+}
+
+model Supplier {
+  id                        Int               @id @default(autoincrement()) @db.UnsignedInt
+  companyId                 Int               @map("company_id") @db.UnsignedInt
+  code                      String            @db.VarChar(50)
+  name                      String            @db.VarChar(191)
+  nit                       String?           @db.VarChar(25)
+  nrc                       String?           @db.VarChar(25)
+  countryId                 Int               @map("country_id") @db.UnsignedInt
+  departmentId              Int?              @map("department_id") @db.UnsignedInt
+  municipalityId            Int?              @map("municipality_id") @db.UnsignedInt
+  districtId                Int?              @map("district_id") @db.UnsignedInt
+  foreignAdministrativeArea String?           @map("foreign_administrative_area") @db.VarChar(191)
+  foreignLocality           String?           @map("foreign_locality") @db.VarChar(191)
+  addressLine               String            @map("address_line") @db.VarChar(500)
+  phone                     String?           @db.VarChar(30)
+  email                     String?           @db.VarChar(191)
+  website                   String?           @db.VarChar(500)
+  isActive                  Boolean           @default(true) @map("is_active")
+  createdAt                 DateTime          @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt                 DateTime          @updatedAt @map("updated_at") @db.DateTime(3)
+  company                   Company           @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  country                   Country           @relation(fields: [countryId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  department                Department?       @relation(fields: [departmentId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  municipality              Municipality?     @relation(fields: [municipalityId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  district                  District?         @relation(fields: [districtId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  contacts                  SupplierContact[]
+
+  @@unique([companyId, code], map: "suppliers_company_code_key")
+  @@unique([companyId, countryId, nit], map: "suppliers_company_country_nit_key")
+  @@unique([companyId, countryId, nrc], map: "suppliers_company_country_nrc_key")
+  @@unique([id, companyId], map: "suppliers_id_company_key")
+  @@index([companyId, isActive, name], map: "suppliers_company_active_name_idx")
+  @@index([countryId], map: "suppliers_country_id_idx")
+  @@index([departmentId], map: "suppliers_department_id_idx")
+  @@index([municipalityId], map: "suppliers_municipality_id_idx")
+  @@index([districtId], map: "suppliers_district_id_idx")
+  @@map("suppliers")
+}
+
+model SupplierContact {
+  id           Int       @id @default(autoincrement()) @db.UnsignedInt
+  companyId    Int       @map("company_id") @db.UnsignedInt
+  supplierId   Int       @map("supplier_id") @db.UnsignedInt
+  fullName     String    @map("full_name") @db.VarChar(191)
+  jobTitle     String?   @map("job_title") @db.VarChar(120)
+  department   String?   @db.VarChar(120)
+  phone        String?   @db.VarChar(30)
+  email        String?   @db.VarChar(191)
+  isPrimary    Boolean   @default(false) @map("is_primary")
+  validFrom    DateTime  @default(now()) @map("valid_from") @db.DateTime(3)
+  validUntil   DateTime? @map("valid_until") @db.DateTime(3)
+  notes        String?   @db.Text
+  isActive     Boolean   @default(true) @map("is_active")
+  createdAt    DateTime  @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.DateTime(3)
+  company      Company   @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  supplier     Supplier  @relation(fields: [supplierId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([id, companyId], map: "supplier_contacts_id_company_key")
+  @@index([companyId, supplierId, isActive, isPrimary], map: "supplier_contacts_supplier_active_primary_idx")
+  @@index([companyId, email], map: "supplier_contacts_company_email_idx")
+  @@map("supplier_contacts")
 }
 
 model CompanyMembership {

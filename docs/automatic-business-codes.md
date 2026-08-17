@@ -13,6 +13,7 @@ Los códigos visibles de las entidades operativas son asignados exclusivamente p
 | Categoría personalizada de almacén | `WCT-000001` | Empresa |
 | Almacén | `WH-000001` | Empresa |
 | Ubicación | `LOC-000001` | Almacén |
+| Proveedor | `SUP-000001` | Empresa |
 | Rol personalizado de plataforma | `ROL-000001` | Plataforma |
 | Rol personalizado de empresa | `CRL-000001` | Empresa |
 

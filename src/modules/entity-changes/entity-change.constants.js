@@ -26,4 +26,6 @@ export const entityTypes = Object.freeze({
   warehouseCategory: 'warehouse_category',
   warehouse: 'warehouse',
   location: 'location',
+  supplier: 'supplier',
+  supplierContact: 'supplier_contact',
 });

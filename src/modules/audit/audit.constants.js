@@ -43,4 +43,11 @@ export const auditActions = Object.freeze({
   locationCreated: 'LOCATION.CREATED',
   locationUpdated: 'LOCATION.UPDATED',
   locationStatusChanged: 'LOCATION.STATUS_CHANGED',
+  supplierCreated: 'SUPPLIER.CREATED',
+  supplierUpdated: 'SUPPLIER.UPDATED',
+  supplierStatusChanged: 'SUPPLIER.STATUS_CHANGED',
+  supplierContactCreated: 'SUPPLIER_CONTACT.CREATED',
+  supplierContactUpdated: 'SUPPLIER_CONTACT.UPDATED',
+  supplierContactStatusChanged: 'SUPPLIER_CONTACT.STATUS_CHANGED',
+  supplierContactPrimaryChanged: 'SUPPLIER_CONTACT.PRIMARY_CHANGED',
 });

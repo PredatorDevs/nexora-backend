@@ -44,6 +44,8 @@ import { createWarehousesRepository } from './modules/warehouses/warehouses.repo
 import { createWarehousesService } from './modules/warehouses/warehouses.service.js';
 import { createLocationsRepository } from './modules/locations/locations.repository.js';
 import { createLocationsService } from './modules/locations/locations.service.js';
+import { createSuppliersRepository } from './modules/suppliers/suppliers.repository.js';
+import { createSuppliersService } from './modules/suppliers/suppliers.service.js';
 import { createCompanyInvitationsRepository } from './modules/company-invitations/company-invitations.repository.js';
 import { createCompanyInvitationsService } from './modules/company-invitations/company-invitations.service.js';
 import { createMailer } from './core/mail/mailer.js';
@@ -144,6 +146,11 @@ const locationsService = createLocationsService({
   entityChangeService,
   runInTransaction,
 });
+const suppliersService = createSuppliersService({
+  repository: createSuppliersRepository(prisma),
+  entityChangeService,
+  runInTransaction,
+});
 const companyInvitationsService = createCompanyInvitationsService({
   repository: createCompanyInvitationsRepository(prisma),
   runInTransaction,
@@ -175,6 +182,7 @@ const app = createApp({
     warehouseCategories: warehouseCategoriesService,
     warehouses: warehousesService,
     locations: locationsService,
+    suppliers: suppliersService,
     companyInvitations: companyInvitationsService,
   },
   settings: {
