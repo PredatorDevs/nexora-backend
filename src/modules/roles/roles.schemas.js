@@ -10,12 +10,6 @@ export const rolesListQuery = createListQuerySchema([
   'isSystem',
 ]);
 export const createRoleBody = z.object({
-  code: z
-    .string()
-    .trim()
-    .toUpperCase()
-    .regex(/^[A-Z][A-Z0-9_]*$/)
-    .max(100),
   name: z.string().trim().min(1).max(120),
   description: z.string().trim().max(500).nullable().optional(),
 });

@@ -3,7 +3,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createCompaniesService } from '../../../../src/modules/companies/companies.service.js';
 
 const companyData = {
-  code: 'NEXORA',
   legalName: 'Nexora, S.A. de C.V.',
   commercialName: 'Nexora',
   nit: '0614-010101-101-1',
@@ -23,6 +22,8 @@ describe('companies service', () => {
   let repository;
   let entityChangeService;
   let provisionRoles;
+  let provisionWarehouseCategories;
+  let generateCode;
   let runInTransaction;
   let service;
 
@@ -51,6 +52,8 @@ describe('companies service', () => {
     };
     entityChangeService = { record: vi.fn() };
     provisionRoles = vi.fn();
+    provisionWarehouseCategories = vi.fn();
+    generateCode = vi.fn().mockResolvedValue('COM-000001');
     runInTransaction = vi.fn((operation) =>
       operation({ transaction: true }),
     );
@@ -59,6 +62,8 @@ describe('companies service', () => {
       entityChangeService,
       runInTransaction,
       provisionRoles,
+      provisionWarehouseCategories,
+      generateCode,
     });
   });
 
@@ -69,10 +74,15 @@ describe('companies service', () => {
     });
 
     expect(created.id).toBe(5);
-    expect(repository.create).toHaveBeenCalledWith(companyData, {
-      transaction: true,
-    });
+    expect(repository.create).toHaveBeenCalledWith(
+      { ...companyData, code: 'COM-000001' },
+      { transaction: true },
+    );
     expect(provisionRoles).toHaveBeenCalledWith({ transaction: true }, 5, 9);
+    expect(provisionWarehouseCategories).toHaveBeenCalledWith(
+      { transaction: true },
+      5,
+    );
     expect(entityChangeService.record).toHaveBeenCalledWith(
       expect.objectContaining({
         schemaName: 'companies',
@@ -121,9 +131,10 @@ describe('companies service', () => {
       countryId: 2,
       foreignLocality: 'Ciudad de Guatemala',
     });
-    expect(repository.create).toHaveBeenCalledWith(foreignCompany, {
-      transaction: true,
-    });
+    expect(repository.create).toHaveBeenCalledWith(
+      { ...foreignCompany, code: 'COM-000001' },
+      { transaction: true },
+    );
   });
 
   it('rejects inactive or unknown economic activities', async () => {

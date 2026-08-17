@@ -119,3 +119,17 @@ export function branchSnapshot(branch) {
     updatedAt: iso(branch.updatedAt),
   };
 }
+
+export function warehouseCategorySnapshot(value) {
+  if (!value) return null;
+  return {
+    id: value.id,
+    companyId: value.companyId,
+    code: value.code,
+    name: value.name,
+    description: value.description,
+    isActive: value.isActive,
+    createdAt: iso(value.createdAt),
+    updatedAt: iso(value.updatedAt),
+  };
+}

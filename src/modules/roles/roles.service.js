@@ -3,6 +3,10 @@ import { errorCodes } from '../../core/errors/error-codes.js';
 import { paginationMeta } from '../../core/validation/pagination.js';
 import { concurrencyConflict } from '../../core/errors/concurrency.js';
 import {
+  businessCodeEntities,
+  generateBusinessCode,
+} from '../../core/code-generation/business-code.js';
+import {
   entityChangeOperations,
   entitySchemas,
   entityTypes,
@@ -19,6 +23,7 @@ export function createRolesService({
   rbacService,
   entityChangeService,
   runInTransaction,
+  generateCode = generateBusinessCode,
 }) {
   const recordChange = (
     { operation, context, oldRole = null, newRole = null },
@@ -51,8 +56,12 @@ export function createRolesService({
     },
     create(data, context) {
       return runInTransaction(async (client) => {
+        const code = await generateCode(
+          client,
+          businessCodeEntities.platformRole,
+        );
         const created = await repository.create(
-          { ...data, isSystem: false },
+          { ...data, code, isSystem: false },
           client,
         );
         await recordChange(

@@ -6,7 +6,6 @@ import {
 } from '../../../../src/modules/companies/companies.schemas.js';
 
 const validCompany = {
-  code: 'NEXORA_SV',
   legalName: 'Nexora Sociedad Anónima de Capital Variable',
   commercialName: 'Nexora',
   nit: '0614-010101-101-1',
@@ -23,17 +22,17 @@ describe('company schemas', () => {
   it('normalizes a valid company and applies regional defaults', () => {
     const result = createCompanyBody.parse({
       ...validCompany,
-      code: ' nexora_sv ',
+      code: 'CLIENT_VALUE_MUST_BE_IGNORED',
       email: ' INFO@NEXORA.COM ',
     });
 
     expect(result).toMatchObject({
-      code: 'NEXORA_SV',
       email: 'info@nexora.com',
       defaultCurrencyCode: 'USD',
       timezone: 'America/El_Salvador',
       locale: 'es-SV',
     });
+    expect(result).not.toHaveProperty('code');
   });
 
   it('requires exactly one primary type and unique activities', () => {

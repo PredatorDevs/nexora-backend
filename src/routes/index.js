@@ -11,6 +11,7 @@ import { createEconomicActivitiesRouter } from '../modules/economic-activities/e
 import { createCompaniesRouter } from '../modules/companies/companies.routes.js';
 import { createCompanyAccessRouter } from '../modules/company-access/company-access.routes.js';
 import { createBranchesRouter } from '../modules/branches/branches.routes.js';
+import { createWarehouseCategoriesRouter } from '../modules/warehouse-categories/warehouse-categories.routes.js';
 import {
   createCompanyInvitationsManagementRouter,
   createCompanyInvitationsPublicRouter,
@@ -87,6 +88,15 @@ export function registerRoutes(app) {
         '/api/v1/branches',
         createBranchesRouter(
           app.locals.services.branches,
+          app.locals.services.audit,
+        ),
+      );
+    }
+    if (app.locals.services.warehouseCategories) {
+      app.use(
+        '/api/v1/warehouse-categories',
+        createWarehouseCategoriesRouter(
+          app.locals.services.warehouseCategories,
           app.locals.services.audit,
         ),
       );

@@ -30,7 +30,7 @@ to Salvadoran subdivisions.
   foreign addresses require free-form administrative area and locality.
 - For Salvadoran data entry, selecting a district after the department derives
   its municipality automatically; the backend validates the resulting hierarchy.
-- Codes and names cannot repeat within a company, including inactive branches.
+- Codes are generated automatically and never reused. Codes and names cannot repeat within a company, including inactive branches.
 - Assigning a new headquarters atomically removes the flag from the previous
   headquarters. A company may temporarily have no headquarters, but never two.
 - Branches are not physically deleted. Status changes retain references and

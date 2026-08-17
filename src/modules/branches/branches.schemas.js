@@ -33,12 +33,6 @@ export const branchesListQuery = createListQuerySchema([
     .optional(),
 });
 export const createBranchBody = z.object({
-  code: z
-    .string()
-    .trim()
-    .toUpperCase()
-    .regex(/^[A-Z][A-Z0-9_-]*$/)
-    .max(50),
   ...fields,
 });
 export const updateBranchBody = z

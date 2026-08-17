@@ -37,6 +37,9 @@ import { createCompanyAccessRepository } from './modules/company-access/company-
 import { createCompanyAccessService } from './modules/company-access/company-access.service.js';
 import { createBranchesRepository } from './modules/branches/branches.repository.js';
 import { createBranchesService } from './modules/branches/branches.service.js';
+import { createWarehouseCategoriesRepository } from './modules/warehouse-categories/warehouse-categories.repository.js';
+import { createWarehouseCategoriesService } from './modules/warehouse-categories/warehouse-categories.service.js';
+import { provisionWarehouseCategories } from './modules/warehouse-categories/warehouse-category-templates.js';
 import { createCompanyInvitationsRepository } from './modules/company-invitations/company-invitations.repository.js';
 import { createCompanyInvitationsService } from './modules/company-invitations/company-invitations.service.js';
 import { createMailer } from './core/mail/mailer.js';
@@ -110,6 +113,7 @@ const companiesService = createCompaniesService({
   entityChangeService,
   runInTransaction,
   provisionRoles: provisionCompanyRoles,
+  provisionWarehouseCategories,
 });
 const companyAccessService = createCompanyAccessService({
   repository: createCompanyAccessRepository(prisma),
@@ -118,6 +122,11 @@ const companyAccessService = createCompanyAccessService({
 });
 const branchesService = createBranchesService({
   repository: createBranchesRepository(prisma),
+  entityChangeService,
+  runInTransaction,
+});
+const warehouseCategoriesService = createWarehouseCategoriesService({
+  repository: createWarehouseCategoriesRepository(prisma),
   entityChangeService,
   runInTransaction,
 });
@@ -149,6 +158,7 @@ const app = createApp({
     companies: companiesService,
     companyAccess: companyAccessService,
     branches: branchesService,
+    warehouseCategories: warehouseCategoriesService,
     companyInvitations: companyInvitationsService,
   },
   settings: {

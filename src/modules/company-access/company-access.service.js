@@ -3,6 +3,10 @@ import { concurrencyConflict } from '../../core/errors/concurrency.js';
 import { errorCodes } from '../../core/errors/error-codes.js';
 import { paginationMeta } from '../../core/validation/pagination.js';
 import {
+  businessCodeEntities,
+  generateBusinessCode,
+} from '../../core/code-generation/business-code.js';
+import {
   entityChangeOperations,
   entitySchemas,
   entityTypes,
@@ -34,6 +38,7 @@ export function createCompanyAccessService({
   repository,
   entityChangeService,
   runInTransaction,
+  generateCode = generateBusinessCode,
 }) {
   async function requireCompany(companyId, active = false, client) {
     const company = active
@@ -258,7 +263,14 @@ export function createCompanyAccessService({
     createRole(companyId, data, context) {
       return runInTransaction(async (client) => {
         await requireCompany(companyId, true, client);
-        const created = await repository.createRole(companyId, data, client);
+        const code = await generateCode(client, businessCodeEntities.companyRole, {
+          companyId,
+        });
+        const created = await repository.createRole(
+          companyId,
+          { ...data, code },
+          client,
+        );
         await record(
           {
             companyId,

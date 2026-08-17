@@ -373,6 +373,7 @@ model Company {
   entityChanges             EntityChangeLog[]
   branches                  Branch[]
   invitations               CompanyInvitation[]
+  warehouseCategories       WarehouseCategory[]
 
   @@index([status, legalName], map: "companies_status_legal_name_idx")
   @@index([countryId], map: "companies_country_id_idx")
@@ -380,6 +381,16 @@ model Company {
   @@index([municipalityId], map: "companies_municipality_id_idx")
   @@index([districtId], map: "companies_district_id_idx")
   @@map("companies")
+}
+
+model CodeSequence {
+  id        Int      @id @default(autoincrement()) @db.UnsignedInt
+  namespace String   @unique(map: "code_sequences_namespace_key") @db.VarChar(191)
+  nextValue BigInt   @default(1) @map("next_value") @db.UnsignedBigInt
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.DateTime(3)
+
+  @@map("code_sequences")
 }
 
 model Branch {
@@ -416,6 +427,24 @@ model Branch {
   @@index([municipalityId], map: "branches_municipality_id_idx")
   @@index([districtId], map: "branches_district_id_idx")
   @@map("branches")
+}
+
+model WarehouseCategory {
+  id          Int      @id @default(autoincrement()) @db.UnsignedInt
+  companyId   Int      @map("company_id") @db.UnsignedInt
+  code        String   @db.VarChar(50)
+  name        String   @db.VarChar(120)
+  description String?  @db.VarChar(500)
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.DateTime(3)
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([companyId, code], map: "warehouse_categories_company_code_key")
+  @@unique([companyId, name], map: "warehouse_categories_company_name_key")
+  @@unique([id, companyId], map: "warehouse_categories_id_company_key")
+  @@index([companyId, isActive, name], map: "warehouse_categories_company_active_name_idx")
+  @@map("warehouse_categories")
 }
 
 model CompanyMembership {

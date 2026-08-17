@@ -3,6 +3,10 @@ import { errorCodes } from '../../core/errors/error-codes.js';
 import { concurrencyConflict } from '../../core/errors/concurrency.js';
 import { paginationMeta } from '../../core/validation/pagination.js';
 import {
+  businessCodeEntities,
+  generateBusinessCode,
+} from '../../core/code-generation/business-code.js';
+import {
   entityChangeOperations,
   entitySchemas,
   entityTypes,
@@ -25,6 +29,7 @@ export function createBranchesService({
   repository,
   entityChangeService,
   runInTransaction,
+  generateCode = generateBusinessCode,
 }) {
   async function validate(companyId, address, requireActiveCompany, client) {
     const [company, value] = await Promise.all([
@@ -106,9 +111,16 @@ export function createBranchesService({
       return runInTransaction(
         async (client) => {
           await validate(companyId, data, true, client);
+          const code = await generateCode(client, businessCodeEntities.branch, {
+            companyId,
+          });
           if (data.isHeadquarters)
             await repository.clearHeadquarters(companyId, null, client);
-          const created = await repository.create(companyId, data, client);
+          const created = await repository.create(
+            companyId,
+            { ...data, code },
+            client,
+          );
           await record(companyId, null, created, context, null, client);
           return created;
         },

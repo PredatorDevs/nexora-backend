@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createBranchesService } from '../../../../src/modules/branches/branches.service.js';
 
 const data = {
-  code: 'SS01',
   name: 'San Salvador',
   isHeadquarters: true,
   countryId: 1,
@@ -43,6 +42,7 @@ describe('branches service', () => {
       repository,
       entityChangeService: changes,
       runInTransaction: (operation) => operation({ tx: true }),
+      generateCode: vi.fn().mockResolvedValue('BR-000001'),
     });
   });
   it('creates a headquarters atomically inside its company', async () => {
@@ -51,7 +51,11 @@ describe('branches service', () => {
     expect(repository.clearHeadquarters).toHaveBeenCalledWith(8, null, {
       tx: true,
     });
-    expect(repository.create).toHaveBeenCalledWith(8, data, { tx: true });
+    expect(repository.create).toHaveBeenCalledWith(
+      8,
+      { ...data, code: 'BR-000001' },
+      { tx: true },
+    );
     expect(changes.record).toHaveBeenCalledWith(
       expect.objectContaining({
         companyId: 8,

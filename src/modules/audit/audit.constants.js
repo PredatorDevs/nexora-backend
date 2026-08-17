@@ -34,4 +34,7 @@ export const auditActions = Object.freeze({
   branchCreated: 'BRANCH.CREATED',
   branchUpdated: 'BRANCH.UPDATED',
   branchStatusChanged: 'BRANCH.STATUS_CHANGED',
+  warehouseCategoryCreated: 'WAREHOUSE_CATEGORY.CREATED',
+  warehouseCategoryUpdated: 'WAREHOUSE_CATEGORY.UPDATED',
+  warehouseCategoryStatusChanged: 'WAREHOUSE_CATEGORY.STATUS_CHANGED',
 });

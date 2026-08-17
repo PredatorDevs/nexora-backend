@@ -83,12 +83,6 @@ export const companiesListQuery = createListQuerySchema([
 });
 
 export const createCompanyBody = z.object({
-  code: z
-    .string()
-    .trim()
-    .toUpperCase()
-    .regex(/^[A-Z][A-Z0-9_-]*$/)
-    .max(50),
   ...companyFields,
 });
 

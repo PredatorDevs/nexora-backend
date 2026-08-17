@@ -3,6 +3,10 @@ import { concurrencyConflict } from '../../core/errors/concurrency.js';
 import { errorCodes } from '../../core/errors/error-codes.js';
 import { paginationMeta } from '../../core/validation/pagination.js';
 import {
+  businessCodeEntities,
+  generateBusinessCode,
+} from '../../core/code-generation/business-code.js';
+import {
   entityChangeOperations,
   entitySchemas,
   entityTypes,
@@ -36,6 +40,8 @@ export function createCompaniesService({
   entityChangeService,
   runInTransaction,
   provisionRoles = async () => {},
+  provisionWarehouseCategories = async () => {},
+  generateCode = generateBusinessCode,
 }) {
   async function validateReferences(data, client) {
     const address = await repository.findAddressContext(data, client);
@@ -139,14 +145,17 @@ export function createCompaniesService({
       return runInTransaction(
         async (client) => {
           await validateReferences(data, client);
+          const code = await generateCode(client, businessCodeEntities.company);
           const created = await repository.create(
             {
               ...data,
+              code,
               economicActivities: activityRows(data.economicActivities),
             },
             client,
           );
           await provisionRoles(client, created.id, context.actorUserId);
+          await provisionWarehouseCategories(client, created.id);
           await recordChange(
             {
               operation: entityChangeOperations.create,
