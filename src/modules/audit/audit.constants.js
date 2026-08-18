@@ -50,4 +50,10 @@ export const auditActions = Object.freeze({
   supplierContactUpdated: 'SUPPLIER_CONTACT.UPDATED',
   supplierContactStatusChanged: 'SUPPLIER_CONTACT.STATUS_CHANGED',
   supplierContactPrimaryChanged: 'SUPPLIER_CONTACT.PRIMARY_CHANGED',
+  brandCreated: 'BRAND.CREATED',
+  brandUpdated: 'BRAND.UPDATED',
+  brandStatusChanged: 'BRAND.STATUS_CHANGED',
+  productCategoryCreated: 'PRODUCT_CATEGORY.CREATED',
+  productCategoryUpdated: 'PRODUCT_CATEGORY.UPDATED',
+  productCategoryStatusChanged: 'PRODUCT_CATEGORY.STATUS_CHANGED',
 });

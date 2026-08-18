@@ -404,6 +404,8 @@ model Company {
   locations                 Location[]
   suppliers                 Supplier[]
   supplierContacts          SupplierContact[]
+  brands                    Brand[]
+  productCategories         ProductCategory[]
 
   @@index([status, legalName], map: "companies_status_legal_name_idx")
   @@index([countryId], map: "companies_country_id_idx")
@@ -411,6 +413,49 @@ model Company {
   @@index([municipalityId], map: "companies_municipality_id_idx")
   @@index([districtId], map: "companies_district_id_idx")
   @@map("companies")
+}
+
+model Brand {
+  id             Int      @id @default(autoincrement()) @db.UnsignedInt
+  companyId      Int      @map("company_id") @db.UnsignedInt
+  code           String   @db.VarChar(50)
+  name           String   @db.VarChar(120)
+  description    String?  @db.VarChar(500)
+  website        String?  @db.VarChar(500)
+  logoStorageKey String?  @map("logo_storage_key") @db.VarChar(500)
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.DateTime(3)
+  company        Company  @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([companyId, code], map: "brands_company_code_key")
+  @@unique([companyId, name], map: "brands_company_name_key")
+  @@unique([id, companyId], map: "brands_id_company_key")
+  @@index([companyId, isActive, name], map: "brands_company_active_name_idx")
+  @@map("brands")
+}
+
+model ProductCategory {
+  id               Int               @id @default(autoincrement()) @db.UnsignedInt
+  companyId        Int               @map("company_id") @db.UnsignedInt
+  parentCategoryId Int?              @map("parent_category_id") @db.UnsignedInt
+  parentScopeId    Int               @default(0) @map("parent_scope_id") @db.UnsignedInt
+  code             String            @db.VarChar(50)
+  name             String            @db.VarChar(120)
+  nameKey          String            @map("name_key") @db.VarChar(120)
+  description      String?           @db.VarChar(500)
+  isActive         Boolean           @default(true) @map("is_active")
+  createdAt        DateTime          @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt        DateTime          @updatedAt @map("updated_at") @db.DateTime(3)
+  company          Company           @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  parent           ProductCategory?  @relation("ProductCategoryHierarchy", fields: [parentCategoryId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  children         ProductCategory[] @relation("ProductCategoryHierarchy")
+
+  @@unique([companyId, code], map: "product_categories_company_code_key")
+  @@unique([companyId, parentScopeId, nameKey], map: "product_categories_sibling_name_key")
+  @@unique([id, companyId], map: "product_categories_id_company_key")
+  @@index([companyId, parentCategoryId, isActive, name], map: "product_categories_parent_active_name_idx")
+  @@map("product_categories")
 }
 
 model CodeSequence {

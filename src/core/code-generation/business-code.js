@@ -7,6 +7,8 @@ export const businessCodeEntities = Object.freeze({
   companyRole: 'company_role',
   location: 'location',
   supplier: 'supplier',
+  brand: 'brand',
+  productCategory: 'product_category',
 });
 
 const definitions = Object.freeze({
@@ -18,6 +20,8 @@ const definitions = Object.freeze({
   [businessCodeEntities.companyRole]: { prefix: 'CRL', scope: 'company' },
   [businessCodeEntities.location]: { prefix: 'LOC', scope: 'warehouse' },
   [businessCodeEntities.supplier]: { prefix: 'SUP', scope: 'company' },
+  [businessCodeEntities.brand]: { prefix: 'MAR', scope: 'company' },
+  [businessCodeEntities.productCategory]: { prefix: 'CAT', scope: 'company' },
 });
 
 export async function generateBusinessCode(
@@ -26,7 +30,8 @@ export async function generateBusinessCode(
   { companyId, warehouseId } = {},
 ) {
   const definition = definitions[entityType];
-  if (!definition) throw new TypeError(`Unknown business code entity: ${entityType}`);
+  if (!definition)
+    throw new TypeError(`Unknown business code entity: ${entityType}`);
   if (definition.scope === 'company' && !companyId) {
     throw new TypeError(`companyId is required for ${entityType} codes.`);
   }

@@ -8,7 +8,10 @@ describe('business code generator', () => {
   it('generates a platform-scoped company code', async () => {
     const upsert = vi.fn().mockResolvedValue({ nextValue: 2n });
     await expect(
-      generateBusinessCode({ codeSequence: { upsert } }, businessCodeEntities.company),
+      generateBusinessCode(
+        { codeSequence: { upsert } },
+        businessCodeEntities.company,
+      ),
     ).resolves.toBe('COM-000001');
     expect(upsert).toHaveBeenCalledWith(
       expect.objectContaining({ where: { namespace: 'company' } }),
@@ -56,4 +59,21 @@ describe('business code generator', () => {
       expect.objectContaining({ where: { namespace: 'supplier:12' } }),
     );
   });
+  it.each([
+    [businessCodeEntities.brand, 'MAR-000003', 'brand:12'],
+    [businessCodeEntities.productCategory, 'CAT-000003', 'product_category:12'],
+  ])(
+    'generates product dictionary codes per company',
+    async (entity, expected, namespace) => {
+      const upsert = vi.fn().mockResolvedValue({ nextValue: 4n });
+      await expect(
+        generateBusinessCode({ codeSequence: { upsert } }, entity, {
+          companyId: 12,
+        }),
+      ).resolves.toBe(expected);
+      expect(upsert).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { namespace } }),
+      );
+    },
+  );
 });

@@ -16,6 +16,8 @@ import { createWarehouseCategoriesRouter } from '../modules/warehouse-categories
 import { createWarehousesRouter } from '../modules/warehouses/warehouses.routes.js';
 import { createLocationsRouter } from '../modules/locations/locations.routes.js';
 import { createSuppliersRouter } from '../modules/suppliers/suppliers.routes.js';
+import { createBrandsRouter } from '../modules/brands/brands.routes.js';
+import { createProductCategoriesRouter } from '../modules/product-categories/product-categories.routes.js';
 import {
   createCompanyInvitationsManagementRouter,
   createCompanyInvitationsPublicRouter,
@@ -138,6 +140,22 @@ export function registerRoutes(app) {
         ),
       );
     }
+    if (app.locals.services.brands)
+      app.use(
+        '/api/v1/brands',
+        createBrandsRouter(
+          app.locals.services.brands,
+          app.locals.services.audit,
+        ),
+      );
+    if (app.locals.services.productCategories)
+      app.use(
+        '/api/v1/product-categories',
+        createProductCategoriesRouter(
+          app.locals.services.productCategories,
+          app.locals.services.audit,
+        ),
+      );
     if (app.locals.services.companyInvitations) {
       app.use(
         '/api/v1/companies',

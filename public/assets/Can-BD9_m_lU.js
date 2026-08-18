@@ -1,1 +1,0 @@
-import{c as e,i as t}from"./index-CrSHBDVp.js";function n({permission:n,anyOf:r,allOf:i,fallback:a=null,children:o}){let{permissions:s}=t();return e(s,{permission:n,anyOf:r,allOf:i})?o:a}export{n as t};

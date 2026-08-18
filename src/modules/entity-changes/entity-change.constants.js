@@ -28,4 +28,6 @@ export const entityTypes = Object.freeze({
   location: 'location',
   supplier: 'supplier',
   supplierContact: 'supplier_contact',
+  brand: 'brand',
+  productCategory: 'product_category',
 });
