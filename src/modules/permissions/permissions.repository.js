@@ -1,14 +1,17 @@
 export function createPermissionsRepository(prisma) {
   return {
     async list({ page, pageSize, search, sortBy, sortOrder }) {
-      const where = search
-        ? {
-            OR: [
-              { code: { contains: search } },
-              { resource: { contains: search } },
-            ],
-          }
-        : {};
+      const where = {
+        scope: 'PLATFORM',
+        ...(search
+          ? {
+              OR: [
+                { code: { contains: search } },
+                { resource: { contains: search } },
+              ],
+            }
+          : {}),
+      };
       const [items, total] = await Promise.all([
         prisma.permission.findMany({
           where,

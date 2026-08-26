@@ -31,7 +31,7 @@ export function createRbacRepository(prisma) {
     },
     findPermissionsByCodes(codes) {
       return prisma.permission.findMany({
-        where: { code: { in: codes } },
+        where: { code: { in: codes }, scope: 'PLATFORM' },
         select: { id: true, code: true },
       });
     },
