@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   businessCodeEntities,
   generateBusinessCode,
+  generateBusinessCodes,
 } from '../../../src/core/code-generation/business-code.js';
 
 describe('business code generator', () => {
@@ -43,6 +44,29 @@ describe('business code generator', () => {
     ).resolves.toBe('LOC-000007');
     expect(upsert).toHaveBeenCalledWith(
       expect.objectContaining({ where: { namespace: 'location:15' } }),
+    );
+  });
+
+  it('reserves a contiguous block of warehouse-scoped location codes', async () => {
+    const upsert = vi.fn().mockResolvedValue({ nextValue: 14n });
+    await expect(
+      generateBusinessCodes(
+        { codeSequence: { upsert } },
+        businessCodeEntities.location,
+        4,
+        { warehouseId: 15 },
+      ),
+    ).resolves.toEqual([
+      'LOC-000010',
+      'LOC-000011',
+      'LOC-000012',
+      'LOC-000013',
+    ]);
+    expect(upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { namespace: 'location:15' },
+        update: { nextValue: { increment: 4n } },
+      }),
     );
   });
 

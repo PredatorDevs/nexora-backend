@@ -107,6 +107,36 @@ describe('entity change service', () => {
     expect(repository.create).not.toHaveBeenCalled();
   });
 
+  it('persists bulk entity history with one repository operation', async () => {
+    const repository = {
+      createMany: vi.fn().mockResolvedValue({ count: 2 }),
+    };
+    const service = createEntityChangeService(repository);
+    const base = {
+      schemaName: 'companies',
+      entityType: 'location',
+      operation: 'CREATE',
+      context: { actorUserId: 7, requestId: 'bulk-request', companyId: 6 },
+      oldValues: null,
+    };
+
+    await service.recordMany(
+      [
+        { ...base, entityId: 10, newValues: { code: 'LOC-000010' } },
+        { ...base, entityId: 11, newValues: { code: 'LOC-000011' } },
+      ],
+      'transaction',
+    );
+
+    expect(repository.createMany).toHaveBeenCalledWith(
+      [
+        expect.objectContaining({ entityId: '10', requestId: 'bulk-request' }),
+        expect.objectContaining({ entityId: '11', requestId: 'bulk-request' }),
+      ],
+      'transaction',
+    );
+  });
+
   it('uses a bounded default range and omits no pagination metadata', async () => {
     const repository = {
       list: vi.fn().mockResolvedValue({ items: [{ id: 2n }], total: 1 }),

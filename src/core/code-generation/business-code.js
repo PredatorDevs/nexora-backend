@@ -54,3 +54,36 @@ export async function generateBusinessCode(
   const reservedValue = BigInt(sequence.nextValue) - 1n;
   return `${definition.prefix}-${reservedValue.toString().padStart(6, '0')}`;
 }
+
+export async function generateBusinessCodes(
+  client,
+  entityType,
+  count,
+  scope = {},
+) {
+  if (!Number.isInteger(count) || count < 1)
+    throw new TypeError('count must be a positive integer.');
+  const definition = definitions[entityType];
+  if (!definition)
+    throw new TypeError(`Unknown business code entity: ${entityType}`);
+  const { companyId, warehouseId } = scope;
+  if (definition.scope === 'company' && !companyId)
+    throw new TypeError(`companyId is required for ${entityType} codes.`);
+  if (definition.scope === 'warehouse' && !warehouseId)
+    throw new TypeError(`warehouseId is required for ${entityType} codes.`);
+  const scopeId = definition.scope === 'company' ? companyId : warehouseId;
+  const namespace =
+    definition.scope === 'platform' ? entityType : `${entityType}:${scopeId}`;
+  const sequence = await client.codeSequence.upsert({
+    where: { namespace },
+    create: { namespace, nextValue: BigInt(count + 1) },
+    update: { nextValue: { increment: BigInt(count) } },
+    select: { nextValue: true },
+  });
+  const first = BigInt(sequence.nextValue) - BigInt(count);
+  return Array.from(
+    { length: count },
+    (_, index) =>
+      `${definition.prefix}-${(first + BigInt(index)).toString().padStart(6, '0')}`,
+  );
+}

@@ -46,6 +46,39 @@ function compactSnapshots(operation, oldValues, newValues) {
 }
 
 export function createEntityChangeService(repository) {
+  const prepare = ({
+    schemaName,
+    entityType,
+    entityId,
+    operation,
+    context,
+    oldValues = null,
+    newValues = null,
+    source = entityChangeSources.application,
+    metadata,
+  }) => {
+    const snapshots = compactSnapshots(operation, oldValues, newValues);
+    if (
+      operation === entityChangeOperations.update &&
+      snapshots.changedFields.length === 0
+    )
+      return null;
+    return {
+      schemaName,
+      entityType,
+      entityId: String(entityId).slice(0, 191),
+      operation,
+      source,
+      actorUserId: context.actorUserId ?? null,
+      companyId: context.companyId ?? null,
+      actorMembershipId: context.membershipId ?? null,
+      requestId: context.requestId,
+      oldValues: snapshots.oldValues,
+      newValues: snapshots.newValues,
+      changedFields: snapshots.changedFields,
+      metadata,
+    };
+  };
   return Object.freeze({
     record(
       {
@@ -61,31 +94,26 @@ export function createEntityChangeService(repository) {
       },
       client,
     ) {
-      const snapshots = compactSnapshots(operation, oldValues, newValues);
-      if (
-        operation === entityChangeOperations.update &&
-        snapshots.changedFields.length === 0
-      ) {
-        return Promise.resolve(null);
-      }
-      return repository.create(
-        {
-          schemaName,
-          entityType,
-          entityId: String(entityId).slice(0, 191),
-          operation,
-          source,
-          actorUserId: context.actorUserId ?? null,
-          companyId: context.companyId ?? null,
-          actorMembershipId: context.membershipId ?? null,
-          requestId: context.requestId,
-          oldValues: snapshots.oldValues,
-          newValues: snapshots.newValues,
-          changedFields: snapshots.changedFields,
-          metadata,
-        },
-        client,
-      );
+      const prepared = prepare({
+        schemaName,
+        entityType,
+        entityId,
+        operation,
+        context,
+        oldValues,
+        newValues,
+        source,
+        metadata,
+      });
+      return prepared
+        ? repository.create(prepared, client)
+        : Promise.resolve(null);
+    },
+    recordMany(events, client) {
+      const prepared = events.map(prepare).filter(Boolean);
+      return prepared.length
+        ? repository.createMany(prepared, client)
+        : Promise.resolve({ count: 0 });
     },
     async list(query, now = new Date()) {
       const to = query.to ?? now;

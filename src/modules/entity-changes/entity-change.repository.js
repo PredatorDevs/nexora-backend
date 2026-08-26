@@ -40,6 +40,9 @@ export function createEntityChangeRepository(prisma) {
         select: entityChangeSelect,
       });
     },
+    createMany(data, client = prisma) {
+      return client.entityChangeLog.createMany({ data });
+    },
     async list({
       page,
       pageSize,

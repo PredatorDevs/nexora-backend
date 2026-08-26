@@ -21,3 +21,17 @@ Pasillo, estante, nivel y posición son cadenas obligatorias, se normalizan a ma
 - Todas las mutaciones generan auditoría e historial de cambios.
 
 La API `/api/v1/locations` utiliza `locations.read`, `locations.create`, `locations.update` y `locations.change_status`.
+
+## Creación múltiple
+
+`POST /api/v1/locations/bulk` conserva el mismo permiso `locations.create` y crea una cuadrícula completa dentro de un estante. Recibe el almacén, pasillo, estante, `levelCount` y `positionsPerLevel`; capacidad, unidad y observaciones son opcionales y se comparten entre todas las ubicaciones.
+
+Los niveles y posiciones se generan como números consecutivos iniciando en `1`. Por ejemplo, cuatro niveles con seis posiciones crean 24 coordenadas desde `1/1` hasta `4/6`. La operación:
+
+- admite como máximo 200 ubicaciones;
+- valida anticipadamente que ninguna coordenada exista;
+- reserva en bloque códigos consecutivos de la secuencia del almacén;
+- se ejecuta con aislamiento serializable y crea todas las ubicaciones o ninguna;
+- registra un evento `LOCATION.BULK_CREATED` y el historial de cada ubicación generada.
+
+La creación y edición individual permanecen disponibles sin cambios.
