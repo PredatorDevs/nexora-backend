@@ -19,6 +19,7 @@ const select = {
       code: true,
       name: true,
       branchId: true,
+      locationSeparator: true,
       isActive: true,
       branch: { select: { id: true, code: true, name: true } },
     },

@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { createListQuerySchema } from '../../core/validation/pagination.js';
 
 const nullableDescription = z.string().trim().min(1).max(500).nullable();
+const locationSeparator = z.enum(['/', '-', '.', '|', '·']);
 export const warehouseIdParams = z.object({ id: z.coerce.number().int().positive() });
 export const warehousesListQuery = createListQuerySchema([
   'createdAt', 'code', 'name', 'isActive',
@@ -15,12 +16,14 @@ export const createWarehouseBody = z.object({
   warehouseCategoryId: z.number().int().positive(),
   name: z.string().trim().min(1).max(191),
   description: nullableDescription.optional(),
+  locationSeparator: locationSeparator.optional(),
 });
 export const updateWarehouseBody = z.object({
   branchId: z.number().int().positive().optional(),
   warehouseCategoryId: z.number().int().positive().optional(),
   name: z.string().trim().min(1).max(191).optional(),
   description: nullableDescription.optional(),
+  locationSeparator: locationSeparator.optional(),
   expectedUpdatedAt: z.string().datetime(),
 }).refine(
   (value) => Object.keys(value).some((key) => key !== 'expectedUpdatedAt'),

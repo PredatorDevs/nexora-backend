@@ -144,6 +144,7 @@ export function warehouseSnapshot(value) {
     code: value.code,
     name: value.name,
     description: value.description,
+    locationSeparator: value.locationSeparator,
     isActive: value.isActive,
     createdAt: iso(value.createdAt),
     updatedAt: iso(value.updatedAt),

@@ -18,4 +18,23 @@ describe('warehouse schemas', () => {
       isActive: false,
     });
   });
+
+  it('accepts supported location separators', () => {
+    const parsed = createWarehouseBody.parse({
+      branchId: 2,
+      warehouseCategoryId: 3,
+      name: 'Principal',
+      locationSeparator: '-',
+    });
+    expect(parsed.locationSeparator).toBe('-');
+  });
+
+  it('rejects unsupported location separators', () => {
+    expect(() => createWarehouseBody.parse({
+      branchId: 2,
+      warehouseCategoryId: 3,
+      name: 'Principal',
+      locationSeparator: ':',
+    })).toThrow();
+  });
 });

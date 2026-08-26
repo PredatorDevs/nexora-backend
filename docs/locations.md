@@ -8,6 +8,8 @@ El backend genera un código estable `LOC-000001` mediante una secuencia indepen
 
 Pasillo, estante, nivel y posición son cadenas obligatorias, se normalizan a mayúsculas y su combinación es única dentro del almacén. La interfaz presenta estas coordenadas como referencia física legible.
 
+El símbolo utilizado para presentar la referencia física se configura en el almacén mediante `locationSeparator`. No forma parte de la identidad de la ubicación: cambiarlo solo altera su visualización y nunca sus coordenadas almacenadas.
+
 ## Capacidad
 
 `capacity` utiliza `DECIMAL(18,4)` y `capacityUnit` admite `UNITS`, `KG`, `M3` y `PALLETS`. Ambos son opcionales, pero deben informarse juntos y la capacidad debe ser mayor que cero. Inicialmente son datos operativos; no bloquean movimientos hasta que exista conversión formal de unidades de producto.

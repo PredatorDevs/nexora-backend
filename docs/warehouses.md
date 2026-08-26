@@ -9,10 +9,13 @@
 - `code` se genera automáticamente con formato `WH-000001`, es único dentro de la empresa e inmutable.
 - `name` es obligatorio y único dentro de la sucursal, incluso para registros inactivos.
 - `description` es opcional.
+- `locationSeparator` configura la representación de las coordenadas de sus ubicaciones. Admite `/`, `-`, `.`, `|` y `·`; su valor predeterminado es `/` para conservar la presentación de almacenes existentes.
 - `isActive` implementa desactivación lógica; no existe eliminación física.
 - La empresa, sucursal y categoría deben estar activas al crear un almacén o al asignar nuevas referencias.
 
 Las claves foráneas compuestas `(branch_id, company_id)` y `(warehouse_category_id, company_id)` hacen imposible asociar datos pertenecientes a tenants distintos.
+
+Cambiar el separador no modifica las coordenadas ni los códigos de las ubicaciones. Es una preferencia visual del almacén y se aplica tanto al listado como a las vistas previas de creación.
 
 ## API y permisos
 

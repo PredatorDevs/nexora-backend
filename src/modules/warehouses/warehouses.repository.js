@@ -1,6 +1,6 @@
 const select = {
   id: true, companyId: true, branchId: true, warehouseCategoryId: true,
-  code: true, name: true, description: true, isActive: true,
+  code: true, name: true, description: true, locationSeparator: true, isActive: true,
   createdAt: true, updatedAt: true,
   branch: { select: { id: true, code: true, name: true, status: true } },
   warehouseCategory: { select: { id: true, code: true, name: true, isActive: true } },
