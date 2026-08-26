@@ -287,3 +287,19 @@ export function productSnapshot(value) {
     updatedAt: iso(value.updatedAt),
   };
 }
+
+export function productImageSnapshot(value) {
+  if (!value) return null;
+  return {
+    id: value.id,
+    companyId: value.companyId,
+    productId: value.productId,
+    storageKey: value.storageKey,
+    altText: value.altText,
+    caption: value.caption,
+    sortOrder: value.sortOrder,
+    isPrimary: value.isPrimary,
+    createdAt: iso(value.createdAt),
+    updatedAt: iso(value.updatedAt),
+  };
+}

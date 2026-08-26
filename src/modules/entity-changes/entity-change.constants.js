@@ -32,4 +32,5 @@ export const entityTypes = Object.freeze({
   productCategory: 'product_category',
   productUnit: 'product_unit',
   product: 'product',
+  productImage: 'product_image',
 });

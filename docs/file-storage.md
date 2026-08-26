@@ -39,7 +39,7 @@ only the object operations currently used:
   "Statement": [
     {
       "Effect": "Allow",
-      "Action": ["s3:PutObject", "s3:GetObject"],
+      "Action": ["s3:PutObject", "s3:GetObject", "s3:DeleteObject"],
       "Resource": "arn:aws:s3:::nexora-assets/companies/*"
     }
   ]
@@ -47,7 +47,8 @@ only the object operations currently used:
 ```
 
 Keep S3 Block Public Access enabled. No `s3:PutObjectAcl`, bucket listing, or
-bucket administration permission is required.
+bucket administration permission is required. `s3:GetObject` also authorizes
+the `HeadObject` verification performed before a product image is registered.
 
 ## Bucket CORS
 

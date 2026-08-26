@@ -47,6 +47,19 @@ const select = {
   brand: { select: { id: true, code: true, name: true, isActive: true } },
   purchaseUnit: { select: unitSelect },
   saleUnit: { select: unitSelect },
+  images: {
+    where: { isPrimary: true },
+    select: {
+      id: true,
+      storageKey: true,
+      altText: true,
+      caption: true,
+      sortOrder: true,
+      isPrimary: true,
+      updatedAt: true,
+    },
+    take: 1,
+  },
 };
 
 export function createProductsRepository(prisma) {

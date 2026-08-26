@@ -1,5 +1,10 @@
 import { randomUUID } from 'node:crypto';
-import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import {
+  DeleteObjectCommand,
+  GetObjectCommand,
+  HeadObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
 import { createPresignedPost } from '@aws-sdk/s3-presigned-post';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { AppError } from '../errors/app-error.js';
@@ -44,6 +49,12 @@ export function createFileStorage(
         throw unavailable();
       },
       createReadUrl() {
+        throw unavailable();
+      },
+      verifyImageUpload() {
+        throw unavailable();
+      },
+      deleteObject() {
         throw unavailable();
       },
     };
@@ -119,6 +130,57 @@ export function createFileStorage(
         url,
         expiresAt: new Date(clock() + expiresIn * 1000).toISOString(),
       };
+    },
+    async verifyImageUpload({ companyId, storageKey }) {
+      const prefix = `companies/${companyId}/products/`;
+      if (!storageKey.startsWith(prefix))
+        throw new AppError({
+          code: errorCodes.forbidden,
+          message: 'The product image does not belong to the active company.',
+          statusCode: 403,
+        });
+      let metadata;
+      try {
+        metadata = await client.send(
+          new HeadObjectCommand({ Bucket: settings.bucket, Key: storageKey }),
+        );
+      } catch {
+        throw new AppError({
+          code: errorCodes.validation,
+          message: 'The uploaded product image could not be verified.',
+          statusCode: 400,
+        });
+      }
+      if (!imageExtensions[metadata.ContentType])
+        throw new AppError({
+          code: errorCodes.validation,
+          message: 'The uploaded object is not a supported image.',
+          statusCode: 400,
+        });
+      if (
+        !metadata.ContentLength ||
+        metadata.ContentLength > settings.maxImageSizeBytes
+      )
+        throw new AppError({
+          code: errorCodes.validation,
+          message: 'The uploaded image has an invalid size.',
+          statusCode: 400,
+        });
+      return {
+        contentType: metadata.ContentType,
+        sizeBytes: metadata.ContentLength,
+      };
+    },
+    async deleteObject({ companyId, storageKey }) {
+      if (!storageKey.startsWith(`companies/${companyId}/`))
+        throw new AppError({
+          code: errorCodes.forbidden,
+          message: 'The file does not belong to the active company.',
+          statusCode: 403,
+        });
+      await client.send(
+        new DeleteObjectCommand({ Bucket: settings.bucket, Key: storageKey }),
+      );
     },
   };
 }

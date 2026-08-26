@@ -62,4 +62,9 @@ export const auditActions = Object.freeze({
   productCreated: 'PRODUCT.CREATED',
   productUpdated: 'PRODUCT.UPDATED',
   productStatusChanged: 'PRODUCT.STATUS_CHANGED',
+  productImageCreated: 'PRODUCT_IMAGE.CREATED',
+  productImageUpdated: 'PRODUCT_IMAGE.UPDATED',
+  productImagePrimaryChanged: 'PRODUCT_IMAGE.PRIMARY_CHANGED',
+  productImagesReordered: 'PRODUCT_IMAGE.REORDERED',
+  productImageDeleted: 'PRODUCT_IMAGE.DELETED',
 });

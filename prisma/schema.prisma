@@ -414,6 +414,7 @@ model Company {
   productCategories         ProductCategory[]
   productUnits              ProductUnit[]
   products                  Product[]
+  productImages             ProductImage[]
 
   @@index([status, legalName], map: "companies_status_legal_name_idx")
   @@index([countryId], map: "companies_country_id_idx")
@@ -448,17 +449,17 @@ model ProductUnit {
 }
 
 model Brand {
-  id             Int      @id @default(autoincrement()) @db.UnsignedInt
-  companyId      Int      @map("company_id") @db.UnsignedInt
-  code           String   @db.VarChar(50)
-  name           String   @db.VarChar(120)
-  description    String?  @db.VarChar(500)
-  website        String?  @db.VarChar(500)
-  logoStorageKey String?  @map("logo_storage_key") @db.VarChar(500)
-  isActive       Boolean  @default(true) @map("is_active")
-  createdAt      DateTime @default(now()) @map("created_at") @db.DateTime(3)
-  updatedAt      DateTime @updatedAt @map("updated_at") @db.DateTime(3)
-  company        Company  @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  id             Int       @id @default(autoincrement()) @db.UnsignedInt
+  companyId      Int       @map("company_id") @db.UnsignedInt
+  code           String    @db.VarChar(50)
+  name           String    @db.VarChar(120)
+  description    String?   @db.VarChar(500)
+  website        String?   @db.VarChar(500)
+  logoStorageKey String?   @map("logo_storage_key") @db.VarChar(500)
+  isActive       Boolean   @default(true) @map("is_active")
+  createdAt      DateTime  @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.DateTime(3)
+  company        Company   @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   products       Product[]
 
   @@unique([companyId, code], map: "brands_company_code_key")
@@ -517,6 +518,7 @@ model Product {
   brand                Brand?          @relation(fields: [brandId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
   purchaseUnit         ProductUnit     @relation("ProductPurchaseUnit", fields: [purchaseUnitId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
   saleUnit             ProductUnit     @relation("ProductSaleUnit", fields: [saleUnitId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  images               ProductImage[]
 
   @@unique([uuid], map: "products_uuid_key")
   @@unique([companyId, internalCode], map: "products_company_internal_code_key")
@@ -526,6 +528,26 @@ model Product {
   @@index([companyId, productCategoryId], map: "products_company_category_idx")
   @@index([companyId, brandId], map: "products_company_brand_idx")
   @@map("products")
+}
+
+model ProductImage {
+  id         Int      @id @default(autoincrement()) @db.UnsignedInt
+  companyId  Int      @map("company_id") @db.UnsignedInt
+  productId  Int      @map("product_id") @db.UnsignedInt
+  storageKey String   @map("storage_key") @db.VarChar(500)
+  altText    String?  @map("alt_text") @db.VarChar(191)
+  caption    String?  @db.VarChar(500)
+  sortOrder  Int      @default(0) @map("sort_order") @db.UnsignedInt
+  isPrimary  Boolean  @default(false) @map("is_primary")
+  createdAt  DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.DateTime(3)
+  company    Company  @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  product    Product  @relation(fields: [productId, companyId], references: [id, companyId], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([storageKey], map: "product_images_storage_key_key")
+  @@unique([id, productId, companyId], map: "product_images_id_product_company_key")
+  @@index([companyId, productId, isPrimary, sortOrder], map: "product_images_product_order_idx")
+  @@map("product_images")
 }
 
 model CodeSequence {

@@ -28,3 +28,25 @@ Todas las claves de catálogos controlados por empresa usan relaciones compuesta
 Permisos: `products.read`, `products.create`, `products.update` y `products.change_status`. Owner y Administrator reciben gestión completa; Operator y Read Only reciben lectura.
 
 Los cambios generan eventos de auditoría `PRODUCT.CREATED`, `PRODUCT.UPDATED` y `PRODUCT.STATUS_CHANGED`, además del historial de valores de la entidad. Las actualizaciones requieren `expectedUpdatedAt` para prevenir sobrescrituras concurrentes.
+
+## Imágenes
+
+Cada producto admite hasta diez imágenes privadas. La tabla `product_images` conserva `storageKey`, texto alternativo, descripción, orden e indicador de imagen principal; no almacena URLs temporales. La primera imagen se convierte automáticamente en principal y, si se elimina, se promueve la siguiente.
+
+Flujo de carga:
+
+1. El cliente solicita un formulario firmado mediante `POST /api/v1/files/image-upload` con propósito `PRODUCT_IMAGE`.
+2. El navegador carga el archivo directamente a S3.
+3. Registra `storageKey` mediante `POST /api/v1/products/:productId/images`.
+4. El backend confirma con `HeadObject` que el objeto existe, es una imagen admitida y pertenece al prefijo `companies/{companyId}/products/`.
+5. Para visualizarla, el cliente obtiene una URL firmada mediante `POST /api/v1/files/read-url`.
+
+Rutas adicionales:
+
+- `GET/POST /api/v1/products/:productId/images`
+- `PUT /api/v1/products/:productId/images/order`
+- `PUT /api/v1/products/:productId/images/:imageId`
+- `PATCH /api/v1/products/:productId/images/:imageId/primary`
+- `DELETE /api/v1/products/:productId/images/:imageId`
+
+Los permisos son `product_images.read`, `product_images.create`, `product_images.update` y `product_images.delete`. La carga y lectura también requieren `files.create` y `files.read`.

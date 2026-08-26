@@ -55,6 +55,8 @@ import { createProductUnitsRepository } from './modules/product-units/product-un
 import { createProductUnitsService } from './modules/product-units/product-units.service.js';
 import { createProductsRepository } from './modules/products/products.repository.js';
 import { createProductsService } from './modules/products/products.service.js';
+import { createProductImagesRepository } from './modules/product-images/product-images.repository.js';
+import { createProductImagesService } from './modules/product-images/product-images.service.js';
 import { createCompanyInvitationsRepository } from './modules/company-invitations/company-invitations.repository.js';
 import { createCompanyInvitationsService } from './modules/company-invitations/company-invitations.service.js';
 import { createMailer } from './core/mail/mailer.js';
@@ -77,6 +79,7 @@ const environment = loadEnvironment(
 );
 const logger = createLogger({ level: environment.logging.level });
 const prisma = initializePrisma({ databaseUrl: environment.databaseUrl });
+const fileStorage = createFileStorage(environment.storage);
 const entityChangeService = createEntityChangeService(
   createEntityChangeRepository(prisma),
 );
@@ -181,6 +184,12 @@ const productsService = createProductsService({
   entityChangeService,
   runInTransaction,
 });
+const productImagesService = createProductImagesService({
+  repository: createProductImagesRepository(prisma),
+  storage: fileStorage,
+  entityChangeService,
+  runInTransaction,
+});
 const companyInvitationsService = createCompanyInvitationsService({
   repository: createCompanyInvitationsRepository(prisma),
   runInTransaction,
@@ -219,8 +228,9 @@ const app = createApp({
     productCategories: productCategoriesService,
     productUnits: productUnitsService,
     products: productsService,
+    productImages: productImagesService,
     companyInvitations: companyInvitationsService,
-    files: createFileStorage(environment.storage),
+    files: fileStorage,
   },
   settings: {
     auth: environment.auth,
