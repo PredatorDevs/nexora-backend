@@ -18,6 +18,8 @@ import { createLocationsRouter } from '../modules/locations/locations.routes.js'
 import { createSuppliersRouter } from '../modules/suppliers/suppliers.routes.js';
 import { createBrandsRouter } from '../modules/brands/brands.routes.js';
 import { createProductCategoriesRouter } from '../modules/product-categories/product-categories.routes.js';
+import { createProductUnitsRouter } from '../modules/product-units/product-units.routes.js';
+import { createFilesRouter } from '../modules/files/files.routes.js';
 import {
   createCompanyInvitationsManagementRouter,
   createCompanyInvitationsPublicRouter,
@@ -156,6 +158,16 @@ export function registerRoutes(app) {
           app.locals.services.audit,
         ),
       );
+    if (app.locals.services.productUnits)
+      app.use(
+        '/api/v1/product-units',
+        createProductUnitsRouter(
+          app.locals.services.productUnits,
+          app.locals.services.audit,
+        ),
+      );
+    if (app.locals.services.files)
+      app.use('/api/v1/files', createFilesRouter(app.locals.services.files));
     if (app.locals.services.companyInvitations) {
       app.use(
         '/api/v1/companies',

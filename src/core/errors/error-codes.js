@@ -12,4 +12,5 @@ export const errorCodes = Object.freeze({
   payloadTooLarge: 'PAYLOAD_TOO_LARGE',
   database: 'DATABASE_ERROR',
   internal: 'INTERNAL_SERVER_ERROR',
+  serviceUnavailable: 'SERVICE_UNAVAILABLE',
 });

@@ -76,6 +76,11 @@ enum PermissionScope {
   @@map("permission_scope")
 }
 
+enum ProductUnitType {
+  PURCHASE
+  SALE
+}
+
 enum CompanyMembershipStatus {
   ACTIVE
   INACTIVE
@@ -349,15 +354,16 @@ model EconomicActivity {
 }
 
 model MeasurementUnit {
-  id         Int      @id @default(autoincrement()) @db.UnsignedInt
-  name       String   @unique(map: "measurement_units_name_key") @db.VarChar(64)
-  pluralName String?  @map("plural_name") @db.VarChar(64)
-  symbol     String?  @db.VarChar(32)
-  mhCode     String?  @unique(map: "measurement_units_mh_code_key") @map("mh_code") @db.VarChar(3)
-  comments   String?  @db.VarChar(1024)
-  isActive   Boolean  @default(true) @map("is_active")
-  createdAt  DateTime @default(now()) @map("created_at") @db.DateTime(3)
-  updatedAt  DateTime @updatedAt @map("updated_at") @db.DateTime(3)
+  id           Int           @id @default(autoincrement()) @db.UnsignedInt
+  name         String        @unique(map: "measurement_units_name_key") @db.VarChar(64)
+  pluralName   String?       @map("plural_name") @db.VarChar(64)
+  symbol       String?       @db.VarChar(32)
+  mhCode       String?       @unique(map: "measurement_units_mh_code_key") @map("mh_code") @db.VarChar(3)
+  comments     String?       @db.VarChar(1024)
+  isActive     Boolean       @default(true) @map("is_active")
+  createdAt    DateTime      @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt    DateTime      @updatedAt @map("updated_at") @db.DateTime(3)
+  productUnits ProductUnit[]
 
   @@index([isActive, name], map: "measurement_units_active_name_idx")
   @@map("measurement_units")
@@ -406,6 +412,7 @@ model Company {
   supplierContacts          SupplierContact[]
   brands                    Brand[]
   productCategories         ProductCategory[]
+  productUnits              ProductUnit[]
 
   @@index([status, legalName], map: "companies_status_legal_name_idx")
   @@index([countryId], map: "companies_country_id_idx")
@@ -413,6 +420,28 @@ model Company {
   @@index([municipalityId], map: "companies_municipality_id_idx")
   @@index([districtId], map: "companies_district_id_idx")
   @@map("companies")
+}
+
+model ProductUnit {
+  id                Int             @id @default(autoincrement()) @db.UnsignedInt
+  companyId         Int             @map("company_id") @db.UnsignedInt
+  measurementUnitId Int             @map("measurement_unit_id") @db.UnsignedInt
+  code              String          @db.VarChar(50)
+  name              String          @db.VarChar(120)
+  type              ProductUnitType
+  description       String?         @db.VarChar(500)
+  isActive          Boolean         @default(true) @map("is_active")
+  createdAt         DateTime        @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt         DateTime        @updatedAt @map("updated_at") @db.DateTime(3)
+  company           Company         @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  measurementUnit   MeasurementUnit @relation(fields: [measurementUnitId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([companyId, code], map: "product_units_company_code_key")
+  @@unique([companyId, type, name], map: "product_units_company_type_name_key")
+  @@unique([id, companyId], map: "product_units_id_company_key")
+  @@index([companyId, type, isActive, name], map: "product_units_company_type_active_name_idx")
+  @@index([measurementUnitId], map: "product_units_measurement_unit_id_idx")
+  @@map("product_units")
 }
 
 model Brand {

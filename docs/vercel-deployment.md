@@ -26,6 +26,10 @@ Set `SERVE_FRONTEND=false` in Vercel. The application enforces it when
 
 Configure these for Production and, when needed, Preview. Never upload `.env`.
 
+For S3-backed file uploads, also configure the canonical variables documented
+in `docs/file-storage.md`. Never expose AWS credentials through frontend
+variables or `VITE_*` names; only presigned upload data is sent to the browser.
+
 ```env
 NODE_ENV=production
 DATABASE_URL=mysql://USER:PASSWORD@HOST:3306/DATABASE

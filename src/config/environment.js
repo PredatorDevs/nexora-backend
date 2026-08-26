@@ -83,6 +83,31 @@ const environmentSchema = z
     MAIL_FROM_EMAIL: optionalString(z.string().email().max(191)),
     MAIL_FROM_NAME: z.string().trim().min(1).max(120).default('Nexora ERP'),
     MAIL_REPLY_TO: optionalString(z.string().email().max(191)),
+    STORAGE_DRIVER: z.enum(['disabled', 's3']).default('disabled'),
+    AWS_REGION: optionalString(z.string().min(1).max(64)),
+    AWS_S3_BUCKET: optionalString(z.string().min(3).max(63)),
+    AWS_ACCESS_KEY_ID: optionalString(z.string().min(1)),
+    AWS_SECRET_ACCESS_KEY: optionalString(z.string().min(1)),
+    AWS_SESSION_TOKEN: optionalString(z.string().min(1)),
+    AWS_S3_PUBLIC_BASE_URL: optionalString(z.string().url()),
+    S3_UPLOAD_EXPIRES_IN_SECONDS: z.coerce
+      .number()
+      .int()
+      .min(60)
+      .max(900)
+      .default(300),
+    S3_READ_EXPIRES_IN_SECONDS: z.coerce
+      .number()
+      .int()
+      .min(60)
+      .max(86400)
+      .default(900),
+    S3_MAX_IMAGE_SIZE_BYTES: z.coerce
+      .number()
+      .int()
+      .min(1024)
+      .max(20_000_000)
+      .default(5_000_000),
     INITIAL_ADMIN_EMAIL: optionalString(
       z.string().trim().toLowerCase().email().max(191),
     ),
@@ -156,6 +181,21 @@ const environmentSchema = z
           'RESEND_API_KEY, MAIL_FROM_EMAIL, and PUBLIC_APP_URL are required when MAIL_TRANSPORT is resend',
         path: ['MAIL_TRANSPORT'],
       });
+    }
+    if (environment.STORAGE_DRIVER === 's3') {
+      for (const field of [
+        'AWS_REGION',
+        'AWS_S3_BUCKET',
+        'AWS_ACCESS_KEY_ID',
+        'AWS_SECRET_ACCESS_KEY',
+      ]) {
+        if (!environment[field])
+          context.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Is required when STORAGE_DRIVER is s3',
+            path: [field],
+          });
+      }
     }
 
     const adminValues = [
@@ -253,6 +293,18 @@ export function loadEnvironment(input = process.env) {
       fromEmail: values.MAIL_FROM_EMAIL,
       fromName: values.MAIL_FROM_NAME,
       replyTo: values.MAIL_REPLY_TO,
+    },
+    storage: {
+      driver: values.STORAGE_DRIVER,
+      region: values.AWS_REGION,
+      bucket: values.AWS_S3_BUCKET,
+      accessKeyId: values.AWS_ACCESS_KEY_ID,
+      secretAccessKey: values.AWS_SECRET_ACCESS_KEY,
+      sessionToken: values.AWS_SESSION_TOKEN,
+      publicBaseUrl: values.AWS_S3_PUBLIC_BASE_URL?.replace(/\/$/, '') ?? null,
+      uploadExpiresInSeconds: values.S3_UPLOAD_EXPIRES_IN_SECONDS,
+      readExpiresInSeconds: values.S3_READ_EXPIRES_IN_SECONDS,
+      maxImageSizeBytes: values.S3_MAX_IMAGE_SIZE_BYTES,
     },
     initialAdmin: values.INITIAL_ADMIN_EMAIL
       ? {

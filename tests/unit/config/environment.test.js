@@ -184,4 +184,25 @@ describe('loadEnvironment', () => {
       displayName: 'Initial Admin',
     });
   });
+
+  it('requires the canonical AWS variables only when S3 is enabled', () => {
+    expect(() =>
+      loadEnvironment({ ...validEnvironment, STORAGE_DRIVER: 's3' }),
+    ).toThrow('AWS_REGION: Is required');
+    expect(
+      loadEnvironment({
+        ...validEnvironment,
+        STORAGE_DRIVER: 's3',
+        AWS_REGION: 'us-east-2',
+        AWS_S3_BUCKET: 'nexora-assets',
+        AWS_ACCESS_KEY_ID: 'test-access-key',
+        AWS_SECRET_ACCESS_KEY: 'test-secret-key',
+      }).storage,
+    ).toMatchObject({
+      driver: 's3',
+      region: 'us-east-2',
+      bucket: 'nexora-assets',
+      maxImageSizeBytes: 5_000_000,
+    });
+  });
 });

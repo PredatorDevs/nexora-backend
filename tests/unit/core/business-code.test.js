@@ -62,6 +62,7 @@ describe('business code generator', () => {
   it.each([
     [businessCodeEntities.brand, 'MAR-000003', 'brand:12'],
     [businessCodeEntities.productCategory, 'CAT-000003', 'product_category:12'],
+    [businessCodeEntities.productUnit, 'PUN-000003', 'product_unit:12'],
   ])(
     'generates product dictionary codes per company',
     async (entity, expected, namespace) => {

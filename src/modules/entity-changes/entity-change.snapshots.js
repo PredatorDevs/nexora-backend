@@ -246,3 +246,19 @@ export function productCategorySnapshot(value) {
     updatedAt: iso(value.updatedAt),
   };
 }
+
+export function productUnitSnapshot(value) {
+  if (!value) return null;
+  return {
+    id: value.id,
+    companyId: value.companyId,
+    measurementUnitId: value.measurementUnitId,
+    code: value.code,
+    name: value.name,
+    type: value.type,
+    description: value.description,
+    isActive: value.isActive,
+    createdAt: iso(value.createdAt),
+    updatedAt: iso(value.updatedAt),
+  };
+}

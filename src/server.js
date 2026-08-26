@@ -51,9 +51,12 @@ import { createBrandsRepository } from './modules/brands/brands.repository.js';
 import { createBrandsService } from './modules/brands/brands.service.js';
 import { createProductCategoriesRepository } from './modules/product-categories/product-categories.repository.js';
 import { createProductCategoriesService } from './modules/product-categories/product-categories.service.js';
+import { createProductUnitsRepository } from './modules/product-units/product-units.repository.js';
+import { createProductUnitsService } from './modules/product-units/product-units.service.js';
 import { createCompanyInvitationsRepository } from './modules/company-invitations/company-invitations.repository.js';
 import { createCompanyInvitationsService } from './modules/company-invitations/company-invitations.service.js';
 import { createMailer } from './core/mail/mailer.js';
+import { createFileStorage } from './core/storage/s3-storage.js';
 import {
   configureServerTimeouts,
   createGracefulShutdown,
@@ -166,6 +169,11 @@ const productCategoriesService = createProductCategoriesService({
   entityChangeService,
   runInTransaction,
 });
+const productUnitsService = createProductUnitsService({
+  repository: createProductUnitsRepository(prisma),
+  entityChangeService,
+  runInTransaction,
+});
 const companyInvitationsService = createCompanyInvitationsService({
   repository: createCompanyInvitationsRepository(prisma),
   runInTransaction,
@@ -202,7 +210,9 @@ const app = createApp({
     suppliers: suppliersService,
     brands: brandsService,
     productCategories: productCategoriesService,
+    productUnits: productUnitsService,
     companyInvitations: companyInvitationsService,
+    files: createFileStorage(environment.storage),
   },
   settings: {
     auth: environment.auth,
