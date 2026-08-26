@@ -413,6 +413,7 @@ model Company {
   brands                    Brand[]
   productCategories         ProductCategory[]
   productUnits              ProductUnit[]
+  products                  Product[]
 
   @@index([status, legalName], map: "companies_status_legal_name_idx")
   @@index([countryId], map: "companies_country_id_idx")
@@ -435,6 +436,8 @@ model ProductUnit {
   updatedAt         DateTime        @updatedAt @map("updated_at") @db.DateTime(3)
   company           Company         @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   measurementUnit   MeasurementUnit @relation(fields: [measurementUnitId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  purchaseProducts  Product[]       @relation("ProductPurchaseUnit")
+  saleProducts      Product[]       @relation("ProductSaleUnit")
 
   @@unique([companyId, code], map: "product_units_company_code_key")
   @@unique([companyId, type, name], map: "product_units_company_type_name_key")
@@ -456,6 +459,7 @@ model Brand {
   createdAt      DateTime @default(now()) @map("created_at") @db.DateTime(3)
   updatedAt      DateTime @updatedAt @map("updated_at") @db.DateTime(3)
   company        Company  @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  products       Product[]
 
   @@unique([companyId, code], map: "brands_company_code_key")
   @@unique([companyId, name], map: "brands_company_name_key")
@@ -479,12 +483,49 @@ model ProductCategory {
   company          Company           @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   parent           ProductCategory?  @relation("ProductCategoryHierarchy", fields: [parentCategoryId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
   children         ProductCategory[] @relation("ProductCategoryHierarchy")
+  products         Product[]
 
   @@unique([companyId, code], map: "product_categories_company_code_key")
   @@unique([companyId, parentScopeId, nameKey], map: "product_categories_sibling_name_key")
   @@unique([id, companyId], map: "product_categories_id_company_key")
   @@index([companyId, parentCategoryId, isActive, name], map: "product_categories_parent_active_name_idx")
   @@map("product_categories")
+}
+
+model Product {
+  id                   Int             @id @default(autoincrement()) @db.UnsignedInt
+  uuid                 String          @default(uuid()) @db.Char(36)
+  companyId            Int             @map("company_id") @db.UnsignedInt
+  productCategoryId    Int             @map("product_category_id") @db.UnsignedInt
+  brandId              Int?            @map("brand_id") @db.UnsignedInt
+  purchaseUnitId       Int             @map("purchase_unit_id") @db.UnsignedInt
+  saleUnitId           Int             @map("sale_unit_id") @db.UnsignedInt
+  sku                  String?         @db.VarChar(100)
+  originalCode         String?         @map("original_code") @db.VarChar(120)
+  internalCode         String          @map("internal_code") @db.VarChar(50)
+  name                 String          @db.VarChar(191)
+  size                 String?         @db.VarChar(120)
+  dimensions           String?         @db.VarChar(191)
+  description          String?         @db.Text
+  presentation         String?         @db.VarChar(191)
+  purchaseToSaleFactor Decimal         @map("purchase_to_sale_factor") @db.Decimal(18, 6)
+  isActive             Boolean         @default(true) @map("is_active")
+  createdAt            DateTime        @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt            DateTime        @updatedAt @map("updated_at") @db.DateTime(3)
+  company              Company         @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  productCategory      ProductCategory @relation(fields: [productCategoryId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  brand                Brand?          @relation(fields: [brandId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  purchaseUnit         ProductUnit     @relation("ProductPurchaseUnit", fields: [purchaseUnitId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  saleUnit             ProductUnit     @relation("ProductSaleUnit", fields: [saleUnitId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([uuid], map: "products_uuid_key")
+  @@unique([companyId, internalCode], map: "products_company_internal_code_key")
+  @@unique([companyId, sku], map: "products_company_sku_key")
+  @@unique([id, companyId], map: "products_id_company_key")
+  @@index([companyId, isActive, name], map: "products_company_active_name_idx")
+  @@index([companyId, productCategoryId], map: "products_company_category_idx")
+  @@index([companyId, brandId], map: "products_company_brand_idx")
+  @@map("products")
 }
 
 model CodeSequence {

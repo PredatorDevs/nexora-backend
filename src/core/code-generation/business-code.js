@@ -10,6 +10,7 @@ export const businessCodeEntities = Object.freeze({
   brand: 'brand',
   productCategory: 'product_category',
   productUnit: 'product_unit',
+  product: 'product',
 });
 
 const definitions = Object.freeze({
@@ -24,6 +25,7 @@ const definitions = Object.freeze({
   [businessCodeEntities.brand]: { prefix: 'MAR', scope: 'company' },
   [businessCodeEntities.productCategory]: { prefix: 'CAT', scope: 'company' },
   [businessCodeEntities.productUnit]: { prefix: 'PUN', scope: 'company' },
+  [businessCodeEntities.product]: { prefix: 'PRD', scope: 'company' },
 });
 
 export async function generateBusinessCode(

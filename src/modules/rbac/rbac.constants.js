@@ -69,6 +69,10 @@ export const permissionCodes = Object.freeze([
   'product_units.create',
   'product_units.update',
   'product_units.change_status',
+  'products.read',
+  'products.create',
+  'products.update',
+  'products.change_status',
 ]);
 
 export const companyPermissionCodes = Object.freeze([
@@ -123,6 +127,10 @@ export const companyPermissionCodes = Object.freeze([
   'product_units.create',
   'product_units.update',
   'product_units.change_status',
+  'products.read',
+  'products.create',
+  'products.update',
+  'products.change_status',
 ]);
 
 const companyPermissions = new Set(companyPermissionCodes);
@@ -227,6 +235,7 @@ export const companyRoleTemplates = Object.freeze([
       'product_categories.read',
       'files.read',
       'product_units.read',
+      'products.read',
     ],
   },
   {
@@ -247,6 +256,7 @@ export const companyRoleTemplates = Object.freeze([
       'product_categories.read',
       'files.read',
       'product_units.read',
+      'products.read',
     ],
   },
 ]);

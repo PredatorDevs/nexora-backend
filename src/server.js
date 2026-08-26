@@ -53,6 +53,8 @@ import { createProductCategoriesRepository } from './modules/product-categories/
 import { createProductCategoriesService } from './modules/product-categories/product-categories.service.js';
 import { createProductUnitsRepository } from './modules/product-units/product-units.repository.js';
 import { createProductUnitsService } from './modules/product-units/product-units.service.js';
+import { createProductsRepository } from './modules/products/products.repository.js';
+import { createProductsService } from './modules/products/products.service.js';
 import { createCompanyInvitationsRepository } from './modules/company-invitations/company-invitations.repository.js';
 import { createCompanyInvitationsService } from './modules/company-invitations/company-invitations.service.js';
 import { createMailer } from './core/mail/mailer.js';
@@ -174,6 +176,11 @@ const productUnitsService = createProductUnitsService({
   entityChangeService,
   runInTransaction,
 });
+const productsService = createProductsService({
+  repository: createProductsRepository(prisma),
+  entityChangeService,
+  runInTransaction,
+});
 const companyInvitationsService = createCompanyInvitationsService({
   repository: createCompanyInvitationsRepository(prisma),
   runInTransaction,
@@ -211,6 +218,7 @@ const app = createApp({
     brands: brandsService,
     productCategories: productCategoriesService,
     productUnits: productUnitsService,
+    products: productsService,
     companyInvitations: companyInvitationsService,
     files: createFileStorage(environment.storage),
   },

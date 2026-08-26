@@ -262,3 +262,28 @@ export function productUnitSnapshot(value) {
     updatedAt: iso(value.updatedAt),
   };
 }
+
+export function productSnapshot(value) {
+  if (!value) return null;
+  return {
+    id: value.id,
+    uuid: value.uuid,
+    companyId: value.companyId,
+    productCategoryId: value.productCategoryId,
+    brandId: value.brandId,
+    purchaseUnitId: value.purchaseUnitId,
+    saleUnitId: value.saleUnitId,
+    sku: value.sku,
+    originalCode: value.originalCode,
+    internalCode: value.internalCode,
+    name: value.name,
+    size: value.size,
+    dimensions: value.dimensions,
+    description: value.description,
+    presentation: value.presentation,
+    purchaseToSaleFactor: value.purchaseToSaleFactor?.toString() ?? null,
+    isActive: value.isActive,
+    createdAt: iso(value.createdAt),
+    updatedAt: iso(value.updatedAt),
+  };
+}
