@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM node:22.15.1-bookworm-slim AS dependencies
+FROM node:26.8.1-bookworm-slim AS dependencies
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
@@ -18,7 +18,7 @@ CMD ["npm", "run", "prisma:deploy"]
 FROM development AS production-dependencies
 RUN npm prune --omit=dev
 
-FROM node:22.15.1-bookworm-slim AS production
+FROM node:26.8.1-bookworm-slim AS production
 ENV NODE_ENV=production
 WORKDIR /app
 COPY --from=production-dependencies --chown=node:node /app/node_modules ./node_modules
