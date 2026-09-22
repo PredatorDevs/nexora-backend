@@ -23,6 +23,7 @@ import { createProductsRouter } from '../modules/products/products.routes.js';
 import { createProductImagesRouter } from '../modules/product-images/product-images.routes.js';
 import { createPurchaseRequestsRouter } from '../modules/purchase-requests/purchase-requests.routes.js';
 import { createExpenseTypesRouter } from '../modules/expense-types/expense-types.routes.js';
+import { createPurchaseQuotationsRouter } from '../modules/purchase-quotations/purchase-quotations.routes.js';
 import { createFilesRouter } from '../modules/files/files.routes.js';
 import {
   createCompanyInvitationsManagementRouter,
@@ -199,6 +200,14 @@ export function registerRoutes(app) {
         '/api/v1/expense-types',
         createExpenseTypesRouter(
           app.locals.services.expenseTypes,
+          app.locals.services.audit,
+        ),
+      );
+    if (app.locals.services.purchaseQuotations)
+      app.use(
+        '/api/v1/purchase-quotations',
+        createPurchaseQuotationsRouter(
+          app.locals.services.purchaseQuotations,
           app.locals.services.audit,
         ),
       );

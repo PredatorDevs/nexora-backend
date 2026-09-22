@@ -355,3 +355,55 @@ export function expenseTypeSnapshot(value) {
     updatedAt: iso(value.updatedAt),
   };
 }
+
+export function purchaseQuotationSnapshot(value) {
+  if (!value) return null;
+  const decimal = (item) => item?.toString() ?? null;
+  return {
+    id: value.id,
+    uuid: value.uuid,
+    companyId: value.companyId,
+    code: value.code,
+    supplierId: value.supplierId,
+    supplierContactId: value.supplierContactId,
+    supplierQuotationNumber: value.supplierQuotationNumber,
+    quotationDate: iso(value.quotationDate),
+    validUntil: iso(value.validUntil),
+    currencyCode: value.currencyCode,
+    exchangeRate: decimal(value.exchangeRate),
+    exchangeRateDate: iso(value.exchangeRateDate),
+    paymentTerms: value.paymentTerms,
+    deliveryDays: value.deliveryDays,
+    subtotal: decimal(value.subtotal),
+    discount: decimal(value.discount),
+    tax: decimal(value.tax),
+    total: decimal(value.total),
+    status: value.status,
+    notes: value.notes,
+    registeredByUserId: value.registeredByUserId,
+    receivedAt: iso(value.receivedAt),
+    underReviewAt: iso(value.underReviewAt),
+    cancelledAt: iso(value.cancelledAt),
+    cancelledByUserId: value.cancelledByUserId,
+    cancellationReason: value.cancellationReason,
+    details: value.details?.map((detail) => ({
+      lineNumber: detail.lineNumber,
+      productId: detail.productId,
+      productUnitId: detail.productUnitId,
+      quantity: decimal(detail.quantity),
+      unitPrice: decimal(detail.unitPrice),
+      grossAmount: decimal(detail.grossAmount),
+      discountRate: decimal(detail.discountRate),
+      discountAmount: decimal(detail.discountAmount),
+      subtotal: decimal(detail.subtotal),
+      taxRate: decimal(detail.taxRate),
+      taxAmount: decimal(detail.taxAmount),
+      total: decimal(detail.total),
+      deliveryDays: detail.deliveryDays,
+      availableQuantity: decimal(detail.availableQuantity),
+      notes: detail.notes,
+    })),
+    createdAt: iso(value.createdAt),
+    updatedAt: iso(value.updatedAt),
+  };
+}

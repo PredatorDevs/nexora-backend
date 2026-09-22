@@ -88,6 +88,15 @@ export const permissionCodes = Object.freeze([
   'expense_types.create',
   'expense_types.update',
   'expense_types.change_status',
+  'purchase_quotations.read',
+  'purchase_quotations.create',
+  'purchase_quotations.update',
+  'purchase_quotations.receive',
+  'purchase_quotations.review',
+  'purchase_quotations.cancel',
+  'purchase_quotations.expire',
+  'purchase_quotations.select',
+  'purchase_quotations.reject',
 ]);
 
 export const companyPermissionCodes = Object.freeze([
@@ -161,6 +170,15 @@ export const companyPermissionCodes = Object.freeze([
   'expense_types.create',
   'expense_types.update',
   'expense_types.change_status',
+  'purchase_quotations.read',
+  'purchase_quotations.create',
+  'purchase_quotations.update',
+  'purchase_quotations.receive',
+  'purchase_quotations.review',
+  'purchase_quotations.cancel',
+  'purchase_quotations.expire',
+  'purchase_quotations.select',
+  'purchase_quotations.reject',
 ]);
 
 const companyPermissions = new Set(companyPermissionCodes);
@@ -272,6 +290,10 @@ export const companyRoleTemplates = Object.freeze([
       'purchase_requests.update',
       'purchase_requests.submit',
       'expense_types.read',
+      'purchase_quotations.read',
+      'purchase_quotations.create',
+      'purchase_quotations.update',
+      'purchase_quotations.receive',
     ],
   },
   {
@@ -296,6 +318,7 @@ export const companyRoleTemplates = Object.freeze([
       'product_images.read',
       'purchase_requests.read',
       'expense_types.read',
+      'purchase_quotations.read',
     ],
   },
 ]);
