@@ -149,7 +149,7 @@ export function createPurchaseRequestsRepository(prisma) {
           companyId,
           ...header,
           details: {
-            create: detailData(details).map((item) => ({ companyId, ...item })),
+            create: detailData(details),
           },
         },
         select,

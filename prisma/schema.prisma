@@ -433,6 +433,7 @@ model Company {
   productImages             ProductImage[]
   purchaseRequests          PurchaseRequest[]
   purchaseRequestDetails    PurchaseRequestDetail[]
+  expenseTypes              ExpenseType[]
 
   @@index([status, legalName], map: "companies_status_legal_name_idx")
   @@index([countryId], map: "companies_country_id_idx")
@@ -820,6 +821,24 @@ model PurchaseRequestDetail {
   @@index([companyId, productId], map: "purchase_request_details_product_idx")
   @@index([companyId, productUnitId], map: "purchase_request_details_unit_idx")
   @@map("purchase_request_details")
+}
+
+model ExpenseType {
+  id          Int      @id @default(autoincrement()) @db.UnsignedInt
+  companyId   Int      @map("company_id") @db.UnsignedInt
+  code        String   @db.VarChar(50)
+  name        String   @db.VarChar(120)
+  description String?  @db.VarChar(500)
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.DateTime(3)
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([companyId, code], map: "expense_types_company_code_key")
+  @@unique([companyId, name], map: "expense_types_company_name_key")
+  @@unique([id, companyId], map: "expense_types_id_company_key")
+  @@index([companyId, isActive, name], map: "expense_types_company_active_name_idx")
+  @@map("expense_types")
 }
 
 model CompanyMembership {

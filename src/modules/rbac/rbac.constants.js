@@ -84,6 +84,10 @@ export const permissionCodes = Object.freeze([
   'purchase_requests.approve',
   'purchase_requests.reject',
   'purchase_requests.cancel',
+  'expense_types.read',
+  'expense_types.create',
+  'expense_types.update',
+  'expense_types.change_status',
 ]);
 
 export const companyPermissionCodes = Object.freeze([
@@ -153,6 +157,10 @@ export const companyPermissionCodes = Object.freeze([
   'purchase_requests.approve',
   'purchase_requests.reject',
   'purchase_requests.cancel',
+  'expense_types.read',
+  'expense_types.create',
+  'expense_types.update',
+  'expense_types.change_status',
 ]);
 
 const companyPermissions = new Set(companyPermissionCodes);
@@ -263,6 +271,7 @@ export const companyRoleTemplates = Object.freeze([
       'purchase_requests.create',
       'purchase_requests.update',
       'purchase_requests.submit',
+      'expense_types.read',
     ],
   },
   {
@@ -286,6 +295,7 @@ export const companyRoleTemplates = Object.freeze([
       'products.read',
       'product_images.read',
       'purchase_requests.read',
+      'expense_types.read',
     ],
   },
 ]);

@@ -41,6 +41,7 @@ export function createCompaniesService({
   runInTransaction,
   provisionRoles = async () => {},
   provisionWarehouseCategories = async () => {},
+  provisionExpenseTypes = async () => {},
   generateCode = generateBusinessCode,
 }) {
   async function validateReferences(data, client) {
@@ -156,6 +157,7 @@ export function createCompaniesService({
           );
           await provisionRoles(client, created.id, context.actorUserId);
           await provisionWarehouseCategories(client, created.id);
+          await provisionExpenseTypes(client, created.id);
           await recordChange(
             {
               operation: entityChangeOperations.create,

@@ -59,6 +59,9 @@ import { createProductImagesRepository } from './modules/product-images/product-
 import { createProductImagesService } from './modules/product-images/product-images.service.js';
 import { createPurchaseRequestsRepository } from './modules/purchase-requests/purchase-requests.repository.js';
 import { createPurchaseRequestsService } from './modules/purchase-requests/purchase-requests.service.js';
+import { createExpenseTypesRepository } from './modules/expense-types/expense-types.repository.js';
+import { createExpenseTypesService } from './modules/expense-types/expense-types.service.js';
+import { provisionExpenseTypes } from './modules/expense-types/expense-type-templates.js';
 import { createCompanyInvitationsRepository } from './modules/company-invitations/company-invitations.repository.js';
 import { createCompanyInvitationsService } from './modules/company-invitations/company-invitations.service.js';
 import { createMailer } from './core/mail/mailer.js';
@@ -135,6 +138,7 @@ const companiesService = createCompaniesService({
   runInTransaction,
   provisionRoles: provisionCompanyRoles,
   provisionWarehouseCategories,
+  provisionExpenseTypes,
 });
 const companyAccessService = createCompanyAccessService({
   repository: createCompanyAccessRepository(prisma),
@@ -197,6 +201,11 @@ const purchaseRequestsService = createPurchaseRequestsService({
   entityChangeService,
   runInTransaction,
 });
+const expenseTypesService = createExpenseTypesService({
+  repository: createExpenseTypesRepository(prisma),
+  entityChangeService,
+  runInTransaction,
+});
 const companyInvitationsService = createCompanyInvitationsService({
   repository: createCompanyInvitationsRepository(prisma),
   runInTransaction,
@@ -237,6 +246,7 @@ const app = createApp({
     products: productsService,
     productImages: productImagesService,
     purchaseRequests: purchaseRequestsService,
+    expenseTypes: expenseTypesService,
     companyInvitations: companyInvitationsService,
     files: fileStorage,
   },

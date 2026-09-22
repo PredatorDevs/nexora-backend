@@ -74,4 +74,7 @@ export const auditActions = Object.freeze({
   purchaseRequestApproved: 'PURCHASE_REQUEST.APPROVED',
   purchaseRequestRejected: 'PURCHASE_REQUEST.REJECTED',
   purchaseRequestCancelled: 'PURCHASE_REQUEST.CANCELLED',
+  expenseTypeCreated: 'EXPENSE_TYPE.CREATED',
+  expenseTypeUpdated: 'EXPENSE_TYPE.UPDATED',
+  expenseTypeStatusChanged: 'EXPENSE_TYPE.STATUS_CHANGED',
 });
