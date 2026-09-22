@@ -80,6 +80,7 @@ export const auditActions = Object.freeze({
   purchaseQuotationCreated: 'PURCHASE_QUOTATION.CREATED',
   purchaseQuotationUpdated: 'PURCHASE_QUOTATION.UPDATED',
   purchaseQuotationRequestsLinked: 'PURCHASE_QUOTATION.REQUESTS_LINKED',
+  purchaseQuotationExpensesUpdated: 'PURCHASE_QUOTATION.EXPENSES_UPDATED',
   purchaseQuotationReceived: 'PURCHASE_QUOTATION.RECEIVED',
   purchaseQuotationReviewStarted: 'PURCHASE_QUOTATION.REVIEW_STARTED',
   purchaseQuotationCancelled: 'PURCHASE_QUOTATION.CANCELLED',

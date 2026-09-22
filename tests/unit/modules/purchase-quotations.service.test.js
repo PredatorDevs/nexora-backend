@@ -90,4 +90,44 @@ describe('purchase quotations service', () => {
 
     expect(repository.replaceRequestLinks).toHaveBeenCalledOnce();
   });
+
+  it('replaces expenses only with active company expense types', async () => {
+    const old = {
+      id: 4,
+      status: 'RECEIVED',
+      updatedAt: new Date('2026-09-22T10:00:00.000Z'),
+      expenses: [],
+      details: [],
+      requestLinks: [],
+    };
+    const repository = {
+      find: vi.fn().mockResolvedValue(old),
+      findExpenseTypes: vi
+        .fn()
+        .mockResolvedValue([{ id: 12, isActive: true }]),
+      replaceExpenses: vi.fn().mockResolvedValue({
+        ...old,
+        expenseTotal: '25',
+        grandTotal: '125',
+      }),
+    };
+    const service = createPurchaseQuotationsService({
+      repository,
+      runInTransaction: (operation) => operation({}),
+    });
+
+    await service.replaceExpenses(
+      6,
+      4,
+      {
+        expectedUpdatedAt: old.updatedAt.toISOString(),
+        expenses: [
+          { expenseTypeId: 12, description: 'Flete local', amount: 25 },
+        ],
+      },
+      { actorUserId: 1 },
+    );
+
+    expect(repository.replaceExpenses).toHaveBeenCalledOnce();
+  });
 });

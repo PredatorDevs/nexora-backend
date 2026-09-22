@@ -411,6 +411,14 @@ export function purchaseQuotationSnapshot(value) {
         quantity: decimal(detail.quantity),
       })),
     })),
+    expenses: value.expenses?.map((expense) => ({
+      lineNumber: expense.lineNumber,
+      expenseTypeId: expense.expenseTypeId,
+      description: expense.description,
+      amount: decimal(expense.amount),
+    })),
+    expenseTotal: decimal(value.expenseTotal),
+    grandTotal: decimal(value.grandTotal),
     createdAt: iso(value.createdAt),
     updatedAt: iso(value.updatedAt),
   };

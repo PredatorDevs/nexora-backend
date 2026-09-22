@@ -107,3 +107,15 @@ export const replacePurchaseQuotationRequestLinksBody = z.object({
     .min(0)
     .max(1000),
 });
+export const replacePurchaseQuotationExpensesBody = z.object({
+  expectedUpdatedAt: z.string().datetime(),
+  expenses: z
+    .array(
+      z.object({
+        expenseTypeId: z.number().int().positive(),
+        description: nullable(500).optional(),
+        amount: z.coerce.number().positive().max(1e14),
+      }),
+    )
+    .max(100),
+});

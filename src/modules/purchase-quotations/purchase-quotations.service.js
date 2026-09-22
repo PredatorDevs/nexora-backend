@@ -404,6 +404,48 @@ export function createPurchaseQuotationsService({
         return updated;
       });
     },
+    async replaceExpenses(companyId, id, data, context) {
+      const old = await get(companyId, id);
+      if (!['DRAFT', 'RECEIVED'].includes(old.status))
+        throw invalid(
+          'Expenses can only be edited before the quotation enters review.',
+          ['status'],
+          409,
+        );
+      return runInTransaction(async (client) => {
+        const ids = [...new Set(data.expenses.map((x) => x.expenseTypeId))];
+        const types = await repository.findExpenseTypes(companyId, ids, client);
+        if (
+          types.length !== ids.length ||
+          types.some((expenseType) => !expenseType.isActive)
+        )
+          throw invalid('Every expense type must exist and be active.', [
+            'expenses',
+          ]);
+        const updated = await repository.replaceExpenses(
+          companyId,
+          id,
+          new Date(data.expectedUpdatedAt),
+          data.expenses.map((expense) => ({
+            expenseTypeId: expense.expenseTypeId,
+            description: expense.description || null,
+            amount: d(expense.amount),
+          })),
+          client,
+        );
+        if (!updated)
+          throw concurrencyConflict('purchase quotation', old.updatedAt);
+        await record(
+          companyId,
+          old,
+          updated,
+          context,
+          { reason: 'EXPENSES_REPLACED' },
+          client,
+        );
+        return updated;
+      });
+    },
     receive: (companyId, id, body, context) =>
       transition(companyId, id, body, context, {
         from: ['DRAFT'],

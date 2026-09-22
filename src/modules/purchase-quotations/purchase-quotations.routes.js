@@ -10,6 +10,7 @@ import {
   purchaseQuotationsListQuery,
   purchaseQuotationTransitionBody,
   replacePurchaseQuotationRequestLinksBody,
+  replacePurchaseQuotationExpensesBody,
   updatePurchaseQuotationBody,
 } from './purchase-quotations.schemas.js';
 export function createPurchaseQuotationsRouter(service, auditService) {
@@ -51,6 +52,15 @@ export function createPurchaseQuotationsRouter(service, auditService) {
       body: replacePurchaseQuotationRequestLinksBody,
     }),
     controller.replaceRequestLinks,
+  );
+  router.put(
+    '/:id/expenses',
+    authorizeCompany('purchase_quotations.manage_expenses'),
+    validate({
+      params: purchaseQuotationIdParams,
+      body: replacePurchaseQuotationExpensesBody,
+    }),
+    controller.replaceExpenses,
   );
   router.post(
     '/:id/receive',

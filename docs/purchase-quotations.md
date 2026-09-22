@@ -75,3 +75,25 @@ Los vínculos deben retirarse antes de modificar las líneas de una cotización.
 Permiso adicional:
 
 - `purchase_quotations.link_requests`
+
+## Tercer corte: gastos adicionales
+
+`purchase_quotation_expenses` registra los costos complementarios informados por el
+proveedor, vinculados al catálogo empresarial `expense_types`. Cada línea conserva
+tipo, descripción, importe, orden y empresa.
+
+Los gastos pueden administrarse mientras la cotización esté en `DRAFT` o `RECEIVED`.
+Al entrar en `UNDER_REVIEW` quedan congelados junto con las demás condiciones de la
+oferta. El backend calcula siempre:
+
+```text
+expenseTotal = suma de gastos adicionales
+grandTotal = total de productos + expenseTotal
+```
+
+Estos valores no modifican `subtotal`, `tax` ni `total`, pues esos campos representan
+exclusivamente el cálculo fiscal de las líneas cotizadas.
+
+Permiso adicional:
+
+- `purchase_quotations.manage_expenses`

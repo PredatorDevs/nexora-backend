@@ -1,4 +1,16 @@
 const user = { id: true, displayName: true, email: true };
+const withComparativeTotals = (quotation) => {
+  if (!quotation) return null;
+  const expenseTotal = quotation.expenses.reduce(
+    (sum, expense) => sum.add(expense.amount),
+    quotation.total.mul(0),
+  );
+  return {
+    ...quotation,
+    expenseTotal,
+    grandTotal: quotation.total.add(expenseTotal),
+  };
+};
 const select = {
   id: true,
   uuid: true,
@@ -108,6 +120,21 @@ const select = {
       },
     },
   },
+  expenses: {
+    orderBy: { lineNumber: 'asc' },
+    select: {
+      id: true,
+      lineNumber: true,
+      expenseTypeId: true,
+      description: true,
+      amount: true,
+      createdAt: true,
+      updatedAt: true,
+      expenseType: {
+        select: { id: true, code: true, name: true, isActive: true },
+      },
+    },
+  },
 };
 export function createPurchaseQuotationsRepository(prisma) {
   return {
@@ -136,13 +163,14 @@ export function createPurchaseQuotationsRepository(prisma) {
         }),
         prisma.purchaseQuotation.count({ where }),
       ]);
-      return { items, total };
+      return { items: items.map(withComparativeTotals), total };
     },
-    find(companyId, id, client = prisma) {
-      return client.purchaseQuotation.findFirst({
+    async find(companyId, id, client = prisma) {
+      const quotation = await client.purchaseQuotation.findFirst({
         where: { id, companyId },
         select,
       });
+      return withComparativeTotals(quotation);
     },
     async references(companyId, data, client = prisma) {
       const [company, supplier, contact, products] = await Promise.all([
@@ -316,6 +344,43 @@ export function createPurchaseQuotationsRepository(prisma) {
             data: { status: 'APPROVED' },
           });
       }
+      return this.find(companyId, quotationId, client);
+    },
+    findExpenseTypes(companyId, ids, client = prisma) {
+      return client.expenseType.findMany({
+        where: { companyId, id: { in: ids } },
+        select: { id: true, isActive: true },
+      });
+    },
+    async replaceExpenses(
+      companyId,
+      quotationId,
+      expectedUpdatedAt,
+      expenses,
+      client = prisma,
+    ) {
+      const claimed = await client.purchaseQuotation.updateMany({
+        where: {
+          id: quotationId,
+          companyId,
+          updatedAt: expectedUpdatedAt,
+          status: { in: ['DRAFT', 'RECEIVED'] },
+        },
+        data: { updatedAt: new Date() },
+      });
+      if (claimed.count !== 1) return null;
+      await client.purchaseQuotationExpense.deleteMany({
+        where: { companyId, purchaseQuotationId: quotationId },
+      });
+      if (expenses.length)
+        await client.purchaseQuotationExpense.createMany({
+          data: expenses.map((expense, index) => ({
+            companyId,
+            purchaseQuotationId: quotationId,
+            lineNumber: index + 1,
+            ...expense,
+          })),
+        });
       return this.find(companyId, quotationId, client);
     },
   };

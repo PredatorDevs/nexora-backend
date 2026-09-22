@@ -61,6 +61,10 @@ export function createPurchaseQuotationsController(service, auditService) {
       'replaceRequestLinks',
       auditActions.purchaseQuotationRequestsLinked,
     ),
+    replaceExpenses: mutate(
+      'replaceExpenses',
+      auditActions.purchaseQuotationExpensesUpdated,
+    ),
     receive: mutate('receive', auditActions.purchaseQuotationReceived),
     review: mutate('review', auditActions.purchaseQuotationReviewStarted),
     cancel: mutate('cancel', auditActions.purchaseQuotationCancelled),
