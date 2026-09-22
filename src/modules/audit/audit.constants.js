@@ -68,4 +68,10 @@ export const auditActions = Object.freeze({
   productImagePrimaryChanged: 'PRODUCT_IMAGE.PRIMARY_CHANGED',
   productImagesReordered: 'PRODUCT_IMAGE.REORDERED',
   productImageDeleted: 'PRODUCT_IMAGE.DELETED',
+  purchaseRequestCreated: 'PURCHASE_REQUEST.CREATED',
+  purchaseRequestUpdated: 'PURCHASE_REQUEST.UPDATED',
+  purchaseRequestSubmitted: 'PURCHASE_REQUEST.SUBMITTED',
+  purchaseRequestApproved: 'PURCHASE_REQUEST.APPROVED',
+  purchaseRequestRejected: 'PURCHASE_REQUEST.REJECTED',
+  purchaseRequestCancelled: 'PURCHASE_REQUEST.CANCELLED',
 });

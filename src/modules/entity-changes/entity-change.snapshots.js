@@ -304,3 +304,40 @@ export function productImageSnapshot(value) {
     updatedAt: iso(value.updatedAt),
   };
 }
+
+export function purchaseRequestSnapshot(value) {
+  if (!value) return null;
+  return {
+    id: value.id,
+    uuid: value.uuid,
+    companyId: value.companyId,
+    code: value.code,
+    branchId: value.branchId,
+    warehouseId: value.warehouseId,
+    requestedByUserId: value.requestedByUserId,
+    requestDate: iso(value.requestDate),
+    requiredDate: iso(value.requiredDate),
+    justification: value.justification,
+    status: value.status,
+    notes: value.notes,
+    submittedAt: iso(value.submittedAt),
+    approvedAt: iso(value.approvedAt),
+    approvedByUserId: value.approvedByUserId,
+    rejectedAt: iso(value.rejectedAt),
+    rejectedByUserId: value.rejectedByUserId,
+    rejectionReason: value.rejectionReason,
+    cancelledAt: iso(value.cancelledAt),
+    cancelledByUserId: value.cancelledByUserId,
+    cancellationReason: value.cancellationReason,
+    details: value.details?.map((detail) => ({
+      lineNumber: detail.lineNumber,
+      productId: detail.productId,
+      productUnitId: detail.productUnitId,
+      quantity: detail.quantity?.toString(),
+      description: detail.description,
+      notes: detail.notes,
+    })),
+    createdAt: iso(value.createdAt),
+    updatedAt: iso(value.updatedAt),
+  };
+}

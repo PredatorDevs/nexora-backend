@@ -21,6 +21,7 @@ import { createProductCategoriesRouter } from '../modules/product-categories/pro
 import { createProductUnitsRouter } from '../modules/product-units/product-units.routes.js';
 import { createProductsRouter } from '../modules/products/products.routes.js';
 import { createProductImagesRouter } from '../modules/product-images/product-images.routes.js';
+import { createPurchaseRequestsRouter } from '../modules/purchase-requests/purchase-requests.routes.js';
 import { createFilesRouter } from '../modules/files/files.routes.js';
 import {
   createCompanyInvitationsManagementRouter,
@@ -181,6 +182,14 @@ export function registerRoutes(app) {
         '/api/v1/products/:productId/images',
         createProductImagesRouter(
           app.locals.services.productImages,
+          app.locals.services.audit,
+        ),
+      );
+    if (app.locals.services.purchaseRequests)
+      app.use(
+        '/api/v1/purchase-requests',
+        createPurchaseRequestsRouter(
+          app.locals.services.purchaseRequests,
           app.locals.services.audit,
         ),
       );
