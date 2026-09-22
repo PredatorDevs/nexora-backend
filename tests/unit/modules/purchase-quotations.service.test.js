@@ -36,4 +36,58 @@ describe('purchase quotations service', () => {
     expect(result.exchangeRate.toString()).toBe('1');
     expect(result.details[0].subtotal.toString()).toBe('180');
   });
+
+  it('links approved request lines with exact product, unit, and quantity coverage', async () => {
+    const old = {
+      id: 4,
+      status: 'DRAFT',
+      updatedAt: new Date('2026-09-22T10:00:00.000Z'),
+      requestLinks: [],
+      details: [
+        { id: 40, productId: 7, productUnitId: 9, quantity: '10' },
+      ],
+    };
+    const repository = {
+      find: vi.fn().mockResolvedValue(old),
+      findLinkReferences: vi.fn().mockResolvedValue({
+        quotation: old,
+        requestDetails: [
+          {
+            id: 70,
+            purchaseRequestId: 8,
+            productId: 7,
+            productUnitId: 9,
+            quantity: '10',
+            purchaseRequest: { status: 'APPROVED' },
+          },
+        ],
+      }),
+      replaceRequestLinks: vi.fn().mockResolvedValue({
+        ...old,
+        requestLinks: [{ purchaseRequestId: 8, details: [] }],
+      }),
+    };
+    const service = createPurchaseQuotationsService({
+      repository,
+      runInTransaction: (operation) => operation({}),
+    });
+
+    await service.replaceRequestLinks(
+      6,
+      4,
+      {
+        expectedUpdatedAt: old.updatedAt.toISOString(),
+        links: [
+          {
+            purchaseQuotationDetailId: 40,
+            purchaseRequestDetailId: 70,
+            quantity: 10,
+          },
+        ],
+      },
+      { actorUserId: 1 },
+    );
+
+    expect(repository.replaceRequestLinks).toHaveBeenCalledOnce();
+  });
 });

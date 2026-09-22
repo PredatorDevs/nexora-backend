@@ -82,6 +82,32 @@ const select = {
       },
     },
   },
+  requestLinks: {
+    orderBy: { id: 'asc' },
+    select: {
+      id: true,
+      purchaseRequestId: true,
+      purchaseRequest: {
+        select: { id: true, code: true, status: true, requiredDate: true },
+      },
+      details: {
+        orderBy: { id: 'asc' },
+        select: {
+          id: true,
+          purchaseQuotationDetailId: true,
+          purchaseRequestDetailId: true,
+          quantity: true,
+          requestDetail: {
+            select: {
+              lineNumber: true,
+              quantity: true,
+              product: { select: { internalCode: true, name: true } },
+            },
+          },
+        },
+      },
+    },
+  },
 };
 export function createPurchaseQuotationsRepository(prisma) {
   return {
@@ -181,6 +207,116 @@ export function createPurchaseQuotationsRepository(prisma) {
         data,
       });
       return result.count === 1 ? this.find(companyId, id, client) : null;
+    },
+    async findLinkReferences(companyId, quotationId, links, client = prisma) {
+      const [quotation, quotationDetails, requestDetails] = await Promise.all([
+        this.find(companyId, quotationId, client),
+        client.purchaseQuotationDetail.findMany({
+          where: {
+            companyId,
+            purchaseQuotationId: quotationId,
+            id: {
+              in: [...new Set(links.map((x) => x.purchaseQuotationDetailId))],
+            },
+          },
+          select: {
+            id: true,
+            productId: true,
+            productUnitId: true,
+            quantity: true,
+          },
+        }),
+        client.purchaseRequestDetail.findMany({
+          where: {
+            companyId,
+            id: {
+              in: [...new Set(links.map((x) => x.purchaseRequestDetailId))],
+            },
+          },
+          select: {
+            id: true,
+            purchaseRequestId: true,
+            productId: true,
+            productUnitId: true,
+            quantity: true,
+            purchaseRequest: { select: { status: true } },
+          },
+        }),
+      ]);
+      return { quotation, quotationDetails, requestDetails };
+    },
+    async replaceRequestLinks(
+      companyId,
+      quotationId,
+      expectedUpdatedAt,
+      links,
+      requestDetails,
+      client = prisma,
+    ) {
+      const claimed = await client.purchaseQuotation.updateMany({
+        where: {
+          id: quotationId,
+          companyId,
+          updatedAt: expectedUpdatedAt,
+          status: 'DRAFT',
+        },
+        data: { updatedAt: new Date() },
+      });
+      if (claimed.count !== 1) return null;
+      const old = await client.purchaseQuotationRequest.findMany({
+        where: { companyId, purchaseQuotationId: quotationId },
+        select: { purchaseRequestId: true },
+      });
+      await client.purchaseQuotationRequest.deleteMany({
+        where: { companyId, purchaseQuotationId: quotationId },
+      });
+      const requestByDetail = new Map(
+        requestDetails.map((x) => [x.id, x.purchaseRequestId]),
+      );
+      const grouped = new Map();
+      for (const link of links) {
+        const requestId = requestByDetail.get(link.purchaseRequestDetailId);
+        if (!grouped.has(requestId)) grouped.set(requestId, []);
+        grouped.get(requestId).push(link);
+      }
+      for (const [purchaseRequestId, details] of grouped) {
+        await client.purchaseQuotationRequest.create({
+          data: {
+            companyId,
+            purchaseQuotationId: quotationId,
+            purchaseRequestId,
+            details: {
+              create: details.map((detail) => ({ companyId, ...detail })),
+            },
+          },
+        });
+      }
+      const currentIds = [...grouped.keys()];
+      await client.purchaseRequest.updateMany({
+        where: {
+          companyId,
+          id: { in: currentIds },
+          status: 'APPROVED',
+        },
+        data: { status: 'IN_QUOTATION' },
+      });
+      for (const requestId of [
+        ...new Set(old.map((x) => x.purchaseRequestId)),
+      ].filter((id) => !grouped.has(id))) {
+        const remaining = await client.purchaseQuotationRequest.count({
+          where: { companyId, purchaseRequestId: requestId },
+        });
+        if (remaining === 0)
+          await client.purchaseRequest.updateMany({
+            where: {
+              companyId,
+              id: requestId,
+              status: 'IN_QUOTATION',
+            },
+            data: { status: 'APPROVED' },
+          });
+      }
+      return this.find(companyId, quotationId, client);
     },
   };
 }

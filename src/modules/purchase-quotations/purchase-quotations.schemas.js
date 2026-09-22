@@ -94,3 +94,16 @@ export const purchaseQuotationReasonTransitionBody =
   purchaseQuotationTransitionBody.extend({
     reason: z.string().trim().min(1).max(5000),
   });
+export const replacePurchaseQuotationRequestLinksBody = z.object({
+  expectedUpdatedAt: z.string().datetime(),
+  links: z
+    .array(
+      z.object({
+        purchaseQuotationDetailId: z.number().int().positive(),
+        purchaseRequestDetailId: z.number().int().positive(),
+        quantity: z.coerce.number().positive().max(1e14),
+      }),
+    )
+    .min(0)
+    .max(1000),
+});

@@ -59,3 +59,19 @@ Permisos:
 - `expense_types.create`
 - `expense_types.update`
 - `expense_types.change_status`
+
+## Segundo corte: cotizaciones y solicitudes de origen
+
+La cotización conserva una asignación explícita entre sus líneas y las líneas de las
+solicitudes aprobadas que le dieron origen. Una cotización puede agrupar varias
+solicitudes y una línea cotizada puede distribuirse entre varias líneas solicitadas,
+siempre que coincidan producto y unidad.
+
+Antes de pasar de `DRAFT` a `RECEIVED`, cada línea debe estar cubierta exactamente
+por la suma de sus asignaciones. Al crear el primer vínculo, la solicitud cambia de
+`APPROVED` a `IN_QUOTATION`; si se eliminan todos sus vínculos, vuelve a `APPROVED`.
+Los vínculos deben retirarse antes de modificar las líneas de una cotización.
+
+Permiso adicional:
+
+- `purchase_quotations.link_requests`

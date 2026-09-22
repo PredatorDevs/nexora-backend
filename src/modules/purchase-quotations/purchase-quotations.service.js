@@ -160,6 +160,36 @@ export function createPurchaseQuotationsService({
         ['validUntil'],
         409,
       );
+    if (rule.requireLinks) {
+      if (!old.requestLinks?.length)
+        throw invalid(
+          'At least one purchase request must be linked before receiving the quotation.',
+          ['requestLinks'],
+          409,
+        );
+      const linkedByDetail = new Map();
+      old.requestLinks.forEach((link) =>
+        link.details.forEach((item) =>
+          linkedByDetail.set(
+            item.purchaseQuotationDetailId,
+            (linkedByDetail.get(item.purchaseQuotationDetailId) ?? d(0)).add(
+              item.quantity,
+            ),
+          ),
+        ),
+      );
+      if (
+        old.details.some(
+          (item) =>
+            !linkedByDetail.get(item.id)?.equals(d(item.quantity)),
+        )
+      )
+        throw invalid(
+          'Every quotation line must be fully allocated to purchase request lines before receiving the quotation.',
+          ['requestLinks'],
+          409,
+        );
+    }
     return runInTransaction(async (client) => {
       const updated = await repository.transition(
         companyId,
@@ -232,6 +262,12 @@ export function createPurchaseQuotationsService({
       const old = await get(companyId, id);
       if (old.status !== 'DRAFT')
         throw invalid('Only draft quotations can be edited.', ['status'], 409);
+      if (old.requestLinks?.length)
+        throw invalid(
+          'Remove the linked purchase requests before editing quotation lines.',
+          ['requestLinks'],
+          409,
+        );
       const { expectedUpdatedAt, ...changes } = data;
       return runInTransaction(async (client) => {
         const refs = await validate(companyId, changes, client);
@@ -267,11 +303,113 @@ export function createPurchaseQuotationsService({
         return updated;
       });
     },
+    async replaceRequestLinks(companyId, id, data, context) {
+      const old = await get(companyId, id);
+      if (old.status !== 'DRAFT')
+        throw invalid(
+          'Purchase requests can only be linked to draft quotations.',
+          ['status'],
+          409,
+        );
+      return runInTransaction(async (client) => {
+        const refs = await repository.findLinkReferences(
+          companyId,
+          id,
+          data.links,
+          client,
+        );
+        if (!refs.quotation) throw missing();
+        const quotationDetails = new Map(
+          refs.quotation.details.map((item) => [item.id, item]),
+        );
+        const requestDetails = new Map(
+          refs.requestDetails.map((item) => [item.id, item]),
+        );
+        const seen = new Set();
+        const allocatedByQuotationDetail = new Map();
+        data.links.forEach((link, index) => {
+          const quotationDetail = quotationDetails.get(
+            link.purchaseQuotationDetailId,
+          );
+          const requestDetail = requestDetails.get(link.purchaseRequestDetailId);
+          if (!quotationDetail)
+            throw invalid('The quotation line does not belong to this quotation.', [
+              `links.${index}.purchaseQuotationDetailId`,
+            ]);
+          if (!requestDetail)
+            throw invalid('The purchase request line was not found.', [
+              `links.${index}.purchaseRequestDetailId`,
+            ]);
+          if (!['APPROVED', 'IN_QUOTATION'].includes(requestDetail.purchaseRequest.status))
+            throw invalid('Only approved purchase requests can be quoted.', [
+              `links.${index}.purchaseRequestDetailId`,
+            ]);
+          if (
+            quotationDetail.productId !== requestDetail.productId ||
+            quotationDetail.productUnitId !== requestDetail.productUnitId
+          )
+            throw invalid(
+              'The quotation line and purchase request line must have the same product and unit.',
+              [`links.${index}.purchaseRequestDetailId`],
+            );
+          const key = `${quotationDetail.id}:${requestDetail.id}`;
+          if (seen.has(key))
+            throw invalid('A request line cannot be repeated for the same quotation line.', [
+              `links.${index}`,
+            ]);
+          seen.add(key);
+          const quantity = d(link.quantity);
+          if (quantity.greaterThan(d(requestDetail.quantity)))
+            throw invalid(
+              'The linked quantity cannot exceed the requested quantity.',
+              [`links.${index}.quantity`],
+            );
+          allocatedByQuotationDetail.set(
+            quotationDetail.id,
+            (allocatedByQuotationDetail.get(quotationDetail.id) ?? d(0)).add(
+              quantity,
+            ),
+          );
+        });
+        if (data.links.length)
+          refs.quotation.details.forEach((detail) => {
+            if (
+              !allocatedByQuotationDetail
+                .get(detail.id)
+                ?.equals(d(detail.quantity))
+            )
+              throw invalid(
+                'Every quotation line must be linked for its full quoted quantity.',
+                ['links'],
+              );
+          });
+        const updated = await repository.replaceRequestLinks(
+          companyId,
+          id,
+          new Date(data.expectedUpdatedAt),
+          data.links.map((link) => ({ ...link, quantity: d(link.quantity) })),
+          refs.requestDetails,
+          client,
+        );
+        if (!updated)
+          throw concurrencyConflict('purchase quotation', old.updatedAt);
+        await record(
+          companyId,
+          old,
+          updated,
+          context,
+          { reason: 'REQUEST_LINKS_REPLACED' },
+          client,
+        );
+        return updated;
+      });
+    },
     receive: (companyId, id, body, context) =>
       transition(companyId, id, body, context, {
         from: ['DRAFT'],
         verb: 'received',
         reason: 'RECEIVED',
+        requireLinks: true,
         data: () => ({ status: 'RECEIVED', receivedAt: new Date() }),
       }),
     review: (companyId, id, body, context) =>

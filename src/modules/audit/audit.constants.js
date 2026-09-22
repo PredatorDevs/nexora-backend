@@ -79,6 +79,7 @@ export const auditActions = Object.freeze({
   expenseTypeStatusChanged: 'EXPENSE_TYPE.STATUS_CHANGED',
   purchaseQuotationCreated: 'PURCHASE_QUOTATION.CREATED',
   purchaseQuotationUpdated: 'PURCHASE_QUOTATION.UPDATED',
+  purchaseQuotationRequestsLinked: 'PURCHASE_QUOTATION.REQUESTS_LINKED',
   purchaseQuotationReceived: 'PURCHASE_QUOTATION.RECEIVED',
   purchaseQuotationReviewStarted: 'PURCHASE_QUOTATION.REVIEW_STARTED',
   purchaseQuotationCancelled: 'PURCHASE_QUOTATION.CANCELLED',

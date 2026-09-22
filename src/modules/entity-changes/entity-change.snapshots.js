@@ -403,6 +403,14 @@ export function purchaseQuotationSnapshot(value) {
       availableQuantity: decimal(detail.availableQuantity),
       notes: detail.notes,
     })),
+    requestLinks: value.requestLinks?.map((link) => ({
+      purchaseRequestId: link.purchaseRequestId,
+      details: link.details?.map((detail) => ({
+        purchaseQuotationDetailId: detail.purchaseQuotationDetailId,
+        purchaseRequestDetailId: detail.purchaseRequestDetailId,
+        quantity: decimal(detail.quantity),
+      })),
+    })),
     createdAt: iso(value.createdAt),
     updatedAt: iso(value.updatedAt),
   };
