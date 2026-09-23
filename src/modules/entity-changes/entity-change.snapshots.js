@@ -506,6 +506,12 @@ export function purchaseSnapshot(value) {
     status: value.status,
     notes: value.notes,
     receivedAt: iso(value.receivedAt),
+    verifiedAt: iso(value.verifiedAt),
+    verifiedByUserId: value.verifiedByUserId,
+    cancelledAt: iso(value.cancelledAt),
+    cancelledByUserId: value.cancelledByUserId,
+    cancellationReason: value.cancellationReason,
+    closedAt: iso(value.closedAt),
     details: value.details?.map((detail) => ({
       lineNumber: detail.lineNumber,
       purchaseOrderDetailId: detail.purchaseOrderDetailId,

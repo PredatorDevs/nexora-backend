@@ -22,3 +22,5 @@ const draft=z.object({
 export const createPurchaseBody=draft;
 export const updatePurchaseBody=draft.and(z.object({expectedUpdatedAt:z.string().datetime()}));
 export const receivePurchaseBody=z.object({expectedUpdatedAt:z.string().datetime(),expectedOrderUpdatedAt:z.string().datetime()});
+export const purchaseTransitionBody=z.object({expectedUpdatedAt:z.string().datetime()});
+export const cancelPurchaseBody=purchaseTransitionBody.extend({expectedOrderUpdatedAt:z.string().datetime(),reason:z.string().trim().min(1).max(5000)});

@@ -8,4 +8,7 @@ export function createPurchasesController(service,auditService){const context=(r
  async create(r,s){return sendSuccess(s,await audited(r,auditActions.purchaseCreated,()=>service.create(r.tenant.companyId,r.validated.body,context(r))),{statusCode:201});},
  async update(r,s){return sendSuccess(s,await audited(r,auditActions.purchaseUpdated,()=>service.update(r.tenant.companyId,r.validated.params.id,r.validated.body,context(r))));},
  async receive(r,s){return sendSuccess(s,await audited(r,auditActions.purchaseReceived,()=>service.receive(r.tenant.companyId,r.validated.params.id,r.validated.body,context(r))));},
+ async verify(r,s){return sendSuccess(s,await audited(r,auditActions.purchaseVerified,()=>service.verify(r.tenant.companyId,r.validated.params.id,r.validated.body,context(r))));},
+ async close(r,s){return sendSuccess(s,await audited(r,auditActions.purchaseClosed,()=>service.close(r.tenant.companyId,r.validated.params.id,r.validated.body,context(r))));},
+ async cancel(r,s){return sendSuccess(s,await audited(r,auditActions.purchaseCancelled,()=>service.cancel(r.tenant.companyId,r.validated.params.id,r.validated.body,context(r))));},
 };}

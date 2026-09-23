@@ -100,4 +100,7 @@ export const auditActions = Object.freeze({
   purchaseCreated: 'PURCHASE.CREATED',
   purchaseUpdated: 'PURCHASE.UPDATED',
   purchaseReceived: 'PURCHASE.RECEIVED',
+  purchaseVerified: 'PURCHASE.VERIFIED',
+  purchaseClosed: 'PURCHASE.CLOSED',
+  purchaseCancelled: 'PURCHASE.CANCELLED',
 });

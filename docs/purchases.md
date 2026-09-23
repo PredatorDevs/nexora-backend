@@ -70,6 +70,9 @@ GET  /api/v1/purchases/orders/:orderId/availability
 POST /api/v1/purchases
 PUT  /api/v1/purchases/:id
 POST /api/v1/purchases/:id/receive
+POST /api/v1/purchases/:id/verify
+POST /api/v1/purchases/:id/close
+POST /api/v1/purchases/:id/cancel
 ```
 
 Las escrituras reciben `expectedOrderUpdatedAt`; las ediciones y confirmaciones
@@ -80,3 +83,8 @@ cantidades; confirmar vuelve a comprobarlas contra recepciones confirmadas.
 El cliente únicamente envía la línea de orden y cantidad recibida. Productos,
 unidades, precios, descuentos, impuestos, destino, proveedor y moneda se copian
 o calculan en el backend desde la orden autorizada.
+
+Cancelar está permitido únicamente para borradores y libera su reserva. Una
+recepción confirmada no se cancela ni modifica: una reversión futura deberá
+producir un movimiento compensatorio de inventario. Verificar requiere estado
+`RECEIVED`, y cerrar requiere estado `VERIFIED`.
