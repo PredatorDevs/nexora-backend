@@ -15,7 +15,10 @@ export function createPurchaseQuotationsController(service, auditService) {
             actorUserId: r.auth.userId,
             action,
             resourceType: 'purchase_quotation',
-            resourceId: r.validated.params?.id ?? ((v) => v.id),
+            resourceId:
+              r.validated.params?.id ??
+              r.validated.params?.purchaseRequestId ??
+              ((v) => v.id),
             context: auditRequestContext(r),
             metadata: { companyId: r.tenant.companyId },
           },
@@ -45,6 +48,31 @@ export function createPurchaseQuotationsController(service, auditService) {
       return sendSuccess(
         s,
         await service.get(r.tenant.companyId, r.validated.params.id),
+      );
+    },
+    async comparison(r, s) {
+      return sendSuccess(
+        s,
+        await service.comparison(
+          r.tenant.companyId,
+          r.validated.params.purchaseRequestId,
+        ),
+      );
+    },
+    async selectAwards(r, s) {
+      return sendSuccess(
+        s,
+        await audited(
+          r,
+          auditActions.purchaseQuotationComparisonDecided,
+          () =>
+            service.selectAwards(
+              r.tenant.companyId,
+              r.validated.params.purchaseRequestId,
+              r.validated.body,
+              context(r),
+            ),
+        ),
       );
     },
     async create(r, s) {

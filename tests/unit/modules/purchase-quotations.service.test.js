@@ -130,4 +130,119 @@ describe('purchase quotations service', () => {
 
     expect(repository.replaceExpenses).toHaveBeenCalledOnce();
   });
+
+  it('normalizes quotation amounts for comparison using the exchange rate', async () => {
+    const repository = {
+      findComparison: vi.fn().mockResolvedValue({
+        request: {
+          id: 5,
+          company: { defaultCurrencyCode: 'USD' },
+          details: [],
+        },
+        links: [
+          {
+            id: 8,
+            details: [
+              {
+                id: 9,
+                quotationDetail: { unitPrice: '10', total: '20' },
+              },
+            ],
+            purchaseQuotation: {
+              exchangeRate: '2',
+              subtotal: '100',
+              discount: '5',
+              tax: '12.35',
+              expenseTotal: '10',
+              grandTotal: '117.35',
+            },
+          },
+        ],
+      }),
+    };
+    const service = createPurchaseQuotationsService({ repository });
+
+    const result = await service.comparison(6, 5);
+
+    expect(result.links[0].purchaseQuotation.normalizedGrandTotal.toString()).toBe(
+      '234.7',
+    );
+    expect(result.links[0].details[0].normalizedUnitPrice.toString()).toBe(
+      '20',
+    );
+  });
+
+  it('persists a valid partial award from a quotation under review', async () => {
+    const quotation = {
+      id: 20,
+      status: 'UNDER_REVIEW',
+      validUntil: '2026-12-31T00:00:00.000Z',
+      exchangeRate: '1',
+      subtotal: '100',
+      discount: '0',
+      tax: '13',
+      expenseTotal: '5',
+      grandTotal: '118',
+      details: [{ id: 30, quantity: '10', availableQuantity: '8' }],
+      requestLinks: [
+        {
+          purchaseRequestId: 5,
+          details: [
+            { purchaseQuotationDetailId: 30, awardedQuantity: '0' },
+          ],
+        },
+      ],
+    };
+    const comparison = {
+      request: {
+        id: 5,
+        status: 'IN_QUOTATION',
+        updatedAt: new Date('2026-09-22T10:00:00.000Z'),
+        company: { defaultCurrencyCode: 'USD' },
+        details: [{ id: 40, quantity: '10' }],
+      },
+      links: [
+        {
+          id: 50,
+          purchaseQuotation: quotation,
+          details: [
+            {
+              id: 60,
+              purchaseRequestDetailId: 40,
+              purchaseQuotationDetailId: 30,
+              quantity: '10',
+              awardedQuantity: '0',
+              quotationDetail: { unitPrice: '10', total: '113' },
+            },
+          ],
+        },
+      ],
+    };
+    const repository = {
+      findComparison: vi.fn().mockResolvedValue(comparison),
+      applyDecision: vi.fn().mockResolvedValue(comparison),
+    };
+    const service = createPurchaseQuotationsService({
+      repository,
+      runInTransaction: (operation) => operation({}),
+    });
+
+    await service.selectAwards(
+      6,
+      5,
+      {
+        expectedUpdatedAt: comparison.request.updatedAt.toISOString(),
+        reason: 'Mejor plazo de entrega',
+        awards: [
+          {
+            purchaseQuotationRequestDetailId: 60,
+            awardedQuantity: 6,
+          },
+        ],
+      },
+      { actorUserId: 1 },
+    );
+
+    expect(repository.applyDecision).toHaveBeenCalledOnce();
+  });
 });

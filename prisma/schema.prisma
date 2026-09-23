@@ -122,32 +122,35 @@ enum CompanyInvitationStatus {
 }
 
 model User {
-  id                           Int                     @id @default(autoincrement()) @db.UnsignedInt
-  email                        String                  @unique(map: "users_email_key") @db.VarChar(191)
-  passwordHash                 String                  @map("password_hash") @db.VarChar(255)
-  displayName                  String                  @map("display_name") @db.VarChar(120)
-  status                       UserStatus              @default(ACTIVE)
-  securityVersion              Int                     @default(1) @map("security_version") @db.UnsignedInt
-  mustChangePassword           Boolean                 @default(false) @map("must_change_password")
-  createdAt                    DateTime                @default(now()) @map("created_at") @db.DateTime(3)
-  updatedAt                    DateTime                @updatedAt @map("updated_at") @db.DateTime(3)
-  roles                        UserRole[]              @relation("UserRoles")
-  roleAssignmentsGranted       UserRole[]              @relation("UserRoleAssignedBy")
-  permissionGrantsAssigned     RolePermission[]        @relation("RolePermissionAssignedBy")
+  id                           Int                        @id @default(autoincrement()) @db.UnsignedInt
+  email                        String                     @unique(map: "users_email_key") @db.VarChar(191)
+  passwordHash                 String                     @map("password_hash") @db.VarChar(255)
+  displayName                  String                     @map("display_name") @db.VarChar(120)
+  status                       UserStatus                 @default(ACTIVE)
+  securityVersion              Int                        @default(1) @map("security_version") @db.UnsignedInt
+  mustChangePassword           Boolean                    @default(false) @map("must_change_password")
+  createdAt                    DateTime                   @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt                    DateTime                   @updatedAt @map("updated_at") @db.DateTime(3)
+  roles                        UserRole[]                 @relation("UserRoles")
+  roleAssignmentsGranted       UserRole[]                 @relation("UserRoleAssignedBy")
+  permissionGrantsAssigned     RolePermission[]           @relation("RolePermissionAssignedBy")
   sessions                     AuthSession[]
-  auditLogs                    AuditLog[]              @relation("AuditActor")
-  entityChanges                EntityChangeLog[]       @relation("EntityChangeActor")
+  auditLogs                    AuditLog[]                 @relation("AuditActor")
+  entityChanges                EntityChangeLog[]          @relation("EntityChangeActor")
   companyMemberships           CompanyMembership[]
-  companyRolesAssigned         CompanyMembershipRole[] @relation("CompanyMembershipRoleAssignedBy")
-  companyPermissionsAssigned   CompanyRolePermission[] @relation("CompanyRolePermissionAssignedBy")
-  companyInvitationsSent       CompanyInvitation[]     @relation("CompanyInvitationInvitedBy")
-  companyInvitationsAccepted   CompanyInvitation[]     @relation("CompanyInvitationAcceptedBy")
-  purchaseRequestsRequested    PurchaseRequest[]       @relation("PurchaseRequestRequestedBy")
-  purchaseRequestsApproved     PurchaseRequest[]       @relation("PurchaseRequestApprovedBy")
-  purchaseRequestsRejected     PurchaseRequest[]       @relation("PurchaseRequestRejectedBy")
-  purchaseRequestsCancelled    PurchaseRequest[]       @relation("PurchaseRequestCancelledBy")
-  purchaseQuotationsRegistered PurchaseQuotation[]     @relation("PurchaseQuotationRegisteredBy")
-  purchaseQuotationsCancelled  PurchaseQuotation[]     @relation("PurchaseQuotationCancelledBy")
+  companyRolesAssigned         CompanyMembershipRole[]    @relation("CompanyMembershipRoleAssignedBy")
+  companyPermissionsAssigned   CompanyRolePermission[]    @relation("CompanyRolePermissionAssignedBy")
+  companyInvitationsSent       CompanyInvitation[]        @relation("CompanyInvitationInvitedBy")
+  companyInvitationsAccepted   CompanyInvitation[]        @relation("CompanyInvitationAcceptedBy")
+  purchaseRequestsRequested    PurchaseRequest[]          @relation("PurchaseRequestRequestedBy")
+  purchaseRequestsApproved     PurchaseRequest[]          @relation("PurchaseRequestApprovedBy")
+  purchaseRequestsRejected     PurchaseRequest[]          @relation("PurchaseRequestRejectedBy")
+  purchaseRequestsCancelled    PurchaseRequest[]          @relation("PurchaseRequestCancelledBy")
+  purchaseQuotationsRegistered PurchaseQuotation[]        @relation("PurchaseQuotationRegisteredBy")
+  purchaseQuotationsCancelled  PurchaseQuotation[]        @relation("PurchaseQuotationCancelledBy")
+  purchaseQuotationsSelected   PurchaseQuotation[]        @relation("PurchaseQuotationSelectedBy")
+  purchaseQuotationsRejected   PurchaseQuotation[]        @relation("PurchaseQuotationRejectedBy")
+  quotationRequestDecisions    PurchaseQuotationRequest[] @relation("PurchaseQuotationRequestDecidedBy")
 
   @@index([status], map: "users_status_idx")
   @@map("users")
@@ -894,6 +897,12 @@ model PurchaseQuotation {
   cancelledAt             DateTime?                  @map("cancelled_at") @db.DateTime(3)
   cancelledByUserId       Int?                       @map("cancelled_by_user_id") @db.UnsignedInt
   cancellationReason      String?                    @map("cancellation_reason") @db.Text
+  selectedAt              DateTime?                  @map("selected_at") @db.DateTime(3)
+  selectedByUserId        Int?                       @map("selected_by_user_id") @db.UnsignedInt
+  selectionReason         String?                    @map("selection_reason") @db.Text
+  rejectedAt              DateTime?                  @map("rejected_at") @db.DateTime(3)
+  rejectedByUserId        Int?                       @map("rejected_by_user_id") @db.UnsignedInt
+  rejectionReason         String?                    @map("rejection_reason") @db.Text
   createdAt               DateTime                   @default(now()) @map("created_at") @db.DateTime(3)
   updatedAt               DateTime                   @updatedAt @map("updated_at") @db.DateTime(3)
   company                 Company                    @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
@@ -901,6 +910,8 @@ model PurchaseQuotation {
   supplierContact         SupplierContact?           @relation(fields: [supplierContactId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
   registeredBy            User                       @relation("PurchaseQuotationRegisteredBy", fields: [registeredByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   cancelledBy             User?                      @relation("PurchaseQuotationCancelledBy", fields: [cancelledByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  selectedBy              User?                      @relation("PurchaseQuotationSelectedBy", fields: [selectedByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  rejectedBy              User?                      @relation("PurchaseQuotationRejectedBy", fields: [rejectedByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   details                 PurchaseQuotationDetail[]
   requestLinks            PurchaseQuotationRequest[]
   expenses                PurchaseQuotationExpense[]
@@ -913,6 +924,8 @@ model PurchaseQuotation {
   @@index([companyId, supplierContactId], map: "purchase_quotations_contact_idx")
   @@index([registeredByUserId], map: "purchase_quotations_registered_by_idx")
   @@index([cancelledByUserId], map: "purchase_quotations_cancelled_by_idx")
+  @@index([selectedByUserId], map: "purchase_quotations_selected_by_idx")
+  @@index([rejectedByUserId], map: "purchase_quotations_rejected_by_idx")
   @@map("purchase_quotations")
 }
 
@@ -956,16 +969,21 @@ model PurchaseQuotationRequest {
   companyId           Int                              @map("company_id") @db.UnsignedInt
   purchaseQuotationId Int                              @map("purchase_quotation_id") @db.UnsignedInt
   purchaseRequestId   Int                              @map("purchase_request_id") @db.UnsignedInt
+  decidedAt           DateTime?                        @map("decided_at") @db.DateTime(3)
+  decidedByUserId     Int?                             @map("decided_by_user_id") @db.UnsignedInt
+  decisionReason      String?                          @map("decision_reason") @db.Text
   createdAt           DateTime                         @default(now()) @map("created_at") @db.DateTime(3)
   updatedAt           DateTime                         @updatedAt @map("updated_at") @db.DateTime(3)
   company             Company                          @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   purchaseQuotation   PurchaseQuotation                @relation(fields: [purchaseQuotationId, companyId], references: [id, companyId], onDelete: Cascade, onUpdate: Cascade)
   purchaseRequest     PurchaseRequest                  @relation(fields: [purchaseRequestId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  decidedBy           User?                            @relation("PurchaseQuotationRequestDecidedBy", fields: [decidedByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   details             PurchaseQuotationRequestDetail[]
 
   @@unique([companyId, purchaseQuotationId, purchaseRequestId], map: "purchase_quotation_requests_pair_key")
   @@unique([id, companyId], map: "purchase_quotation_requests_id_company_key")
   @@index([companyId, purchaseRequestId], map: "purchase_quotation_requests_request_idx")
+  @@index([decidedByUserId], map: "purchase_quotation_requests_decided_by_idx")
   @@map("purchase_quotation_requests")
 }
 
@@ -976,6 +994,7 @@ model PurchaseQuotationRequestDetail {
   purchaseQuotationDetailId  Int                      @map("purchase_quotation_detail_id") @db.UnsignedInt
   purchaseRequestDetailId    Int                      @map("purchase_request_detail_id") @db.UnsignedInt
   quantity                   Decimal                  @db.Decimal(18, 4)
+  awardedQuantity            Decimal                  @default(0) @map("awarded_quantity") @db.Decimal(18, 4)
   createdAt                  DateTime                 @default(now()) @map("created_at") @db.DateTime(3)
   updatedAt                  DateTime                 @updatedAt @map("updated_at") @db.DateTime(3)
   company                    Company                  @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)

@@ -85,4 +85,6 @@ export const auditActions = Object.freeze({
   purchaseQuotationReviewStarted: 'PURCHASE_QUOTATION.REVIEW_STARTED',
   purchaseQuotationCancelled: 'PURCHASE_QUOTATION.CANCELLED',
   purchaseQuotationExpired: 'PURCHASE_QUOTATION.EXPIRED',
+  purchaseQuotationComparisonDecided:
+    'PURCHASE_QUOTATION.COMPARISON_DECIDED',
 });

@@ -146,6 +146,55 @@ export function createPurchaseQuotationsService({
     if (!value) throw missing();
     return value;
   }
+  const normalize = (value, exchangeRate) => round(d(value).mul(exchangeRate));
+  async function comparison(companyId, purchaseRequestId, client) {
+    const value = await repository.findComparison(
+      companyId,
+      purchaseRequestId,
+      client,
+    );
+    if (!value)
+      throw new AppError({
+        code: errorCodes.notFound,
+        message: 'The requested purchase request was not found.',
+        statusCode: 404,
+      });
+    return {
+      ...value,
+      links: value.links.map((link) => {
+        const quotation = link.purchaseQuotation;
+        const exchangeRate = d(quotation.exchangeRate);
+        return {
+          ...link,
+          purchaseQuotation: {
+            ...quotation,
+            normalizedSubtotal: normalize(quotation.subtotal, exchangeRate),
+            normalizedDiscount: normalize(quotation.discount, exchangeRate),
+            normalizedTax: normalize(quotation.tax, exchangeRate),
+            normalizedExpenseTotal: normalize(
+              quotation.expenseTotal,
+              exchangeRate,
+            ),
+            normalizedGrandTotal: normalize(
+              quotation.grandTotal,
+              exchangeRate,
+            ),
+          },
+          details: link.details.map((item) => ({
+            ...item,
+            normalizedUnitPrice: normalize(
+              item.quotationDetail.unitPrice,
+              exchangeRate,
+            ),
+            normalizedLineTotal: normalize(
+              item.quotationDetail.total,
+              exchangeRate,
+            ),
+          })),
+        };
+      }),
+    };
+  }
   async function transition(companyId, id, body, context, rule) {
     const old = await get(companyId, id);
     if (!rule.from.includes(old.status))
@@ -221,6 +270,7 @@ export function createPurchaseQuotationsService({
       };
     },
     get,
+    comparison,
     create(companyId, data, context) {
       return runInTransaction(async (client) => {
         const refs = await validate(companyId, data, client);
@@ -444,6 +494,141 @@ export function createPurchaseQuotationsService({
           client,
         );
         return updated;
+      });
+    },
+    async selectAwards(companyId, purchaseRequestId, data, context) {
+      const old = await comparison(companyId, purchaseRequestId);
+      if (old.request.status !== 'IN_QUOTATION')
+        throw invalid(
+          'Only purchase requests in quotation can be awarded.',
+          ['status'],
+          409,
+        );
+      const candidates = new Map();
+      old.links.forEach((parent) =>
+        parent.details.forEach((item) =>
+          candidates.set(item.id, {
+            ...item,
+            parent,
+            quotation: parent.purchaseQuotation,
+          }),
+        ),
+      );
+      const seen = new Set();
+      const byRequestDetail = new Map();
+      const byQuotationDetail = new Map();
+      data.awards.forEach((award, index) => {
+        if (seen.has(award.purchaseQuotationRequestDetailId))
+          throw invalid('An offer line cannot be awarded more than once.', [
+            `awards.${index}`,
+          ]);
+        seen.add(award.purchaseQuotationRequestDetailId);
+        const candidate = candidates.get(
+          award.purchaseQuotationRequestDetailId,
+        );
+        if (!candidate)
+          throw invalid('The selected offer does not belong to this request.', [
+            `awards.${index}.purchaseQuotationRequestDetailId`,
+          ]);
+        if (
+          !['UNDER_REVIEW', 'SELECTED', 'REJECTED'].includes(
+            candidate.quotation.status,
+          )
+        )
+          throw invalid('Every selected quotation must be under review.', [
+            `awards.${index}.purchaseQuotationRequestDetailId`,
+          ]);
+        if (new Date(candidate.quotation.validUntil) < new Date())
+          throw invalid('An expired quotation cannot be selected.', [
+            `awards.${index}.purchaseQuotationRequestDetailId`,
+          ]);
+        const quantity = d(award.awardedQuantity);
+        if (quantity.greaterThan(d(candidate.quantity)))
+          throw invalid(
+            'The awarded quantity cannot exceed the quantity linked to the request.',
+            [`awards.${index}.awardedQuantity`],
+          );
+        byRequestDetail.set(
+          candidate.purchaseRequestDetailId,
+          (byRequestDetail.get(candidate.purchaseRequestDetailId) ?? d(0)).add(
+            quantity,
+          ),
+        );
+        byQuotationDetail.set(
+          candidate.purchaseQuotationDetailId,
+          (byQuotationDetail.get(candidate.purchaseQuotationDetailId) ?? d(0)).add(
+            quantity,
+          ),
+        );
+      });
+      const requestDetails = new Map(
+        old.request.details.map((item) => [item.id, item]),
+      );
+      for (const [requestDetailId, quantity] of byRequestDetail) {
+        if (quantity.greaterThan(d(requestDetails.get(requestDetailId).quantity)))
+          throw invalid(
+            'The total awarded quantity cannot exceed the requested quantity.',
+            ['awards'],
+          );
+      }
+      const quotationDetails = new Map();
+      old.links.forEach((parent) =>
+        parent.purchaseQuotation.details.forEach((item) =>
+          quotationDetails.set(item.id, {
+            detail: item,
+            otherAwarded: parent.purchaseQuotation.requestLinks
+              .filter((link) => link.purchaseRequestId !== purchaseRequestId)
+              .flatMap((link) => link.details)
+              .filter(
+                (link) => link.purchaseQuotationDetailId === item.id,
+              )
+              .reduce(
+                (sum, link) => sum.add(link.awardedQuantity ?? 0),
+                d(0),
+              ),
+          }),
+        ),
+      );
+      for (const [quotationDetailId, quantity] of byQuotationDetail) {
+        const { detail, otherAwarded } = quotationDetails.get(quotationDetailId);
+        const limit = d(detail.availableQuantity ?? detail.quantity);
+        if (otherAwarded.add(quantity).greaterThan(limit))
+          throw invalid(
+            'The awarded quantity exceeds the supplier available quantity.',
+            ['awards'],
+          );
+      }
+      return runInTransaction(async (client) => {
+        const updated = await repository.applyDecision(
+          companyId,
+          purchaseRequestId,
+          new Date(data.expectedUpdatedAt),
+          data.awards.map((award) => ({
+            ...award,
+            awardedQuantity: d(award.awardedQuantity),
+          })),
+          data.reason,
+          context.actorUserId,
+          client,
+        );
+        if (!updated)
+          throw concurrencyConflict('purchase request', old.request.updatedAt);
+        const oldById = new Map(
+          old.links.map((link) => [link.purchaseQuotation.id, link.purchaseQuotation]),
+        );
+        for (const link of updated.links)
+          await record(
+            companyId,
+            oldById.get(link.purchaseQuotation.id),
+            link.purchaseQuotation,
+            context,
+            {
+              reason: 'COMPARISON_DECISION',
+              purchaseRequestId,
+            },
+            client,
+          );
+        return comparison(companyId, purchaseRequestId, client);
       });
     },
     receive: (companyId, id, body, context) =>

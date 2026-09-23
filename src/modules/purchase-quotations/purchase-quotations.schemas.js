@@ -3,6 +3,9 @@ import { createListQuerySchema } from '../../core/validation/pagination.js';
 export const purchaseQuotationIdParams = z.object({
   id: z.coerce.number().int().positive(),
 });
+export const purchaseQuotationComparisonParams = z.object({
+  purchaseRequestId: z.coerce.number().int().positive(),
+});
 export const purchaseQuotationsListQuery = createListQuerySchema([
   'createdAt',
   'quotationDate',
@@ -118,4 +121,17 @@ export const replacePurchaseQuotationExpensesBody = z.object({
       }),
     )
     .max(100),
+});
+export const selectPurchaseQuotationAwardsBody = z.object({
+  expectedUpdatedAt: z.string().datetime(),
+  reason: z.string().trim().min(1).max(5000),
+  awards: z
+    .array(
+      z.object({
+        purchaseQuotationRequestDetailId: z.number().int().positive(),
+        awardedQuantity: z.coerce.number().positive().max(1e14),
+      }),
+    )
+    .min(1)
+    .max(1000),
 });

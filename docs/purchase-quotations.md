@@ -97,3 +97,29 @@ exclusivamente el cálculo fiscal de las líneas cotizadas.
 Permiso adicional:
 
 - `purchase_quotations.manage_expenses`
+
+## Etapa 3: comparación y adjudicación
+
+La comparación se calcula por solicitud usando las relaciones existentes, sin crear
+una cabecera adicional. Las ofertas muestran proveedor, precios, descuentos,
+impuestos, disponibilidad, entrega, condiciones de pago, vigencia y gastos.
+
+Los importes se normalizan a la moneda base de la empresa mediante el tipo de cambio
+registrado en cada cotización. El sistema informa los costos, pero no selecciona
+automáticamente la oferta más barata.
+
+La decisión se persiste así:
+
+- `purchase_quotation_request_details.awarded_quantity`: cantidad adjudicada de una
+  oferta para una línea solicitada.
+- `purchase_quotation_requests`: fecha, usuario y justificación de la decisión para
+  cada solicitud evaluada.
+- `purchase_quotations`: trazabilidad de selección o rechazo general.
+
+La suma adjudicada no puede superar la cantidad solicitada, vinculada, cotizada ni
+disponible. Una cotización queda `SELECTED` cuando posee al menos una cantidad
+adjudicada; queda `REJECTED` cuando todas sus solicitudes relacionadas fueron
+decididas sin ninguna adjudicación. Se conserva el permiso ya previsto
+`purchase_quotations.select`.
+Como la confirmación también descarta alternativas ya decididas, el endpoint exige
+conjuntamente `purchase_quotations.select` y `purchase_quotations.reject`.

@@ -386,6 +386,12 @@ export function purchaseQuotationSnapshot(value) {
     cancelledAt: iso(value.cancelledAt),
     cancelledByUserId: value.cancelledByUserId,
     cancellationReason: value.cancellationReason,
+    selectedAt: iso(value.selectedAt),
+    selectedByUserId: value.selectedByUserId,
+    selectionReason: value.selectionReason,
+    rejectedAt: iso(value.rejectedAt),
+    rejectedByUserId: value.rejectedByUserId,
+    rejectionReason: value.rejectionReason,
     details: value.details?.map((detail) => ({
       lineNumber: detail.lineNumber,
       productId: detail.productId,
@@ -405,10 +411,14 @@ export function purchaseQuotationSnapshot(value) {
     })),
     requestLinks: value.requestLinks?.map((link) => ({
       purchaseRequestId: link.purchaseRequestId,
+      decidedAt: iso(link.decidedAt),
+      decidedByUserId: link.decidedByUserId,
+      decisionReason: link.decisionReason,
       details: link.details?.map((detail) => ({
         purchaseQuotationDetailId: detail.purchaseQuotationDetailId,
         purchaseRequestDetailId: detail.purchaseRequestDetailId,
         quantity: decimal(detail.quantity),
+        awardedQuantity: decimal(detail.awardedQuantity),
       })),
     })),
     expenses: value.expenses?.map((expense) => ({

@@ -38,6 +38,12 @@ const select = {
   cancelledAt: true,
   cancelledByUserId: true,
   cancellationReason: true,
+  selectedAt: true,
+  selectedByUserId: true,
+  selectionReason: true,
+  rejectedAt: true,
+  rejectedByUserId: true,
+  rejectionReason: true,
   createdAt: true,
   updatedAt: true,
   supplier: { select: { id: true, code: true, name: true, isActive: true } },
@@ -52,6 +58,8 @@ const select = {
   },
   registeredBy: { select: user },
   cancelledBy: { select: user },
+  selectedBy: { select: user },
+  rejectedBy: { select: user },
   details: {
     orderBy: { lineNumber: 'asc' },
     select: {
@@ -99,6 +107,9 @@ const select = {
     select: {
       id: true,
       purchaseRequestId: true,
+      decidedAt: true,
+      decidedByUserId: true,
+      decisionReason: true,
       purchaseRequest: {
         select: { id: true, code: true, status: true, requiredDate: true },
       },
@@ -109,6 +120,7 @@ const select = {
           purchaseQuotationDetailId: true,
           purchaseRequestDetailId: true,
           quantity: true,
+          awardedQuantity: true,
           requestDetail: {
             select: {
               lineNumber: true,
@@ -382,6 +394,181 @@ export function createPurchaseQuotationsRepository(prisma) {
           })),
         });
       return this.find(companyId, quotationId, client);
+    },
+    async findComparison(companyId, purchaseRequestId, client = prisma) {
+      const request = await client.purchaseRequest.findFirst({
+        where: { id: purchaseRequestId, companyId },
+        select: {
+          id: true,
+          uuid: true,
+          code: true,
+          status: true,
+          requestDate: true,
+          requiredDate: true,
+          justification: true,
+          updatedAt: true,
+          company: { select: { defaultCurrencyCode: true } },
+          branch: { select: { id: true, code: true, name: true } },
+          warehouse: { select: { id: true, code: true, name: true } },
+          details: {
+            orderBy: { lineNumber: 'asc' },
+            select: {
+              id: true,
+              lineNumber: true,
+              productId: true,
+              productUnitId: true,
+              quantity: true,
+              description: true,
+              product: {
+                select: { internalCode: true, name: true },
+              },
+              productUnit: {
+                select: {
+                  code: true,
+                  name: true,
+                  measurementUnit: { select: { symbol: true } },
+                },
+              },
+            },
+          },
+        },
+      });
+      if (!request) return null;
+      const links = await client.purchaseQuotationRequest.findMany({
+        where: { companyId, purchaseRequestId },
+        orderBy: { purchaseQuotationId: 'asc' },
+        select: {
+          id: true,
+          purchaseQuotationId: true,
+          decidedAt: true,
+          decidedByUserId: true,
+          decisionReason: true,
+          decidedBy: { select: user },
+          details: {
+            orderBy: { id: 'asc' },
+            select: {
+              id: true,
+              purchaseQuotationDetailId: true,
+              purchaseRequestDetailId: true,
+              quantity: true,
+              awardedQuantity: true,
+              quotationDetail: {
+                select: {
+                  lineNumber: true,
+                  quantity: true,
+                  unitPrice: true,
+                  discountRate: true,
+                  taxRate: true,
+                  total: true,
+                  deliveryDays: true,
+                  availableQuantity: true,
+                },
+              },
+            },
+          },
+          purchaseQuotation: { select },
+        },
+      });
+      return {
+        request,
+        links: links.map((link) => ({
+          ...link,
+          purchaseQuotation: withComparativeTotals(link.purchaseQuotation),
+        })),
+      };
+    },
+    async applyDecision(
+      companyId,
+      purchaseRequestId,
+      expectedUpdatedAt,
+      awards,
+      reason,
+      userId,
+      client = prisma,
+    ) {
+      const claimed = await client.purchaseRequest.updateMany({
+        where: {
+          id: purchaseRequestId,
+          companyId,
+          updatedAt: expectedUpdatedAt,
+          status: 'IN_QUOTATION',
+        },
+        data: { updatedAt: new Date() },
+      });
+      if (claimed.count !== 1) return null;
+      const parents = await client.purchaseQuotationRequest.findMany({
+        where: { companyId, purchaseRequestId },
+        select: { id: true, purchaseQuotationId: true },
+      });
+      const parentIds = parents.map((item) => item.id);
+      await client.purchaseQuotationRequestDetail.updateMany({
+        where: { companyId, purchaseQuotationRequestId: { in: parentIds } },
+        data: { awardedQuantity: 0 },
+      });
+      for (const award of awards)
+        await client.purchaseQuotationRequestDetail.updateMany({
+          where: {
+            id: award.purchaseQuotationRequestDetailId,
+            companyId,
+            purchaseQuotationRequestId: { in: parentIds },
+          },
+          data: { awardedQuantity: award.awardedQuantity },
+        });
+      await client.purchaseQuotationRequest.updateMany({
+        where: { id: { in: parentIds }, companyId },
+        data: {
+          decidedAt: new Date(),
+          decidedByUserId: userId,
+          decisionReason: reason,
+        },
+      });
+      for (const quotationId of [
+        ...new Set(parents.map((item) => item.purchaseQuotationId)),
+      ]) {
+        const [pending, awarded] = await Promise.all([
+          client.purchaseQuotationRequest.count({
+            where: { companyId, purchaseQuotationId: quotationId, decidedAt: null },
+          }),
+          client.purchaseQuotationRequestDetail.count({
+            where: {
+              companyId,
+              awardedQuantity: { gt: 0 },
+              quotationRequest: { purchaseQuotationId: quotationId },
+            },
+          }),
+        ]);
+        const selected = awarded > 0;
+        const rejected = !selected && pending === 0;
+        await client.purchaseQuotation.updateMany({
+          where: {
+            id: quotationId,
+            companyId,
+            status: { in: ['UNDER_REVIEW', 'SELECTED', 'REJECTED'] },
+          },
+          data: selected
+            ? {
+                status: 'SELECTED',
+                selectedAt: new Date(),
+                selectedByUserId: userId,
+                selectionReason: reason,
+                rejectedAt: null,
+                rejectedByUserId: null,
+                rejectionReason: null,
+              }
+            : rejected
+              ? {
+                  status: 'REJECTED',
+                  rejectedAt: new Date(),
+                  rejectedByUserId: userId,
+                  rejectionReason: reason,
+                  selectedAt: null,
+                  selectedByUserId: null,
+                  selectionReason: null,
+                }
+              : { status: 'UNDER_REVIEW' },
+        });
+      }
+      return this.findComparison(companyId, purchaseRequestId, client);
     },
   };
 }

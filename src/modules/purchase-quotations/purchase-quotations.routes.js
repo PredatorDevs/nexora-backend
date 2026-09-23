@@ -6,11 +6,13 @@ import { createPurchaseQuotationsController } from './purchase-quotations.contro
 import {
   createPurchaseQuotationBody,
   purchaseQuotationIdParams,
+  purchaseQuotationComparisonParams,
   purchaseQuotationReasonTransitionBody,
   purchaseQuotationsListQuery,
   purchaseQuotationTransitionBody,
   replacePurchaseQuotationRequestLinksBody,
   replacePurchaseQuotationExpensesBody,
+  selectPurchaseQuotationAwardsBody,
   updatePurchaseQuotationBody,
 } from './purchase-quotations.schemas.js';
 export function createPurchaseQuotationsRouter(service, auditService) {
@@ -22,6 +24,22 @@ export function createPurchaseQuotationsRouter(service, auditService) {
     authorizeCompany('purchase_quotations.read'),
     validate({ query: purchaseQuotationsListQuery }),
     controller.list,
+  );
+  router.get(
+    '/comparison/:purchaseRequestId',
+    authorizeCompany('purchase_quotations.read'),
+    validate({ params: purchaseQuotationComparisonParams }),
+    controller.comparison,
+  );
+  router.post(
+    '/comparison/:purchaseRequestId/select',
+    authorizeCompany('purchase_quotations.select'),
+    authorizeCompany('purchase_quotations.reject'),
+    validate({
+      params: purchaseQuotationComparisonParams,
+      body: selectPurchaseQuotationAwardsBody,
+    }),
+    controller.selectAwards,
   );
   router.get(
     '/:id',
