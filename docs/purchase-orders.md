@@ -2,6 +2,12 @@
 
 Las órdenes pertenecen siempre a una empresa y se generan desde cantidades adjudicadas no procesadas. Cada orden conserva proveedor, cotización, sucursal y almacén; una restricción única evita reutilizar una adjudicación.
 
+Cuando todas las cantidades adjudicadas pendientes de una solicitud se convierten en
+órdenes, la solicitud cambia de `IN_QUOTATION` a `COMPLETED`. Desde ese momento deja
+de ofrecerse como origen de nuevas cotizaciones. La cantidad no adjudicada se entiende
+cerrada por la decisión de comparación; una adjudicación parcial no mantiene abierta
+automáticamente la necesidad original.
+
 La generación copia las condiciones comerciales y calcula los importes en el backend. Los gastos de cotización se prorratean según la proporción adjudicada y pasan a ser gastos editables de la orden.
 
 Estados iniciales:

@@ -22,6 +22,7 @@ describe('purchase orders service', () => {
         }],
       }),
       create: vi.fn(async (data) => ({ id: 1, ...data })),
+      completeRequest: vi.fn().mockResolvedValue({ count: 1 }),
     };
     const service = createPurchaseOrdersService({ repository, runInTransaction: (fn) => fn({}), generateCode: vi.fn().mockResolvedValue('OC-000001') });
     const result = await service.generate(6, { purchaseRequestId: 5, orderDate: '2026-09-22T00:00:00.000Z', expectedDate: '2026-10-01T00:00:00.000Z' }, { actorUserId: 1 });
@@ -30,5 +31,6 @@ describe('purchase orders service', () => {
     expect(result[0].tax.toString()).toBe('11.7');
     expect(result[0].additionalExpenses.toString()).toBe('9');
     expect(result[0].total.toString()).toBe('110.7');
+    expect(repository.completeRequest).toHaveBeenCalledWith(6, 5, {});
   });
 });
