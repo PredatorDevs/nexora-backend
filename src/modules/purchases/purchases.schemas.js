@@ -3,6 +3,7 @@ import { createListQuerySchema } from '../../core/validation/pagination.js';
 
 export const purchaseIdParams = z.object({ id: z.coerce.number().int().positive() });
 export const purchaseOrderAvailabilityParams = z.object({ orderId: z.coerce.number().int().positive() });
+export const purchaseOrderAvailabilityQuery = z.object({ purchaseId: z.coerce.number().int().positive().optional() });
 export const purchasesListQuery = createListQuerySchema(['createdAt','purchaseDate','code','status','total']).extend({
   status: z.enum(['DRAFT','RECEIVED','VERIFIED','CANCELLED','CLOSED']).optional(),
   supplierId: z.coerce.number().int().positive().optional(),
