@@ -479,3 +479,51 @@ export function purchaseOrderSnapshot(value) {
     updatedAt: iso(value.updatedAt),
   };
 }
+
+export function purchaseSnapshot(value) {
+  if (!value) return null;
+  const decimal = (item) => item?.toString() ?? null;
+  return {
+    id: value.id,
+    uuid: value.uuid,
+    companyId: value.companyId,
+    code: value.code,
+    purchaseOrderId: value.purchaseOrderId,
+    supplierId: value.supplierId,
+    branchId: value.branchId,
+    warehouseId: value.warehouseId,
+    receivedByUserId: value.receivedByUserId,
+    purchaseDate: iso(value.purchaseDate),
+    supplierInvoiceNumber: value.supplierInvoiceNumber,
+    supplierInvoiceDate: iso(value.supplierInvoiceDate),
+    currencyCode: value.currencyCode,
+    exchangeRate: decimal(value.exchangeRate),
+    exchangeRateDate: iso(value.exchangeRateDate),
+    subtotal: decimal(value.subtotal),
+    discount: decimal(value.discount),
+    tax: decimal(value.tax),
+    total: decimal(value.total),
+    status: value.status,
+    notes: value.notes,
+    receivedAt: iso(value.receivedAt),
+    details: value.details?.map((detail) => ({
+      lineNumber: detail.lineNumber,
+      purchaseOrderDetailId: detail.purchaseOrderDetailId,
+      productId: detail.productId,
+      productUnitId: detail.productUnitId,
+      quantityOrdered: decimal(detail.quantityOrdered),
+      quantityReceived: decimal(detail.quantityReceived),
+      unitPrice: decimal(detail.unitPrice),
+      grossAmount: decimal(detail.grossAmount),
+      discountRate: decimal(detail.discountRate),
+      discountAmount: decimal(detail.discountAmount),
+      subtotal: decimal(detail.subtotal),
+      taxRate: decimal(detail.taxRate),
+      taxAmount: decimal(detail.taxAmount),
+      total: decimal(detail.total),
+      notes: detail.notes,
+    })),
+    createdAt: iso(value.createdAt),
+    updatedAt: iso(value.updatedAt),
+  };
+}

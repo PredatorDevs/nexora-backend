@@ -97,4 +97,7 @@ export const auditActions = Object.freeze({
   purchaseOrderExpenseDeleted: 'PURCHASE_ORDER_EXPENSE.DELETED',
   purchaseOrderDocumentCreated: 'PURCHASE_ORDER_DOCUMENT.CREATED',
   purchaseOrderDocumentDeleted: 'PURCHASE_ORDER_DOCUMENT.DELETED',
+  purchaseCreated: 'PURCHASE.CREATED',
+  purchaseUpdated: 'PURCHASE.UPDATED',
+  purchaseReceived: 'PURCHASE.RECEIVED',
 });

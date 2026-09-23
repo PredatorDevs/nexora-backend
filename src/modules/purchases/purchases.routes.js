@@ -1,0 +1,7 @@
+import { Router } from 'express';
+import { authenticate } from '../../core/middleware/authenticate.js';
+import { authorizeCompany } from '../../core/middleware/authorize.js';
+import { validate } from '../../core/middleware/validate.js';
+import { createPurchasesController } from './purchases.controller.js';
+import { createPurchaseBody,purchaseIdParams,purchaseOrderAvailabilityParams,purchasesListQuery,receivePurchaseBody,updatePurchaseBody } from './purchases.schemas.js';
+export function createPurchasesRouter(service,auditService){const router=Router(),controller=createPurchasesController(service,auditService);router.use(authenticate);router.get('/',authorizeCompany('purchases.read'),validate({query:purchasesListQuery}),controller.list);router.get('/orders/:orderId/availability',authorizeCompany('purchases.read'),validate({params:purchaseOrderAvailabilityParams}),controller.availability);router.get('/:id',authorizeCompany('purchases.read'),validate({params:purchaseIdParams}),controller.get);router.post('/',authorizeCompany('purchases.create'),validate({body:createPurchaseBody}),controller.create);router.put('/:id',authorizeCompany('purchases.update'),validate({params:purchaseIdParams,body:updatePurchaseBody}),controller.update);router.post('/:id/receive',authorizeCompany('purchases.receive'),validate({params:purchaseIdParams,body:receivePurchaseBody}),controller.receive);return router;}

@@ -60,3 +60,23 @@ purchases.verify
 purchases.close
 purchases.cancel
 ```
+
+## API inicial
+
+```text
+GET  /api/v1/purchases
+GET  /api/v1/purchases/:id
+GET  /api/v1/purchases/orders/:orderId/availability
+POST /api/v1/purchases
+PUT  /api/v1/purchases/:id
+POST /api/v1/purchases/:id/receive
+```
+
+Las escrituras reciben `expectedOrderUpdatedAt`; las ediciones y confirmaciones
+también reciben `expectedUpdatedAt` de la compra. Estos valores implementan
+control de concurrencia optimista. Crear o editar un borrador reserva sus
+cantidades; confirmar vuelve a comprobarlas contra recepciones confirmadas.
+
+El cliente únicamente envía la línea de orden y cantidad recibida. Productos,
+unidades, precios, descuentos, impuestos, destino, proveedor y moneda se copian
+o calculan en el backend desde la orden autorizada.

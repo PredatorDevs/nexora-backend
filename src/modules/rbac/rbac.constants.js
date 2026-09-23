@@ -206,6 +206,13 @@ export const companyPermissionCodes = Object.freeze([
   'purchase_orders.cancel',
   'purchase_orders.manage_expenses',
   'purchase_orders.manage_documents',
+  'purchases.read',
+  'purchases.create',
+  'purchases.update',
+  'purchases.receive',
+  'purchases.verify',
+  'purchases.close',
+  'purchases.cancel',
 ]);
 
 const companyPermissions = new Set(companyPermissionCodes);
