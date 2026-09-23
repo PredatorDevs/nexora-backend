@@ -320,15 +320,20 @@ export function createPurchaseQuotationsRepository(prisma) {
         grouped.get(requestId).push(link);
       }
       for (const [purchaseRequestId, details] of grouped) {
-        await client.purchaseQuotationRequest.create({
+        const parent = await client.purchaseQuotationRequest.create({
           data: {
             companyId,
             purchaseQuotationId: quotationId,
             purchaseRequestId,
-            details: {
-              create: details.map((detail) => ({ companyId, ...detail })),
-            },
           },
+          select: { id: true },
+        });
+        await client.purchaseQuotationRequestDetail.createMany({
+          data: details.map((detail) => ({
+            companyId,
+            purchaseQuotationRequestId: parent.id,
+            ...detail,
+          })),
         });
       }
       const currentIds = [...grouped.keys()];

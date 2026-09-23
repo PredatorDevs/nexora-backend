@@ -19,7 +19,7 @@ const draft=z.object({
   supplierInvoiceDate:z.string().date().nullable().optional(),
   notes:nullableText(5000),
   details:z.array(detail).min(1).max(500),
-}).superRefine((value,context)=>{const ids=new Set();value.details.forEach((item,index)=>{if(ids.has(item.purchaseOrderDetailId))context.addIssue({code:'custom',path:['details',index,'purchaseOrderDetailId'],message:'An order line cannot be repeated.'});ids.add(item.purchaseOrderDetailId);});});
+}).superRefine((value,context)=>{const ids=new Set();value.details.forEach((item,index)=>{if(ids.has(item.purchaseOrderDetailId))context.addIssue({code:'custom',path:['details',index,'purchaseOrderDetailId'],message:'Una línea de la orden no puede repetirse.'});ids.add(item.purchaseOrderDetailId);});});
 export const createPurchaseBody=draft;
 export const updatePurchaseBody=draft.and(z.object({expectedUpdatedAt:z.string().datetime()}));
 export const receivePurchaseBody=z.object({expectedUpdatedAt:z.string().datetime(),expectedOrderUpdatedAt:z.string().datetime()});

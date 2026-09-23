@@ -212,7 +212,7 @@ export function createPurchaseQuotationsService({
     if (rule.requireLinks) {
       if (!old.requestLinks?.length)
         throw invalid(
-          'At least one purchase request must be linked before receiving the quotation.',
+          'Debes vincular al menos una solicitud de compra antes de marcar la cotización como recibida.',
           ['requestLinks'],
           409,
         );
@@ -234,7 +234,7 @@ export function createPurchaseQuotationsService({
         )
       )
         throw invalid(
-          'Every quotation line must be fully allocated to purchase request lines before receiving the quotation.',
+          'Todas las líneas de la cotización deben estar vinculadas por su cantidad completa antes de marcarla como recibida.',
           ['requestLinks'],
           409,
         );
@@ -357,7 +357,7 @@ export function createPurchaseQuotationsService({
       const old = await get(companyId, id);
       if (old.status !== 'DRAFT')
         throw invalid(
-          'Purchase requests can only be linked to draft quotations.',
+          'Las solicitudes de compra solo pueden vincularse a cotizaciones en borrador.',
           ['status'],
           409,
         );
@@ -383,15 +383,15 @@ export function createPurchaseQuotationsService({
           );
           const requestDetail = requestDetails.get(link.purchaseRequestDetailId);
           if (!quotationDetail)
-            throw invalid('The quotation line does not belong to this quotation.', [
+            throw invalid('La línea seleccionada no pertenece a esta cotización.', [
               `links.${index}.purchaseQuotationDetailId`,
             ]);
           if (!requestDetail)
-            throw invalid('The purchase request line was not found.', [
+            throw invalid('No se encontró la línea de solicitud de compra seleccionada.', [
               `links.${index}.purchaseRequestDetailId`,
             ]);
           if (!['APPROVED', 'IN_QUOTATION'].includes(requestDetail.purchaseRequest.status))
-            throw invalid('Only approved purchase requests can be quoted.', [
+            throw invalid('Solo pueden cotizarse solicitudes de compra aprobadas.', [
               `links.${index}.purchaseRequestDetailId`,
             ]);
           if (
@@ -399,19 +399,19 @@ export function createPurchaseQuotationsService({
             quotationDetail.productUnitId !== requestDetail.productUnitId
           )
             throw invalid(
-              'The quotation line and purchase request line must have the same product and unit.',
+              'La línea cotizada y la línea solicitada deben tener el mismo producto y unidad.',
               [`links.${index}.purchaseRequestDetailId`],
             );
           const key = `${quotationDetail.id}:${requestDetail.id}`;
           if (seen.has(key))
-            throw invalid('A request line cannot be repeated for the same quotation line.', [
+            throw invalid('Una línea de solicitud no puede repetirse para la misma línea cotizada.', [
               `links.${index}`,
             ]);
           seen.add(key);
           const quantity = d(link.quantity);
           if (quantity.greaterThan(d(requestDetail.quantity)))
             throw invalid(
-              'The linked quantity cannot exceed the requested quantity.',
+              'La cantidad vinculada no puede superar la cantidad solicitada.',
               [`links.${index}.quantity`],
             );
           allocatedByQuotationDetail.set(
@@ -429,7 +429,7 @@ export function createPurchaseQuotationsService({
                 ?.equals(d(detail.quantity))
             )
               throw invalid(
-                'Every quotation line must be linked for its full quoted quantity.',
+                'Todas las líneas deben vincularse por la totalidad de su cantidad cotizada.',
                 ['links'],
               );
           });
