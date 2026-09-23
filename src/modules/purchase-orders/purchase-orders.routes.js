@@ -1,0 +1,7 @@
+import { Router } from 'express';
+import { authenticate } from '../../core/middleware/authenticate.js';
+import { authorizeCompany } from '../../core/middleware/authorize.js';
+import { validate } from '../../core/middleware/validate.js';
+import { createPurchaseOrdersController } from './purchase-orders.controller.js';
+import { generatePurchaseOrdersBody,purchaseOrderIdParams,purchaseOrderReasonTransitionBody,purchaseOrdersListQuery,purchaseOrderTransitionBody } from './purchase-orders.schemas.js';
+export function createPurchaseOrdersRouter(service){const router=Router(),controller=createPurchaseOrdersController(service);router.use(authenticate);router.get('/',authorizeCompany('purchase_orders.read'),validate({query:purchaseOrdersListQuery}),controller.list);router.get('/:id',authorizeCompany('purchase_orders.read'),validate({params:purchaseOrderIdParams}),controller.get);router.post('/generate',authorizeCompany('purchase_orders.create'),validate({body:generatePurchaseOrdersBody}),controller.generate);for(const [path,permission,handler] of [['submit','purchase_orders.submit',controller.submit],['approve','purchase_orders.approve',controller.approve],['send','purchase_orders.send',controller.send]])router.post(`/:id/${path}`,authorizeCompany(permission),validate({params:purchaseOrderIdParams,body:purchaseOrderTransitionBody}),handler);router.post('/:id/cancel',authorizeCompany('purchase_orders.cancel'),validate({params:purchaseOrderIdParams,body:purchaseOrderReasonTransitionBody}),controller.cancel);return router;}

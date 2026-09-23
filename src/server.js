@@ -64,6 +64,8 @@ import { createExpenseTypesService } from './modules/expense-types/expense-types
 import { provisionExpenseTypes } from './modules/expense-types/expense-type-templates.js';
 import { createPurchaseQuotationsRepository } from './modules/purchase-quotations/purchase-quotations.repository.js';
 import { createPurchaseQuotationsService } from './modules/purchase-quotations/purchase-quotations.service.js';
+import { createPurchaseOrdersRepository } from './modules/purchase-orders/purchase-orders.repository.js';
+import { createPurchaseOrdersService } from './modules/purchase-orders/purchase-orders.service.js';
 import { createCompanyInvitationsRepository } from './modules/company-invitations/company-invitations.repository.js';
 import { createCompanyInvitationsService } from './modules/company-invitations/company-invitations.service.js';
 import { createMailer } from './core/mail/mailer.js';
@@ -213,6 +215,10 @@ const purchaseQuotationsService = createPurchaseQuotationsService({
   entityChangeService,
   runInTransaction,
 });
+const purchaseOrdersService = createPurchaseOrdersService({
+  repository: createPurchaseOrdersRepository(prisma),
+  runInTransaction,
+});
 const companyInvitationsService = createCompanyInvitationsService({
   repository: createCompanyInvitationsRepository(prisma),
   runInTransaction,
@@ -255,6 +261,7 @@ const app = createApp({
     purchaseRequests: purchaseRequestsService,
     expenseTypes: expenseTypesService,
     purchaseQuotations: purchaseQuotationsService,
+    purchaseOrders: purchaseOrdersService,
     companyInvitations: companyInvitationsService,
     files: fileStorage,
   },

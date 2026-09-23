@@ -24,6 +24,7 @@ import { createProductImagesRouter } from '../modules/product-images/product-ima
 import { createPurchaseRequestsRouter } from '../modules/purchase-requests/purchase-requests.routes.js';
 import { createExpenseTypesRouter } from '../modules/expense-types/expense-types.routes.js';
 import { createPurchaseQuotationsRouter } from '../modules/purchase-quotations/purchase-quotations.routes.js';
+import { createPurchaseOrdersRouter } from '../modules/purchase-orders/purchase-orders.routes.js';
 import { createFilesRouter } from '../modules/files/files.routes.js';
 import {
   createCompanyInvitationsManagementRouter,
@@ -210,6 +211,11 @@ export function registerRoutes(app) {
           app.locals.services.purchaseQuotations,
           app.locals.services.audit,
         ),
+      );
+    if (app.locals.services.purchaseOrders)
+      app.use(
+        '/api/v1/purchase-orders',
+        createPurchaseOrdersRouter(app.locals.services.purchaseOrders),
       );
     if (app.locals.services.files)
       app.use('/api/v1/files', createFilesRouter(app.locals.services.files));
