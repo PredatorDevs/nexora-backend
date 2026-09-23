@@ -118,6 +118,16 @@ enum PurchaseOrderStatus {
   @@map("purchase_order_status")
 }
 
+enum PurchaseStatus {
+  DRAFT
+  RECEIVED
+  VERIFIED
+  CANCELLED
+  CLOSED
+
+  @@map("purchase_status")
+}
+
 enum CompanyMembershipStatus {
   ACTIVE
   INACTIVE
@@ -169,6 +179,9 @@ model User {
   purchaseOrdersSent             PurchaseOrder[]                @relation("PurchaseOrderSentBy")
   purchaseOrdersCancelled        PurchaseOrder[]                @relation("PurchaseOrderCancelledBy")
   purchaseOrderDocumentsUploaded PurchaseOrderExpenseDocument[] @relation("PurchaseOrderExpenseDocumentUploadedBy")
+  purchasesReceived              Purchase[]                      @relation("PurchaseReceivedBy")
+  purchasesVerified              Purchase[]                      @relation("PurchaseVerifiedBy")
+  purchasesCancelled             Purchase[]                      @relation("PurchaseCancelledBy")
 
   @@index([status], map: "users_status_idx")
   @@map("users")
@@ -478,6 +491,8 @@ model Company {
   purchaseOrderDetails            PurchaseOrderDetail[]
   purchaseOrderExpenses           PurchaseOrderExpense[]
   purchaseOrderExpenseDocuments   PurchaseOrderExpenseDocument[]
+  purchases                       Purchase[]
+  purchaseDetails                 PurchaseDetail[]
 
   @@index([status, legalName], map: "companies_status_legal_name_idx")
   @@index([countryId], map: "companies_country_id_idx")
@@ -505,6 +520,7 @@ model ProductUnit {
   purchaseRequestDetails   PurchaseRequestDetail[]
   purchaseQuotationDetails PurchaseQuotationDetail[]
   purchaseOrderDetails     PurchaseOrderDetail[]
+  purchaseDetails          PurchaseDetail[]
 
   @@unique([companyId, code], map: "product_units_company_code_key")
   @@unique([companyId, type, name], map: "product_units_company_type_name_key")
@@ -588,6 +604,7 @@ model Product {
   purchaseRequestDetails   PurchaseRequestDetail[]
   purchaseQuotationDetails PurchaseQuotationDetail[]
   purchaseOrderDetails     PurchaseOrderDetail[]
+  purchaseDetails          PurchaseDetail[]
 
   @@unique([uuid], map: "products_uuid_key")
   @@unique([companyId, internalCode], map: "products_company_internal_code_key")
@@ -655,6 +672,7 @@ model Branch {
   warehouses                Warehouse[]
   purchaseRequests          PurchaseRequest[]
   purchaseOrders            PurchaseOrder[]
+  purchases                 Purchase[]
 
   @@unique([companyId, code], map: "branches_company_code_key")
   @@unique([companyId, name], map: "branches_company_name_key")
@@ -705,6 +723,7 @@ model Warehouse {
   locations           Location[]
   purchaseRequests    PurchaseRequest[]
   purchaseOrders      PurchaseOrder[]
+  purchases           Purchase[]
 
   @@unique([companyId, code], map: "warehouses_company_code_key")
   @@unique([companyId, branchId, name], map: "warehouses_company_branch_name_key")
@@ -767,6 +786,7 @@ model Supplier {
   contacts                  SupplierContact[]
   purchaseQuotations        PurchaseQuotation[]
   purchaseOrders            PurchaseOrder[]
+  purchases                 Purchase[]
 
   @@unique([companyId, code], map: "suppliers_company_code_key")
   @@unique([companyId, countryId, nit], map: "suppliers_company_country_nit_key")
@@ -1106,6 +1126,7 @@ model PurchaseOrder {
   cancelledBy         User?                  @relation("PurchaseOrderCancelledBy", fields: [cancelledByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   details             PurchaseOrderDetail[]
   expenses            PurchaseOrderExpense[]
+  purchases           Purchase[]
 
   @@unique([uuid], map: "purchase_orders_uuid_key")
   @@unique([companyId, code], map: "purchase_orders_company_code_key")
@@ -1146,12 +1167,102 @@ model PurchaseOrderDetail {
   sourceAward                      PurchaseQuotationRequestDetail? @relation(fields: [purchaseQuotationRequestDetailId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
   product                          Product                         @relation(fields: [productId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
   productUnit                      ProductUnit                     @relation(fields: [productUnitId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  purchaseDetails                  PurchaseDetail[]
 
   @@unique([companyId, purchaseOrderId, lineNumber], map: "purchase_order_details_line_key")
   @@unique([purchaseQuotationRequestDetailId, companyId], map: "purchase_order_details_award_key")
   @@unique([id, companyId], map: "purchase_order_details_id_company_key")
   @@index([companyId, productId], map: "purchase_order_details_product_idx")
   @@map("purchase_order_details")
+}
+
+model Purchase {
+  id                    Int            @id @default(autoincrement()) @db.UnsignedInt
+  uuid                  String         @default(uuid()) @db.Char(36)
+  companyId             Int            @map("company_id") @db.UnsignedInt
+  code                  String         @db.VarChar(50)
+  purchaseOrderId       Int            @map("purchase_order_id") @db.UnsignedInt
+  supplierId            Int            @map("supplier_id") @db.UnsignedInt
+  branchId              Int            @map("branch_id") @db.UnsignedInt
+  warehouseId           Int            @map("warehouse_id") @db.UnsignedInt
+  receivedByUserId      Int            @map("received_by_user_id") @db.UnsignedInt
+  purchaseDate          DateTime       @map("purchase_date") @db.DateTime(3)
+  supplierInvoiceNumber String?        @map("supplier_invoice_number") @db.VarChar(100)
+  supplierInvoiceDate   DateTime?      @map("supplier_invoice_date") @db.Date
+  currencyCode          String         @map("currency_code") @db.Char(3)
+  exchangeRate          Decimal        @default(1) @map("exchange_rate") @db.Decimal(18, 8)
+  exchangeRateDate      DateTime?      @map("exchange_rate_date") @db.Date
+  subtotal              Decimal        @default(0) @db.Decimal(18, 6)
+  discount              Decimal        @default(0) @db.Decimal(18, 6)
+  tax                   Decimal        @default(0) @db.Decimal(18, 6)
+  total                 Decimal        @default(0) @db.Decimal(18, 6)
+  status                PurchaseStatus @default(DRAFT)
+  notes                 String?        @db.Text
+  receivedAt            DateTime?      @map("received_at") @db.DateTime(3)
+  verifiedAt            DateTime?      @map("verified_at") @db.DateTime(3)
+  verifiedByUserId      Int?           @map("verified_by_user_id") @db.UnsignedInt
+  cancelledAt           DateTime?      @map("cancelled_at") @db.DateTime(3)
+  cancelledByUserId     Int?           @map("cancelled_by_user_id") @db.UnsignedInt
+  cancellationReason    String?        @map("cancellation_reason") @db.Text
+  closedAt              DateTime?      @map("closed_at") @db.DateTime(3)
+  createdAt             DateTime       @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt             DateTime       @updatedAt @map("updated_at") @db.DateTime(3)
+  company               Company        @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  purchaseOrder         PurchaseOrder  @relation(fields: [purchaseOrderId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  supplier              Supplier       @relation(fields: [supplierId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  branch                Branch         @relation(fields: [branchId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  warehouse             Warehouse      @relation(fields: [warehouseId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  receivedBy            User           @relation("PurchaseReceivedBy", fields: [receivedByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  verifiedBy            User?          @relation("PurchaseVerifiedBy", fields: [verifiedByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  cancelledBy           User?          @relation("PurchaseCancelledBy", fields: [cancelledByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  details               PurchaseDetail[]
+
+  @@unique([uuid], map: "purchases_uuid_key")
+  @@unique([companyId, code], map: "purchases_company_code_key")
+  @@unique([companyId, supplierId, supplierInvoiceNumber], map: "purchases_company_supplier_invoice_key")
+  @@unique([id, companyId], map: "purchases_id_company_key")
+  @@index([companyId, status, purchaseDate], map: "purchases_company_status_date_idx")
+  @@index([companyId, purchaseOrderId], map: "purchases_order_idx")
+  @@index([companyId, branchId, warehouseId], map: "purchases_destination_idx")
+  @@index([receivedByUserId], map: "purchases_received_by_idx")
+  @@index([verifiedByUserId], map: "purchases_verified_by_idx")
+  @@index([cancelledByUserId], map: "purchases_cancelled_by_idx")
+  @@map("purchases")
+}
+
+model PurchaseDetail {
+  id                    Int                 @id @default(autoincrement()) @db.UnsignedInt
+  companyId             Int                 @map("company_id") @db.UnsignedInt
+  purchaseId            Int                 @map("purchase_id") @db.UnsignedInt
+  purchaseOrderDetailId Int                 @map("purchase_order_detail_id") @db.UnsignedInt
+  lineNumber            Int                 @map("line_number") @db.UnsignedSmallInt
+  productId             Int                 @map("product_id") @db.UnsignedInt
+  productUnitId         Int                 @map("product_unit_id") @db.UnsignedInt
+  quantityOrdered       Decimal             @map("quantity_ordered") @db.Decimal(18, 4)
+  quantityReceived      Decimal             @map("quantity_received") @db.Decimal(18, 4)
+  unitPrice             Decimal             @map("unit_price") @db.Decimal(18, 6)
+  grossAmount           Decimal             @map("gross_amount") @db.Decimal(18, 6)
+  discountRate          Decimal             @default(0) @map("discount_rate") @db.Decimal(9, 6)
+  discountAmount        Decimal             @default(0) @map("discount_amount") @db.Decimal(18, 6)
+  subtotal              Decimal             @db.Decimal(18, 6)
+  taxRate               Decimal             @default(0) @map("tax_rate") @db.Decimal(9, 6)
+  taxAmount             Decimal             @default(0) @map("tax_amount") @db.Decimal(18, 6)
+  total                 Decimal             @db.Decimal(18, 6)
+  notes                 String?             @db.Text
+  createdAt             DateTime            @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt             DateTime            @updatedAt @map("updated_at") @db.DateTime(3)
+  company               Company             @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  purchase              Purchase            @relation(fields: [purchaseId, companyId], references: [id, companyId], onDelete: Cascade, onUpdate: Cascade)
+  purchaseOrderDetail   PurchaseOrderDetail @relation(fields: [purchaseOrderDetailId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  product               Product             @relation(fields: [productId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  productUnit           ProductUnit         @relation(fields: [productUnitId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([companyId, purchaseId, lineNumber], map: "purchase_details_line_key")
+  @@unique([companyId, purchaseId, purchaseOrderDetailId], map: "purchase_details_order_line_key")
+  @@unique([id, companyId], map: "purchase_details_id_company_key")
+  @@index([companyId, purchaseOrderDetailId], map: "purchase_details_order_detail_idx")
+  @@index([companyId, productId], map: "purchase_details_product_idx")
+  @@map("purchase_details")
 }
 
 model PurchaseOrderExpense {

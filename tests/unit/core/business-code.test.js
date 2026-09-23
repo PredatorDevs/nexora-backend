@@ -83,6 +83,19 @@ describe('business code generator', () => {
       expect.objectContaining({ where: { namespace: 'supplier:12' } }),
     );
   });
+  it('generates purchase receipt codes per company', async () => {
+    const upsert = vi.fn().mockResolvedValue({ nextValue: 6n });
+    await expect(
+      generateBusinessCode(
+        { codeSequence: { upsert } },
+        businessCodeEntities.purchase,
+        { companyId: 7 },
+      ),
+    ).resolves.toBe('C-000005');
+    expect(upsert).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { namespace: 'purchase:7' } }),
+    );
+  });
   it.each([
     [businessCodeEntities.brand, 'MAR-000003', 'brand:12'],
     [businessCodeEntities.productCategory, 'CAT-000003', 'product_category:12'],

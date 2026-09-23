@@ -107,6 +107,13 @@ export const permissionCodes = Object.freeze([
   'purchase_orders.cancel',
   'purchase_orders.manage_expenses',
   'purchase_orders.manage_documents',
+  'purchases.read',
+  'purchases.create',
+  'purchases.update',
+  'purchases.receive',
+  'purchases.verify',
+  'purchases.close',
+  'purchases.cancel',
 ]);
 
 export const companyPermissionCodes = Object.freeze([
@@ -320,6 +327,10 @@ export const companyRoleTemplates = Object.freeze([
       'purchase_orders.create',
       'purchase_orders.submit',
       'purchase_orders.send',
+      'purchases.read',
+      'purchases.create',
+      'purchases.update',
+      'purchases.receive',
     ],
   },
   {
@@ -346,6 +357,7 @@ export const companyRoleTemplates = Object.freeze([
       'expense_types.read',
       'purchase_quotations.read',
       'purchase_orders.read',
+      'purchases.read',
     ],
   },
 ]);
