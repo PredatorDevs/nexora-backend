@@ -36,4 +36,5 @@ export const entityTypes = Object.freeze({
   purchaseRequest: 'purchase_request',
   expenseType: 'expense_type',
   purchaseQuotation: 'purchase_quotation',
+  purchaseOrder: 'purchase_order',
 });

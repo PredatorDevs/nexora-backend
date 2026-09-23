@@ -20,6 +20,7 @@ AWS_S3_PUBLIC_BASE_URL=
 S3_UPLOAD_EXPIRES_IN_SECONDS=300
 S3_READ_EXPIRES_IN_SECONDS=900
 S3_MAX_IMAGE_SIZE_BYTES=5000000
+S3_MAX_DOCUMENT_SIZE_BYTES=10000000
 ```
 
 `AWS_SESSION_TOKEN` is only required for temporary credentials.
@@ -100,3 +101,9 @@ POST /api/v1/files/read-url
 Both endpoints require an active company and reject keys outside that tenant.
 Supported image types are JPEG, PNG, and WebP. The presigned POST enforces the
 configured maximum size and exact content type at S3, not only in the API.
+
+Purchase-order expense evidence follows the same private-upload design through
+the order endpoints. It accepts PDF, JPEG, PNG, and WebP and stores objects
+under `companies/{companyId}/purchase-orders/{orderId}/expenses/{expenseId}/`.
+The API verifies ownership, MIME type, and actual S3 size before inserting the
+document record. Read URLs are generated temporarily and are never persisted.

@@ -108,6 +108,12 @@ const environmentSchema = z
       .min(1024)
       .max(20_000_000)
       .default(5_000_000),
+    S3_MAX_DOCUMENT_SIZE_BYTES: z.coerce
+      .number()
+      .int()
+      .min(1024)
+      .max(50_000_000)
+      .default(10_000_000),
     INITIAL_ADMIN_EMAIL: optionalString(
       z.string().trim().toLowerCase().email().max(191),
     ),
@@ -305,6 +311,7 @@ export function loadEnvironment(input = process.env) {
       uploadExpiresInSeconds: values.S3_UPLOAD_EXPIRES_IN_SECONDS,
       readExpiresInSeconds: values.S3_READ_EXPIRES_IN_SECONDS,
       maxImageSizeBytes: values.S3_MAX_IMAGE_SIZE_BYTES,
+      maxDocumentSizeBytes: values.S3_MAX_DOCUMENT_SIZE_BYTES,
     },
     initialAdmin: values.INITIAL_ADMIN_EMAIL
       ? {

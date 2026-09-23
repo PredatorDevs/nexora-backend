@@ -433,3 +433,49 @@ export function purchaseQuotationSnapshot(value) {
     updatedAt: iso(value.updatedAt),
   };
 }
+
+export function purchaseOrderSnapshot(value) {
+  if (!value) return null;
+  const decimal = (item) => item?.toString() ?? null;
+  return {
+    id: value.id,
+    uuid: value.uuid,
+    companyId: value.companyId,
+    code: value.code,
+    supplierId: value.supplierId,
+    supplierContactId: value.supplierContactId,
+    branchId: value.branchId,
+    warehouseId: value.warehouseId,
+    purchaseQuotationId: value.purchaseQuotationId,
+    createdByUserId: value.createdByUserId,
+    orderDate: iso(value.orderDate),
+    expectedDate: iso(value.expectedDate),
+    currencyCode: value.currencyCode,
+    exchangeRate: decimal(value.exchangeRate),
+    paymentTerms: value.paymentTerms,
+    subtotal: decimal(value.subtotal),
+    discount: decimal(value.discount),
+    tax: decimal(value.tax),
+    additionalExpenses: decimal(value.additionalExpenses),
+    total: decimal(value.total),
+    status: value.status,
+    notes: value.notes,
+    expenses: value.expenses?.map((expense) => ({
+      id: expense.id,
+      lineNumber: expense.lineNumber,
+      expenseTypeId: expense.expenseTypeId,
+      description: expense.description,
+      amount: decimal(expense.amount),
+      isCostable: expense.isCostable,
+      documents: expense.documents?.map((document) => ({
+        id: document.id,
+        storageKey: document.storageKey,
+        originalFileName: document.originalFileName,
+        contentType: document.contentType,
+        sizeBytes: document.sizeBytes,
+      })),
+    })),
+    createdAt: iso(value.createdAt),
+    updatedAt: iso(value.updatedAt),
+  };
+}

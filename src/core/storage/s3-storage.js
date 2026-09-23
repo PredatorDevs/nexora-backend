@@ -15,6 +15,12 @@ const imageExtensions = Object.freeze({
   'image/png': 'png',
   'image/webp': 'webp',
 });
+const documentExtensions = Object.freeze({
+  'application/pdf': 'pdf',
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+});
 const purposePaths = Object.freeze({
   PRODUCT_IMAGE: 'products',
   COMPANY_LOGO: 'companies',
@@ -48,10 +54,16 @@ export function createFileStorage(
       prepareImageUpload() {
         throw unavailable();
       },
+      preparePurchaseOrderDocumentUpload() {
+        throw unavailable();
+      },
       createReadUrl() {
         throw unavailable();
       },
       verifyImageUpload() {
+        throw unavailable();
+      },
+      verifyPurchaseOrderDocumentUpload() {
         throw unavailable();
       },
       deleteObject() {
@@ -111,14 +123,57 @@ export function createFileStorage(
         ).toISOString(),
       };
     },
-    async createReadUrl({ companyId, storageKey }) {
+    async preparePurchaseOrderDocumentUpload({
+      companyId,
+      purchaseOrderId,
+      expenseId,
+      contentType,
+      sizeBytes,
+    }) {
+      const extension = documentExtensions[contentType];
+      if (!extension)
+        throw new AppError({
+          code: errorCodes.validation,
+          message: 'Only PDF, JPEG, PNG, and WebP documents are allowed.',
+          statusCode: 400,
+        });
+      if (sizeBytes > settings.maxDocumentSizeBytes)
+        throw new AppError({
+          code: errorCodes.payloadTooLarge,
+          message: 'The document exceeds the configured size limit.',
+          statusCode: 413,
+        });
+      const key = `companies/${companyId}/purchase-orders/${purchaseOrderId}/expenses/${expenseId}/${uuid()}.${extension}`;
+      const signed = await createPost(client, {
+        Bucket: settings.bucket,
+        Key: key,
+        Expires: settings.uploadExpiresInSeconds,
+        Fields: { 'Content-Type': contentType },
+        Conditions: [
+          ['eq', '$Content-Type', contentType],
+          ['content-length-range', 1, settings.maxDocumentSizeBytes],
+        ],
+      });
+      return {
+        method: 'POST',
+        uploadUrl: signed.url,
+        fields: signed.fields,
+        storageKey: key,
+        expiresAt: new Date(
+          clock() + settings.uploadExpiresInSeconds * 1000,
+        ).toISOString(),
+      };
+    },
+    async createReadUrl({ companyId, storageKey, forceSigned = false }) {
       if (!storageKey.startsWith(`companies/${companyId}/`))
         throw new AppError({
           code: errorCodes.forbidden,
           message: 'The file does not belong to the active company.',
           statusCode: 403,
         });
-      const directUrl = publicUrl(settings.publicBaseUrl, storageKey);
+      const directUrl = forceSigned
+        ? null
+        : publicUrl(settings.publicBaseUrl, storageKey);
       if (directUrl) return { url: directUrl, expiresAt: null };
       const expiresIn = settings.readExpiresInSeconds;
       const url = await signUrl(
@@ -164,6 +219,51 @@ export function createFileStorage(
         throw new AppError({
           code: errorCodes.validation,
           message: 'The uploaded image has an invalid size.',
+          statusCode: 400,
+        });
+      return {
+        contentType: metadata.ContentType,
+        sizeBytes: metadata.ContentLength,
+      };
+    },
+    async verifyPurchaseOrderDocumentUpload({
+      companyId,
+      purchaseOrderId,
+      expenseId,
+      storageKey,
+    }) {
+      const prefix = `companies/${companyId}/purchase-orders/${purchaseOrderId}/expenses/${expenseId}/`;
+      if (!storageKey.startsWith(prefix))
+        throw new AppError({
+          code: errorCodes.forbidden,
+          message: 'The document does not belong to the requested expense.',
+          statusCode: 403,
+        });
+      let metadata;
+      try {
+        metadata = await client.send(
+          new HeadObjectCommand({ Bucket: settings.bucket, Key: storageKey }),
+        );
+      } catch {
+        throw new AppError({
+          code: errorCodes.validation,
+          message: 'The uploaded document could not be verified.',
+          statusCode: 400,
+        });
+      }
+      if (!documentExtensions[metadata.ContentType])
+        throw new AppError({
+          code: errorCodes.validation,
+          message: 'The uploaded object is not a supported document.',
+          statusCode: 400,
+        });
+      if (
+        !metadata.ContentLength ||
+        metadata.ContentLength > settings.maxDocumentSizeBytes
+      )
+        throw new AppError({
+          code: errorCodes.validation,
+          message: 'The uploaded document has an invalid size.',
           statusCode: 400,
         });
       return {

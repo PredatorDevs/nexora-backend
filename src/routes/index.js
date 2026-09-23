@@ -215,7 +215,10 @@ export function registerRoutes(app) {
     if (app.locals.services.purchaseOrders)
       app.use(
         '/api/v1/purchase-orders',
-        createPurchaseOrdersRouter(app.locals.services.purchaseOrders),
+        createPurchaseOrdersRouter(
+          app.locals.services.purchaseOrders,
+          app.locals.services.audit,
+        ),
       );
     if (app.locals.services.files)
       app.use('/api/v1/files', createFilesRouter(app.locals.services.files));

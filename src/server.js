@@ -217,6 +217,8 @@ const purchaseQuotationsService = createPurchaseQuotationsService({
 });
 const purchaseOrdersService = createPurchaseOrdersService({
   repository: createPurchaseOrdersRepository(prisma),
+  storage: fileStorage,
+  entityChangeService,
   runInTransaction,
 });
 const companyInvitationsService = createCompanyInvitationsService({

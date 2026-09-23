@@ -87,4 +87,14 @@ export const auditActions = Object.freeze({
   purchaseQuotationExpired: 'PURCHASE_QUOTATION.EXPIRED',
   purchaseQuotationComparisonDecided:
     'PURCHASE_QUOTATION.COMPARISON_DECIDED',
+  purchaseOrderGenerated: 'PURCHASE_ORDER.GENERATED',
+  purchaseOrderSubmitted: 'PURCHASE_ORDER.SUBMITTED',
+  purchaseOrderApproved: 'PURCHASE_ORDER.APPROVED',
+  purchaseOrderSent: 'PURCHASE_ORDER.SENT',
+  purchaseOrderCancelled: 'PURCHASE_ORDER.CANCELLED',
+  purchaseOrderExpenseCreated: 'PURCHASE_ORDER_EXPENSE.CREATED',
+  purchaseOrderExpenseUpdated: 'PURCHASE_ORDER_EXPENSE.UPDATED',
+  purchaseOrderExpenseDeleted: 'PURCHASE_ORDER_EXPENSE.DELETED',
+  purchaseOrderDocumentCreated: 'PURCHASE_ORDER_DOCUMENT.CREATED',
+  purchaseOrderDocumentDeleted: 'PURCHASE_ORDER_DOCUMENT.DELETED',
 });
