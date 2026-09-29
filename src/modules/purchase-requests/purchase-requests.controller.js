@@ -68,6 +68,21 @@ export function createPurchaseRequestsController(service, auditService) {
         ),
         { statusCode: 201 },
       ),
+    consolidate: async (request, response) =>
+      sendSuccess(
+        response,
+        await audited(
+          request,
+          auditActions.purchaseRequestConsolidated,
+          () =>
+            service.consolidate(
+              request.tenant.companyId,
+              request.validated.body,
+              context(request),
+            ),
+        ),
+        { statusCode: 201 },
+      ),
     update: mutate('update', auditActions.purchaseRequestUpdated),
     submit: mutate('submit', auditActions.purchaseRequestSubmitted),
     approve: mutate('approve', auditActions.purchaseRequestApproved),

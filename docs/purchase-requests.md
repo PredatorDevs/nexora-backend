@@ -57,3 +57,27 @@ Owner y Administrator reciben todos. Operator recibe lectura, creación, edició
 - Debe existir al menos una línea con cantidad mayor que cero.
 - El solicitante se toma del usuario autenticado; no se acepta desde el cliente.
 - Los eventos relevantes se registran tanto en auditoría operacional como en historial de cambios.
+
+## Consolidación de solicitudes
+
+Las solicitudes creadas manualmente son de tipo `STANDARD`. Dos o más solicitudes
+individuales aprobadas y todavía no consolidadas pueden convertirse mediante
+`POST /api/v1/purchase-requests/consolidate` en una solicitud de tipo
+`CONSOLIDATED`.
+
+La operación es atómica y aplica estas reglas:
+
+- Solo acepta solicitudes `STANDARD` en estado `APPROVED` de la empresa activa.
+- La consolidación toma cada solicitud de origen completa; no admite consolidación parcial.
+- El usuario elige la sucursal y el almacén de destino de la solicitud consolidada.
+- Las líneas con la misma combinación producto/unidad se agrupan y sus cantidades se suman.
+- Se conserva la relación exacta entre cada línea consolidada y sus líneas de origen.
+- La nueva solicitud nace en `DRAFT` y debe recorrer envío y aprobación normalmente.
+- Las solicitudes de origen pasan a `CONSOLIDATED`, quedan vinculadas a la nueva solicitud y ya no son editables ni cotizables.
+- Solo las solicitudes de tipo `CONSOLIDATED` pueden vincularse posteriormente a cotizaciones.
+
+El listado permite filtrar por rango de fecha, estado, tipo y situación de
+consolidación. “Consolidadas” incluye tanto las solicitudes individuales ya
+absorbidas como las solicitudes maestras generadas; “no consolidadas” muestra
+únicamente solicitudes individuales todavía disponibles. El permiso específico para ejecutar la operación es
+`purchase_requests.consolidate`; se asigna inicialmente a Owner y Administrator.

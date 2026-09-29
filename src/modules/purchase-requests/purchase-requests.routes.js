@@ -5,6 +5,7 @@ import { validate } from '../../core/middleware/validate.js';
 import { createPurchaseRequestsController } from './purchase-requests.controller.js';
 import {
   createPurchaseRequestBody,
+  consolidatePurchaseRequestsBody,
   purchaseRequestIdParams,
   purchaseRequestReasonTransitionBody,
   purchaseRequestsListQuery,
@@ -33,6 +34,12 @@ export function createPurchaseRequestsRouter(service, auditService) {
     authorizeCompany('purchase_requests.create'),
     validate({ body: createPurchaseRequestBody }),
     controller.create,
+  );
+  router.post(
+    '/consolidate',
+    authorizeCompany('purchase_requests.consolidate'),
+    validate({ body: consolidatePurchaseRequestsBody }),
+    controller.consolidate,
   );
   router.put(
     '/:id',

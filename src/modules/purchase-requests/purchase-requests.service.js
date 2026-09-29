@@ -159,6 +159,7 @@ export function createPurchaseRequestsService({
           companyId,
           {
             ...data,
+            requestType: 'STANDARD',
             requiredDate: new Date(data.requiredDate),
             notes: data.notes || null,
             details: normalizeDetails(data.details),
@@ -172,6 +173,88 @@ export function createPurchaseRequestsService({
           client,
         );
         await record(companyId, null, created, context, null, client);
+        return created;
+      });
+    },
+    async consolidate(companyId, data, context) {
+      const sourceIds = [...new Set(data.sourceRequestIds)];
+      if (sourceIds.length !== data.sourceRequestIds.length)
+        throw fail('Una solicitud de origen no puede repetirse.', [
+          'sourceRequestIds',
+        ]);
+      return runInTransaction(async (client) => {
+        const sources = await repository.findConsolidationSources(
+          companyId,
+          sourceIds,
+          client,
+        );
+        if (sources.length !== sourceIds.length)
+          throw fail(
+            'Todas las solicitudes deben ser estándar, estar aprobadas y no haber sido consolidadas previamente.',
+            ['sourceRequestIds'],
+            409,
+          );
+        const grouped = new Map();
+        for (const source of sources)
+          for (const detail of source.details) {
+            const key = `${detail.productId}:${detail.productUnitId}`;
+            const current = grouped.get(key);
+            if (current) current.quantity = current.quantity.add(detail.quantity);
+            else
+              grouped.set(key, {
+                productId: detail.productId,
+                productUnitId: detail.productUnitId,
+                quantity: new Prisma.Decimal(detail.quantity),
+                description: null,
+                notes: null,
+              });
+          }
+        const details = [...grouped.values()];
+        await validate(
+          companyId,
+          {
+            branchId: data.branchId,
+            warehouseId: data.warehouseId,
+            requiredDate: data.requiredDate,
+            details,
+          },
+          client,
+        );
+        const created = await repository.createConsolidation(
+          companyId,
+          {
+            requestType: 'CONSOLIDATED',
+            branchId: data.branchId,
+            warehouseId: data.warehouseId,
+            requiredDate: new Date(data.requiredDate),
+            justification: data.justification,
+            notes: data.notes || null,
+            details,
+            code: await generateCode(
+              client,
+              businessCodeEntities.purchaseRequest,
+              { companyId },
+            ),
+            requestedByUserId: context.actorUserId,
+          },
+          sources,
+          context.actorUserId,
+          client,
+        );
+        if (!created)
+          throw fail(
+            'Las solicitudes cambiaron mientras se consolidaban. Actualiza la lista e inténtalo nuevamente.',
+            ['sourceRequestIds'],
+            409,
+          );
+        await record(
+          companyId,
+          null,
+          created,
+          context,
+          { reason: 'CONSOLIDATED', sourceRequestIds: sourceIds },
+          client,
+        );
         return created;
       });
     },

@@ -4,6 +4,10 @@ const select = {
   uuid: true,
   companyId: true,
   code: true,
+  requestType: true,
+  consolidatedIntoId: true,
+  consolidatedAt: true,
+  consolidatedByUserId: true,
   branchId: true,
   warehouseId: true,
   requestedByUserId: true,
@@ -29,6 +33,18 @@ const select = {
   approvedBy: { select: userSelect },
   rejectedBy: { select: userSelect },
   cancelledBy: { select: userSelect },
+  consolidatedBy: { select: userSelect },
+  consolidatedInto: { select: { id: true, code: true } },
+  sourceRequests: {
+    orderBy: { code: 'asc' },
+    select: {
+      id: true,
+      code: true,
+      status: true,
+      branch: { select: { code: true, name: true } },
+      warehouse: { select: { code: true, name: true } },
+    },
+  },
   details: {
     orderBy: { lineNumber: 'asc' },
     select: {
@@ -39,6 +55,18 @@ const select = {
       quantity: true,
       description: true,
       notes: true,
+      consolidationSources: {
+        select: {
+          quantity: true,
+          sourceRequestDetail: {
+            select: {
+              id: true,
+              lineNumber: true,
+              purchaseRequest: { select: { id: true, code: true } },
+            },
+          },
+        },
+      },
       createdAt: true,
       updatedAt: true,
       product: {
@@ -81,6 +109,29 @@ export function createPurchaseRequestsRepository(prisma) {
         ...(query.status ? { status: query.status } : {}),
         ...(query.branchId ? { branchId: query.branchId } : {}),
         ...(query.warehouseId ? { warehouseId: query.warehouseId } : {}),
+        ...(query.requestType ? { requestType: query.requestType } : {}),
+        ...(query.consolidationState === 'CONSOLIDATED'
+          ? {
+              AND: [
+                {
+                  OR: [
+                    { requestType: 'CONSOLIDATED' },
+                    { consolidatedIntoId: { not: null } },
+                  ],
+                },
+              ],
+            }
+          : query.consolidationState === 'UNCONSOLIDATED'
+            ? { requestType: 'STANDARD', consolidatedIntoId: null }
+            : {}),
+        ...(query.dateFrom || query.dateTo
+          ? {
+              requestDate: {
+                ...(query.dateFrom ? { gte: query.dateFrom } : {}),
+                ...(query.dateTo ? { lte: query.dateTo } : {}),
+              },
+            }
+          : {}),
         ...(query.search
           ? {
               OR: [
@@ -107,6 +158,32 @@ export function createPurchaseRequestsRepository(prisma) {
       return client.purchaseRequest.findFirst({
         where: { id, companyId },
         select,
+      });
+    },
+    findConsolidationSources(companyId, ids, client = prisma) {
+      return client.purchaseRequest.findMany({
+        where: {
+          companyId,
+          id: { in: ids },
+          requestType: 'STANDARD',
+          status: 'APPROVED',
+          consolidatedIntoId: null,
+        },
+        select: {
+          id: true,
+          code: true,
+          details: {
+            orderBy: { lineNumber: 'asc' },
+            select: {
+              id: true,
+              productId: true,
+              productUnitId: true,
+              quantity: true,
+              description: true,
+              notes: true,
+            },
+          },
+        },
       });
     },
     async findReferences(
@@ -154,6 +231,52 @@ export function createPurchaseRequestsRepository(prisma) {
         },
         select,
       });
+    },
+    async createConsolidation(
+      companyId,
+      data,
+      sourceRequests,
+      userId,
+      client = prisma,
+    ) {
+      const created = await this.create(companyId, data, client);
+      const targetByProductUnit = new Map(
+        created.details.map((detail) => [
+          `${detail.productId}:${detail.productUnitId}`,
+          detail,
+        ]),
+      );
+      await client.purchaseRequestConsolidationDetail.createMany({
+        data: sourceRequests.flatMap((request) =>
+          request.details.map((detail) => ({
+            companyId,
+            consolidatedRequestDetailId: targetByProductUnit.get(
+              `${detail.productId}:${detail.productUnitId}`,
+            ).id,
+            sourceRequestDetailId: detail.id,
+            quantity: detail.quantity,
+          })),
+        ),
+      });
+      const sourceIds = sourceRequests.map((request) => request.id);
+      const updated = await client.purchaseRequest.updateMany({
+        where: {
+          companyId,
+          id: { in: sourceIds },
+          requestType: 'STANDARD',
+          status: 'APPROVED',
+          consolidatedIntoId: null,
+        },
+        data: {
+          status: 'CONSOLIDATED',
+          consolidatedIntoId: created.id,
+          consolidatedAt: new Date(),
+          consolidatedByUserId: userId,
+        },
+      });
+      return updated.count === sourceIds.length
+        ? this.find(companyId, created.id, client)
+        : null;
     },
     async replace(companyId, id, expectedUpdatedAt, data, client = prisma) {
       const { details, ...header } = data;

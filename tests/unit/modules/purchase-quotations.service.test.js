@@ -58,7 +58,10 @@ describe('purchase quotations service', () => {
             productId: 7,
             productUnitId: 9,
             quantity: '10',
-            purchaseRequest: { status: 'APPROVED' },
+            purchaseRequest: {
+              status: 'APPROVED',
+              requestType: 'CONSOLIDATED',
+            },
           },
         ],
       }),

@@ -279,7 +279,7 @@ export function createPurchaseQuotationsRepository(prisma) {
             productId: true,
             productUnitId: true,
             quantity: true,
-            purchaseRequest: { select: { status: true } },
+            purchaseRequest: { select: { status: true, requestType: true } },
           },
         }),
       ]);

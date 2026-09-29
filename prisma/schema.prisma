@@ -85,12 +85,20 @@ enum PurchaseRequestStatus {
   DRAFT
   SUBMITTED
   APPROVED
+  CONSOLIDATED
   REJECTED
   IN_QUOTATION
   COMPLETED
   CANCELLED
 
   @@map("purchase_request_status")
+}
+
+enum PurchaseRequestType {
+  STANDARD
+  CONSOLIDATED
+
+  @@map("purchase_request_type")
 }
 
 enum PurchaseQuotationStatus {
@@ -169,6 +177,7 @@ model User {
   purchaseRequestsApproved       PurchaseRequest[]              @relation("PurchaseRequestApprovedBy")
   purchaseRequestsRejected       PurchaseRequest[]              @relation("PurchaseRequestRejectedBy")
   purchaseRequestsCancelled      PurchaseRequest[]              @relation("PurchaseRequestCancelledBy")
+  purchaseRequestsConsolidated   PurchaseRequest[]              @relation("PurchaseRequestConsolidatedBy")
   purchaseQuotationsRegistered   PurchaseQuotation[]            @relation("PurchaseQuotationRegisteredBy")
   purchaseQuotationsCancelled    PurchaseQuotation[]            @relation("PurchaseQuotationCancelledBy")
   purchaseQuotationsSelected     PurchaseQuotation[]            @relation("PurchaseQuotationSelectedBy")
@@ -481,6 +490,7 @@ model Company {
   productImages                   ProductImage[]
   purchaseRequests                PurchaseRequest[]
   purchaseRequestDetails          PurchaseRequestDetail[]
+  purchaseRequestConsolidationDetails PurchaseRequestConsolidationDetail[]
   expenseTypes                    ExpenseType[]
   purchaseQuotations              PurchaseQuotation[]
   purchaseQuotationDetails        PurchaseQuotationDetail[]
@@ -832,6 +842,10 @@ model PurchaseRequest {
   uuid               String                     @default(uuid()) @db.Char(36)
   companyId          Int                        @map("company_id") @db.UnsignedInt
   code               String                     @db.VarChar(50)
+  requestType        PurchaseRequestType        @default(STANDARD) @map("request_type")
+  consolidatedIntoId Int?                       @map("consolidated_into_id") @db.UnsignedInt
+  consolidatedAt     DateTime?                  @map("consolidated_at") @db.DateTime(3)
+  consolidatedByUserId Int?                     @map("consolidated_by_user_id") @db.UnsignedInt
   branchId           Int                        @map("branch_id") @db.UnsignedInt
   warehouseId        Int                        @map("warehouse_id") @db.UnsignedInt
   requestedByUserId  Int                        @map("requested_by_user_id") @db.UnsignedInt
@@ -858,6 +872,9 @@ model PurchaseRequest {
   approvedBy         User?                      @relation("PurchaseRequestApprovedBy", fields: [approvedByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   rejectedBy         User?                      @relation("PurchaseRequestRejectedBy", fields: [rejectedByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   cancelledBy        User?                      @relation("PurchaseRequestCancelledBy", fields: [cancelledByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  consolidatedBy     User?                      @relation("PurchaseRequestConsolidatedBy", fields: [consolidatedByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  consolidatedInto   PurchaseRequest?           @relation("PurchaseRequestConsolidation", fields: [consolidatedIntoId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  sourceRequests     PurchaseRequest[]           @relation("PurchaseRequestConsolidation")
   details            PurchaseRequestDetail[]
   quotationLinks     PurchaseQuotationRequest[]
 
@@ -870,6 +887,9 @@ model PurchaseRequest {
   @@index([approvedByUserId], map: "purchase_requests_approved_by_idx")
   @@index([rejectedByUserId], map: "purchase_requests_rejected_by_idx")
   @@index([cancelledByUserId], map: "purchase_requests_cancelled_by_idx")
+  @@index([companyId, requestType, status], map: "purchase_requests_type_status_idx")
+  @@index([consolidatedIntoId, companyId], map: "purchase_requests_consolidated_into_idx")
+  @@index([consolidatedByUserId], map: "purchase_requests_consolidated_by_idx")
   @@map("purchase_requests")
 }
 
@@ -890,6 +910,8 @@ model PurchaseRequestDetail {
   product           Product                          @relation(fields: [productId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
   productUnit       ProductUnit                      @relation(fields: [productUnitId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
   quotationLinks    PurchaseQuotationRequestDetail[]
+  consolidationSources PurchaseRequestConsolidationDetail[] @relation("ConsolidatedRequestDetail")
+  consolidationTargets PurchaseRequestConsolidationDetail[] @relation("SourceRequestDetail")
 
   @@unique([companyId, purchaseRequestId, lineNumber], map: "purchase_request_details_line_key")
   @@unique([companyId, purchaseRequestId, productId, productUnitId], map: "purchase_request_details_product_unit_key")
@@ -897,6 +919,23 @@ model PurchaseRequestDetail {
   @@index([companyId, productId], map: "purchase_request_details_product_idx")
   @@index([companyId, productUnitId], map: "purchase_request_details_unit_idx")
   @@map("purchase_request_details")
+}
+
+model PurchaseRequestConsolidationDetail {
+  id                          Int                   @id @default(autoincrement()) @db.UnsignedInt
+  companyId                   Int                   @map("company_id") @db.UnsignedInt
+  consolidatedRequestDetailId Int                   @map("consolidated_request_detail_id") @db.UnsignedInt
+  sourceRequestDetailId       Int                   @map("source_request_detail_id") @db.UnsignedInt
+  quantity                    Decimal               @db.Decimal(18, 4)
+  createdAt                   DateTime              @default(now()) @map("created_at") @db.DateTime(3)
+  company                     Company               @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  consolidatedRequestDetail   PurchaseRequestDetail @relation("ConsolidatedRequestDetail", fields: [consolidatedRequestDetailId, companyId], references: [id, companyId], onDelete: Cascade, onUpdate: Cascade)
+  sourceRequestDetail         PurchaseRequestDetail @relation("SourceRequestDetail", fields: [sourceRequestDetailId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([companyId, consolidatedRequestDetailId, sourceRequestDetailId], map: "purchase_request_consolidation_details_pair_key")
+  @@unique([sourceRequestDetailId, companyId], map: "purchase_request_consolidation_details_source_key")
+  @@index([companyId, consolidatedRequestDetailId], map: "purchase_request_consolidation_details_target_idx")
+  @@map("purchase_request_consolidation_details")
 }
 
 model ExpenseType {

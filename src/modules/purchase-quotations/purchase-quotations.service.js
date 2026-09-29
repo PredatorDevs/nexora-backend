@@ -394,6 +394,11 @@ export function createPurchaseQuotationsService({
             throw invalid('Solo pueden cotizarse solicitudes de compra aprobadas.', [
               `links.${index}.purchaseRequestDetailId`,
             ]);
+          if (requestDetail.purchaseRequest.requestType !== 'CONSOLIDATED')
+            throw invalid(
+              'Solo las solicitudes consolidadas pueden vincularse a cotizaciones.',
+              [`links.${index}.purchaseRequestDetailId`],
+            );
           if (
             quotationDetail.productId !== requestDetail.productId ||
             quotationDetail.productUnitId !== requestDetail.productUnitId

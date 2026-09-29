@@ -16,6 +16,7 @@ export const purchaseRequestsListQuery = createListQuerySchema([
       'DRAFT',
       'SUBMITTED',
       'APPROVED',
+      'CONSOLIDATED',
       'REJECTED',
       'IN_QUOTATION',
       'COMPLETED',
@@ -24,6 +25,10 @@ export const purchaseRequestsListQuery = createListQuerySchema([
     .optional(),
   branchId: z.coerce.number().int().positive().optional(),
   warehouseId: z.coerce.number().int().positive().optional(),
+  requestType: z.enum(['STANDARD', 'CONSOLIDATED']).optional(),
+  consolidationState: z.enum(['UNCONSOLIDATED', 'CONSOLIDATED']).optional(),
+  dateFrom: z.coerce.date().optional(),
+  dateTo: z.coerce.date().optional(),
 });
 const detail = z.object({
   productId: z.number().int().positive(),
@@ -64,3 +69,12 @@ export const purchaseRequestReasonTransitionBody =
   purchaseRequestTransitionBody.extend({
     reason: z.string().trim().min(1).max(5000),
   });
+
+export const consolidatePurchaseRequestsBody = z.object({
+  sourceRequestIds: z.array(z.number().int().positive()).min(2).max(500),
+  branchId: z.number().int().positive(),
+  warehouseId: z.number().int().positive(),
+  requiredDate: z.string().datetime(),
+  justification: z.string().trim().min(1).max(5000),
+  notes: z.string().trim().min(1).max(5000).nullable().optional(),
+});
