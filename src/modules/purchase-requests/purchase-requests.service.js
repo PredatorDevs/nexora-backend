@@ -13,6 +13,7 @@ import {
   entityTypes,
 } from '../entity-changes/entity-change.constants.js';
 import { purchaseRequestSnapshot } from '../entity-changes/entity-change.snapshots.js';
+import { generatePurchaseRequestPdf } from './purchase-request-pdf.js';
 
 const fail = (message, fields, statusCode = 400) =>
   new AppError({
@@ -40,6 +41,7 @@ export function createPurchaseRequestsService({
   entityChangeService,
   runInTransaction,
   generateCode = generateBusinessCode,
+  generatePdf = generatePurchaseRequestPdf,
 }) {
   async function validate(companyId, data, client) {
     if (new Date(data.requiredDate).getTime() < Date.now())
@@ -152,6 +154,23 @@ export function createPurchaseRequestsService({
       };
     },
     get,
+    async pdf(companyId, id) {
+      const value = await get(companyId, id);
+      const printableStatuses = ['APPROVED', 'IN_QUOTATION', 'COMPLETED'];
+      if (
+        value.requestType !== 'CONSOLIDATED' ||
+        !printableStatuses.includes(value.status)
+      )
+        throw fail(
+          'El PDF solo está disponible para solicitudes consolidadas aprobadas.',
+          ['status'],
+          409,
+        );
+      return {
+        buffer: await generatePdf(value),
+        filename: `solicitud-${value.code}.pdf`,
+      };
+    },
     create(companyId, data, context) {
       return runInTransaction(async (client) => {
         await validate(companyId, data, client);

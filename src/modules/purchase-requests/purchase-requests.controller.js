@@ -56,6 +56,23 @@ export function createPurchaseRequestsController(service, auditService) {
         ),
       );
     },
+    async pdf(request, response) {
+      const result = await audited(
+        request,
+        auditActions.purchaseRequestPdfDownloaded,
+        () =>
+          service.pdf(
+            request.tenant.companyId,
+            request.validated.params.id,
+          ),
+      );
+      response.set({
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename="${result.filename}"`,
+        'Content-Length': result.buffer.length,
+      });
+      return response.send(result.buffer);
+    },
     create: async (request, response) =>
       sendSuccess(
         response,

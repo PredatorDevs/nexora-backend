@@ -23,6 +23,7 @@ function setup(sources) {
     details: [],
   };
   const repository = {
+    find: vi.fn(),
     findConsolidationSources: vi.fn().mockResolvedValue(sources),
     findReferences: vi.fn().mockResolvedValue({
       company: { status: 'ACTIVE' },
@@ -40,13 +41,15 @@ function setup(sources) {
     createConsolidation: vi.fn().mockResolvedValue(created),
   };
   const entityChangeService = { record: vi.fn() };
+  const generatePdf = vi.fn().mockResolvedValue(Buffer.from('%PDF-test'));
   const service = createPurchaseRequestsService({
     repository,
     entityChangeService,
     runInTransaction: (callback) => callback({ transaction: true }),
     generateCode: vi.fn().mockResolvedValue('PR-000050'),
+    generatePdf,
   });
-  return { service, repository, entityChangeService, created };
+  return { service, repository, entityChangeService, generatePdf, created };
 }
 
 const body = {
@@ -95,5 +98,35 @@ describe('purchase requests service consolidation', () => {
       statusCode: 409,
     });
     expect(repository.createConsolidation).not.toHaveBeenCalled();
+  });
+
+  it('generates the PDF only for an approved consolidated request', async () => {
+    const { service, repository, generatePdf } = setup([]);
+    const printable = {
+      id: 50,
+      code: 'PR-000050',
+      requestType: 'CONSOLIDATED',
+      status: 'APPROVED',
+    };
+    repository.find.mockResolvedValue(printable);
+
+    await expect(service.pdf(6, 50)).resolves.toEqual({
+      buffer: Buffer.from('%PDF-test'),
+      filename: 'solicitud-PR-000050.pdf',
+    });
+    expect(generatePdf).toHaveBeenCalledWith(printable);
+  });
+
+  it('rejects the PDF for an individual request', async () => {
+    const { service, repository, generatePdf } = setup([]);
+    repository.find.mockResolvedValue({
+      id: 1,
+      code: 'PR-000001',
+      requestType: 'STANDARD',
+      status: 'APPROVED',
+    });
+
+    await expect(service.pdf(6, 1)).rejects.toMatchObject({ statusCode: 409 });
+    expect(generatePdf).not.toHaveBeenCalled();
   });
 });

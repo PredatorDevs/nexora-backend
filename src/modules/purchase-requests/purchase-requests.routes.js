@@ -24,6 +24,12 @@ export function createPurchaseRequestsRouter(service, auditService) {
     controller.list,
   );
   router.get(
+    '/:id/pdf',
+    authorizeCompany('purchase_requests.read'),
+    validate({ params: purchaseRequestIdParams }),
+    controller.pdf,
+  );
+  router.get(
     '/:id',
     authorizeCompany('purchase_requests.read'),
     validate({ params: purchaseRequestIdParams }),

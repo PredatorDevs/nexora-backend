@@ -28,6 +28,7 @@ Solo un borrador puede modificarse. Las transiciones son endpoints independiente
 
 - `GET /api/v1/purchase-requests`
 - `GET /api/v1/purchase-requests/:id`
+- `GET /api/v1/purchase-requests/:id/pdf`
 - `POST /api/v1/purchase-requests`
 - `PUT /api/v1/purchase-requests/:id`
 - `POST /api/v1/purchase-requests/:id/submit`
@@ -48,6 +49,11 @@ Rechazar y cancelar requieren `reason`. Crear y actualizar reemplazan el agregad
 - `purchase_requests.cancel`
 
 Owner y Administrator reciben todos. Operator recibe lectura, creación, edición y envío. Read Only recibe únicamente lectura.
+
+La descarga PDF reutiliza `purchase_requests.read`, queda registrada en auditoría
+y solo está disponible para solicitudes consolidadas que ya se encuentren
+`APPROVED`, `IN_QUOTATION` o `COMPLETED`. El archivo se genera bajo demanda con
+pdfmake y no se persiste en disco ni en S3.
 
 ## Reglas principales
 
