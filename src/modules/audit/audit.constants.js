@@ -105,4 +105,9 @@ export const auditActions = Object.freeze({
   purchaseVerified: 'PURCHASE.VERIFIED',
   purchaseClosed: 'PURCHASE.CLOSED',
   purchaseCancelled: 'PURCHASE.CANCELLED',
+  retaceoCreated: 'RETACEO.CREATED',
+  retaceoUpdated: 'RETACEO.UPDATED',
+  retaceoCostCreated: 'RETACEO_COST.CREATED',
+  retaceoCostUpdated: 'RETACEO_COST.UPDATED',
+  retaceoCostDeleted: 'RETACEO_COST.DELETED',
 });

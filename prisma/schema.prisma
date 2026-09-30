@@ -728,7 +728,6 @@ model Branch {
   purchaseRequests          PurchaseRequest[]
   purchaseOrders            PurchaseOrder[]
   purchases                 Purchase[]
-  retaceos                  Retaceo[]
 
   @@unique([companyId, code], map: "branches_company_code_key")
   @@unique([companyId, name], map: "branches_company_name_key")
@@ -1406,8 +1405,6 @@ model Retaceo {
   cancelledBy             User?           @relation("RetaceoCancelledBy", fields: [cancelledByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   details                 RetaceoDetail[]
   costs                   RetaceoCost[]
-  branch                  Branch?         @relation(fields: [branchId], references: [id])
-  branchId                Int?            @db.UnsignedInt
 
   @@unique([uuid], map: "retaceos_uuid_key")
   @@unique([companyId, code], map: "retaceos_company_code_key")

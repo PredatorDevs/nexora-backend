@@ -68,6 +68,8 @@ import { createPurchaseOrdersRepository } from './modules/purchase-orders/purcha
 import { createPurchaseOrdersService } from './modules/purchase-orders/purchase-orders.service.js';
 import { createPurchasesRepository } from './modules/purchases/purchases.repository.js';
 import { createPurchasesService } from './modules/purchases/purchases.service.js';
+import { createRetaceosRepository } from './modules/retaceos/retaceos.repository.js';
+import { createRetaceosService } from './modules/retaceos/retaceos.service.js';
 import { createCompanyInvitationsRepository } from './modules/company-invitations/company-invitations.repository.js';
 import { createCompanyInvitationsService } from './modules/company-invitations/company-invitations.service.js';
 import { createMailer } from './core/mail/mailer.js';
@@ -228,6 +230,11 @@ const purchasesService = createPurchasesService({
   entityChangeService,
   runInTransaction,
 });
+const retaceosService = createRetaceosService({
+  repository: createRetaceosRepository(prisma),
+  entityChangeService,
+  runInTransaction,
+});
 const companyInvitationsService = createCompanyInvitationsService({
   repository: createCompanyInvitationsRepository(prisma),
   runInTransaction,
@@ -272,6 +279,7 @@ const app = createApp({
     purchaseQuotations: purchaseQuotationsService,
     purchaseOrders: purchaseOrdersService,
     purchases: purchasesService,
+    retaceos: retaceosService,
     companyInvitations: companyInvitationsService,
     files: fileStorage,
   },

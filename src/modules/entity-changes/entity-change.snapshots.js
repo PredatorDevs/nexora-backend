@@ -542,3 +542,57 @@ export function purchaseSnapshot(value) {
     updatedAt: iso(value.updatedAt),
   };
 }
+
+export function retaceoSnapshot(value) {
+  if (!value) return null;
+  const decimal = (item) => item?.toString() ?? null;
+  return {
+    id: value.id,
+    uuid: value.uuid,
+    companyId: value.companyId,
+    code: value.code,
+    purchaseId: value.purchaseId,
+    supplierId: value.supplierId,
+    originCountryId: value.originCountryId,
+    retaceoDate: iso(value.retaceoDate),
+    currencyCode: value.currencyCode,
+    exchangeRate: decimal(value.exchangeRate),
+    importInvoiceNumber: value.importInvoiceNumber,
+    importInvoiceDate: iso(value.importInvoiceDate),
+    importPolicyNumber: value.importPolicyNumber,
+    importPolicyDate: iso(value.importPolicyDate),
+    status: value.status,
+    totalFob: decimal(value.totalFob),
+    totalCif: decimal(value.totalCif),
+    totalCapitalizableCosts: decimal(value.totalCapitalizableCosts),
+    totalRecoverableTaxes: decimal(value.totalRecoverableTaxes),
+    totalLandedCost: decimal(value.totalLandedCost),
+    notes: value.notes,
+    details: value.details?.map((detail) => ({
+      id: detail.id,
+      purchaseDetailId: detail.purchaseDetailId,
+      productId: detail.productId,
+      productUnitId: detail.productUnitId,
+      quantity: decimal(detail.quantity),
+      weight: decimal(detail.weight),
+      volume: decimal(detail.volume),
+      fobTotal: decimal(detail.fobTotal),
+      totalCost: decimal(detail.totalCost),
+      unitCost: decimal(detail.unitCost),
+    })),
+    costs: value.costs?.map((cost) => ({
+      id: cost.id,
+      expenseTypeId: cost.expenseTypeId,
+      purchaseOrderExpenseId: cost.purchaseOrderExpenseId,
+      originalAmount: decimal(cost.originalAmount),
+      baseAmount: decimal(cost.baseAmount),
+      category: cost.category,
+      isCapitalizable: cost.isCapitalizable,
+      isRecoverableTax: cost.isRecoverableTax,
+      isCifComponent: cost.isCifComponent,
+      allocationMethod: cost.allocationMethod,
+    })),
+    createdAt: iso(value.createdAt),
+    updatedAt: iso(value.updatedAt),
+  };
+}

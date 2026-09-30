@@ -146,3 +146,26 @@ creación, actualización y cálculo. Read Only recibe únicamente lectura.
 - El cierre prepara costos para Inventario; este corte no crea existencias ni
   asientos contables.
 - La asignación de precios consumirá posteriormente el costo unitario cerrado.
+
+## API disponible en el corte funcional
+
+Todos los endpoints operan dentro del contexto de compañía autenticado:
+
+```text
+GET    /api/v1/retaceos
+GET    /api/v1/retaceos/eligible-purchases
+GET    /api/v1/retaceos/:id
+POST   /api/v1/retaceos
+PUT    /api/v1/retaceos/:id
+POST   /api/v1/retaceos/:id/costs
+PUT    /api/v1/retaceos/:id/costs/:costId
+DELETE /api/v1/retaceos/:id/costs/:costId
+```
+
+Solo una compra `VERIFIED` o `CLOSED` sin retaceo previo aparece como elegible.
+Al crear el expediente se copian las líneas recibidas y su FOB neto. De forma
+predeterminada también se copian los gastos definitivos de la orden; cada uno
+conserva una instantánea de la clasificación configurada en su tipo de gasto.
+
+La edición del encabezado, peso, volumen y costos se permite únicamente en
+`DRAFT` y utiliza `updatedAt` para impedir sobrescrituras concurrentes.
