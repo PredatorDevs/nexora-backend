@@ -1307,7 +1307,7 @@ model Purchase {
   verifiedBy            User?            @relation("PurchaseVerifiedBy", fields: [verifiedByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   cancelledBy           User?            @relation("PurchaseCancelledBy", fields: [cancelledByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   details               PurchaseDetail[]
-  retaceo               Retaceo?
+  retaceos              Retaceo[]
 
   @@unique([uuid], map: "purchases_uuid_key")
   @@unique([companyId, code], map: "purchases_company_code_key")
@@ -1408,9 +1408,10 @@ model Retaceo {
 
   @@unique([uuid], map: "retaceos_uuid_key")
   @@unique([companyId, code], map: "retaceos_company_code_key")
-  @@unique([purchaseId, companyId], map: "retaceos_company_purchase_key")
   @@unique([id, companyId], map: "retaceos_id_company_key")
   @@index([companyId, status, retaceoDate], map: "retaceos_company_status_date_idx")
+  @@index([purchaseId, companyId], map: "retaceos_purchase_company_idx")
+  @@index([companyId, purchaseId, status], map: "retaceos_company_purchase_status_idx")
   @@index([companyId, supplierId], map: "retaceos_supplier_idx")
   @@index([originCountryId], map: "retaceos_origin_country_idx")
   @@index([createdByUserId], map: "retaceos_created_by_idx")

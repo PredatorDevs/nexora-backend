@@ -34,7 +34,7 @@ const select = {
   createdAt: true, updatedAt: true,
   purchase: { select: { id: true, code: true, status: true, purchaseDate: true } },
   supplier: { select: { id: true, code: true, name: true } },
-  originCountry: { select: { id: true, iso2: true, name: true } },
+  originCountry: { select: { id: true, abbreviation: true, name: true } },
   createdBy: { select: user }, calculatedBy: { select: user },
   verifiedBy: { select: user }, closedBy: { select: user },
   cancelledBy: { select: user },
@@ -69,9 +69,19 @@ export function createRetaceosRepository(prisma) {
     find(companyId, id, client = prisma) {
       return client.retaceo.findFirst({ where: { id, companyId }, select });
     },
+    async lockPurchase(companyId, id, client = prisma) {
+      await client.$queryRaw`
+        SELECT id
+        FROM purchases
+        WHERE id = ${id} AND company_id = ${companyId}
+        FOR UPDATE
+      `;
+    },
     async eligiblePurchases(companyId, query) {
       const where = {
-        companyId, status: { in: ['VERIFIED', 'CLOSED'] }, retaceo: null,
+        companyId,
+        status: { in: ['VERIFIED', 'CLOSED'] },
+        retaceos: { none: { status: { not: 'CANCELLED' } } },
         ...(query.search ? { OR: [
           { code: { contains: query.search } },
           { supplierInvoiceNumber: { contains: query.search } },
@@ -95,7 +105,10 @@ export function createRetaceosRepository(prisma) {
       return client.purchase.findFirst({ where: { id, companyId }, select: {
         id: true, status: true, supplierId: true, purchaseOrderId: true,
         currencyCode: true, exchangeRate: true, exchangeRateDate: true,
-        retaceo: { select: { id: true } },
+        retaceos: {
+          where: { status: { not: 'CANCELLED' } },
+          select: { id: true, status: true },
+        },
         details: { orderBy: { lineNumber: 'asc' }, select: {
           id: true, lineNumber: true, productId: true, productUnitId: true,
           quantityReceived: true, subtotal: true,

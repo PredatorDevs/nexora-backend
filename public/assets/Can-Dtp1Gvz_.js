@@ -1,1 +1,0 @@
-import{a as e,l as t}from"./index-BL1Z262a.js";function n({permission:n,anyOf:r,allOf:i,fallback:a=null,children:o}){let{permissions:s}=e();return t(s,{permission:n,anyOf:r,allOf:i})?o:a}export{n as t};

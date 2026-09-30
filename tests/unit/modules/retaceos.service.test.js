@@ -10,7 +10,7 @@ const purchase = (overrides = {}) => ({
   currencyCode: 'USD',
   exchangeRate: new Prisma.Decimal(1),
   exchangeRateDate: null,
-  retaceo: null,
+  retaceos: [],
   details: [{
     id: 11, lineNumber: 1, productId: 21, productUnitId: 31,
     quantityReceived: new Prisma.Decimal(4), subtotal: new Prisma.Decimal(80),
@@ -28,6 +28,7 @@ const purchase = (overrides = {}) => ({
 
 function setup(source = purchase()) {
   const repository = {
+    lockPurchase: vi.fn().mockResolvedValue(undefined),
     findPurchase: vi.fn().mockResolvedValue(source),
     findCountry: vi.fn().mockResolvedValue({ id: 1 }),
     create: vi.fn().mockImplementation(async (data) => ({
@@ -74,6 +75,20 @@ describe('retaceos service', () => {
 
   it('rejects purchases that have not been verified', async () => {
     const { service, repository } = setup(purchase({ status: 'RECEIVED' }));
+    await expect(service.create(6, {
+      purchaseId: 7,
+      originCountryId: 1,
+      retaceoDate: '2026-09-30T12:00:00.000Z',
+      includeOrderExpenses: true,
+    }, { actorUserId: 2 })).rejects.toMatchObject({ statusCode: 409 });
+    expect(repository.create).not.toHaveBeenCalled();
+  });
+
+  it('rejects purchases that already have a non-cancelled retaceo', async () => {
+    const { service, repository } = setup(purchase({
+      retaceos: [{ id: 4, status: 'CALCULATED' }],
+    }));
+
     await expect(service.create(6, {
       purchaseId: 7,
       originCountryId: 1,

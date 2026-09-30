@@ -90,11 +90,12 @@ export function createRetaceosService({
     },
     async create(companyId, data, context) {
       return runInTransaction(async (client) => {
+        await repository.lockPurchase(companyId, data.purchaseId, client);
         const purchase = await repository.findPurchase(companyId, data.purchaseId, client);
         if (!purchase) throw invalid('No se encontró la compra seleccionada.', 404);
         if (!['VERIFIED', 'CLOSED'].includes(purchase.status))
           throw invalid('Solo las compras verificadas o cerradas pueden someterse a retaceo.', 409);
-        if (purchase.retaceo)
+        if (purchase.retaceos.length)
           throw invalid('La compra seleccionada ya tiene un retaceo asociado.', 409);
         if (!purchase.details.length)
           throw invalid('La compra seleccionada no contiene productos recibidos.', 409);
