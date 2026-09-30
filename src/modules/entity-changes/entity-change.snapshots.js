@@ -355,6 +355,11 @@ export function expenseTypeSnapshot(value) {
     name: value.name,
     description: value.description,
     isActive: value.isActive,
+    landedCostCategory: value.landedCostCategory,
+    defaultAllocationMethod: value.defaultAllocationMethod,
+    isCapitalizable: value.isCapitalizable,
+    isRecoverableTax: value.isRecoverableTax,
+    isCifComponent: value.isCifComponent,
     createdAt: iso(value.createdAt),
     updatedAt: iso(value.updatedAt),
   };

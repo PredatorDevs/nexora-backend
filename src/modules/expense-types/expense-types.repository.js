@@ -5,6 +5,11 @@ const select = {
   name: true,
   description: true,
   isActive: true,
+  landedCostCategory: true,
+  defaultAllocationMethod: true,
+  isCapitalizable: true,
+  isRecoverableTax: true,
+  isCifComponent: true,
   createdAt: true,
   updatedAt: true,
 };
@@ -14,6 +19,9 @@ export function createExpenseTypesRepository(prisma) {
       const where = {
         companyId,
         ...(query.isActive === undefined ? {} : { isActive: query.isActive }),
+        ...(query.landedCostCategory
+          ? { landedCostCategory: query.landedCostCategory }
+          : {}),
         ...(query.search
           ? {
               OR: [

@@ -96,6 +96,19 @@ describe('business code generator', () => {
       expect.objectContaining({ where: { namespace: 'purchase:7' } }),
     );
   });
+  it('generates retaceo codes per company', async () => {
+    const upsert = vi.fn().mockResolvedValue({ nextValue: 3n });
+    await expect(
+      generateBusinessCode(
+        { codeSequence: { upsert } },
+        businessCodeEntities.retaceo,
+        { companyId: 7 },
+      ),
+    ).resolves.toBe('RTC-000002');
+    expect(upsert).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { namespace: 'retaceo:7' } }),
+    );
+  });
   it.each([
     [businessCodeEntities.brand, 'MAR-000003', 'brand:12'],
     [businessCodeEntities.productCategory, 'CAT-000003', 'product_category:12'],

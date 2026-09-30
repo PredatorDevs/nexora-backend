@@ -115,6 +115,13 @@ export const permissionCodes = Object.freeze([
   'purchases.verify',
   'purchases.close',
   'purchases.cancel',
+  'retaceos.read',
+  'retaceos.create',
+  'retaceos.update',
+  'retaceos.calculate',
+  'retaceos.verify',
+  'retaceos.close',
+  'retaceos.cancel',
 ]);
 
 export const companyPermissionCodes = Object.freeze([
@@ -215,6 +222,13 @@ export const companyPermissionCodes = Object.freeze([
   'purchases.verify',
   'purchases.close',
   'purchases.cancel',
+  'retaceos.read',
+  'retaceos.create',
+  'retaceos.update',
+  'retaceos.calculate',
+  'retaceos.verify',
+  'retaceos.close',
+  'retaceos.cancel',
 ]);
 
 const companyPermissions = new Set(companyPermissionCodes);
@@ -340,6 +354,10 @@ export const companyRoleTemplates = Object.freeze([
       'purchases.create',
       'purchases.update',
       'purchases.receive',
+      'retaceos.read',
+      'retaceos.create',
+      'retaceos.update',
+      'retaceos.calculate',
     ],
   },
   {
@@ -367,6 +385,7 @@ export const companyRoleTemplates = Object.freeze([
       'purchase_quotations.read',
       'purchase_orders.read',
       'purchases.read',
+      'retaceos.read',
     ],
   },
 ]);
