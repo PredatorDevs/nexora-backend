@@ -155,6 +155,22 @@ export function createPurchaseQuotationsRepository(prisma) {
         companyId,
         ...(query.status ? { status: query.status } : {}),
         ...(query.supplierId ? { supplierId: query.supplierId } : {}),
+        ...(query.dateFrom || query.dateTo
+          ? {
+              quotationDate: {
+                ...(query.dateFrom ? { gte: query.dateFrom } : {}),
+                ...(query.dateTo ? { lte: query.dateTo } : {}),
+              },
+            }
+          : {}),
+        ...(query.validUntilFrom || query.validUntilTo
+          ? {
+              validUntil: {
+                ...(query.validUntilFrom ? { gte: query.validUntilFrom } : {}),
+                ...(query.validUntilTo ? { lte: query.validUntilTo } : {}),
+              },
+            }
+          : {}),
         ...(query.search
           ? {
               OR: [

@@ -26,6 +26,10 @@ export const purchaseQuotationsListQuery = createListQuerySchema([
     ])
     .optional(),
   supplierId: z.coerce.number().int().positive().optional(),
+  dateFrom: z.coerce.date().optional(),
+  dateTo: z.coerce.date().optional(),
+  validUntilFrom: z.coerce.date().optional(),
+  validUntilTo: z.coerce.date().optional(),
 });
 const nullable = (max) => z.string().trim().min(1).max(max).nullable();
 const detail = z.object({
