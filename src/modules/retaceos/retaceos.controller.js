@@ -62,5 +62,11 @@ export function createRetaceosController(service, auditService) {
         { costId: request.validated.params.costId },
       ));
     },
+    async calculate(request, response) {
+      return sendSuccess(response, await audited(
+        request, auditActions.retaceoCalculated, request.validated.params.id,
+        () => service.calculate(request.tenant.companyId, request.validated.params.id, request.validated.body, context(request)),
+      ));
+    },
   };
 }

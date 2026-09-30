@@ -84,7 +84,8 @@ EQUAL
 MANUAL
 ```
 
-El primer motor funcional implementará `FOB_VALUE`, requerido por ERS v0.9:
+El motor funcional implementa todos los métodos definidos. `FOB_VALUE` es el
+valor predeterminado y el requerido por ERS v0.9:
 
 ```text
 factor = fob_linea / total_fob
@@ -95,6 +96,11 @@ Los cálculos internos usarán seis decimales monetarios y doce para factores.
 Al contabilizar o presentar a dos decimales, cualquier residuo se asignará de
 forma determinista para garantizar que la suma distribuida coincida exactamente
 con el costo original.
+
+Para `WEIGHT` y `VOLUME`, todas las líneas deben tener una base mayor que cero.
+`CIF_VALUE` utiliza el FOB más los componentes CIF distribuidos previamente,
+respetando el orden de los costos. `MANUAL` exige indicar una asignación para
+cada línea y que su suma coincida exactamente con el costo.
 
 ## Totales
 
@@ -160,6 +166,7 @@ PUT    /api/v1/retaceos/:id
 POST   /api/v1/retaceos/:id/costs
 PUT    /api/v1/retaceos/:id/costs/:costId
 DELETE /api/v1/retaceos/:id/costs/:costId
+POST   /api/v1/retaceos/:id/calculate
 ```
 
 Solo una compra `VERIFIED` o `CLOSED` sin retaceo previo aparece como elegible.

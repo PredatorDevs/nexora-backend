@@ -110,4 +110,5 @@ export const auditActions = Object.freeze({
   retaceoCostCreated: 'RETACEO_COST.CREATED',
   retaceoCostUpdated: 'RETACEO_COST.UPDATED',
   retaceoCostDeleted: 'RETACEO_COST.DELETED',
+  retaceoCalculated: 'RETACEO.CALCULATED',
 });

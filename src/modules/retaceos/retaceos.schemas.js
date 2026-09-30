@@ -87,3 +87,14 @@ export const updateRetaceoCostBody = validateCost(z.object({ ...costFields,
 export const deleteRetaceoCostBody = z.object({
   expectedRetaceoUpdatedAt: z.string().datetime(),
 });
+const manualAllocation = z.object({
+  retaceoDetailId: z.number().int().positive(),
+  amount: z.coerce.number().nonnegative().max(1e14),
+});
+export const calculateRetaceoBody = z.object({
+  expectedUpdatedAt: z.string().datetime(),
+  manualAllocations: z.array(z.object({
+    retaceoCostId: z.number().int().positive(),
+    allocations: z.array(manualAllocation).min(1).max(500),
+  })).max(500).default([]),
+});

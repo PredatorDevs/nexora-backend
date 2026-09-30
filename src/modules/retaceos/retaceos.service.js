@@ -6,6 +6,7 @@ import { businessCodeEntities, generateBusinessCode } from '../../core/code-gene
 import { paginationMeta } from '../../core/validation/pagination.js';
 import { entityChangeOperations, entitySchemas, entityTypes } from '../entity-changes/entity-change.constants.js';
 import { retaceoSnapshot } from '../entity-changes/entity-change.snapshots.js';
+import { calculateRetaceo, RetaceoCalculationError } from './retaceo-calculator.js';
 
 const decimal = (value) => new Prisma.Decimal(value ?? 0);
 const round = (value) => value.toDecimalPlaces(6, Prisma.Decimal.ROUND_HALF_UP);
@@ -42,10 +43,13 @@ export function createRetaceosService({
       throw invalid('Solo puede modificarse un retaceo en estado borrador.', 409);
   };
   const costData = (input, type) => {
+    const category = input.category ?? type.landedCostCategory;
     const isRecoverableTax = input.isRecoverableTax ?? type.isRecoverableTax;
     const isCapitalizable = input.isCapitalizable ?? type.isCapitalizable;
     if (isRecoverableTax && isCapitalizable)
       throw invalid('Un impuesto recuperable no puede formar parte del costo.');
+    if (category === 'IMPORT_VAT' && isCapitalizable)
+      throw invalid('El IVA de importación no puede incluirse en el costo del retaceo.');
     return {
       expenseTypeId: type.id,
       description: input.description ?? null,
@@ -56,7 +60,7 @@ export function createRetaceosService({
       exchangeRate: decimal(input.exchangeRate),
       exchangeRateDate: asDate(input.exchangeRateDate),
       baseAmount: round(decimal(input.originalAmount).mul(input.exchangeRate)),
-      category: input.category ?? type.landedCostCategory,
+      category,
       isCapitalizable,
       isRecoverableTax,
       isCifComponent: input.isCifComponent ?? type.isCifComponent,
@@ -105,7 +109,8 @@ export function createRetaceosService({
               exchangeRate: decimal(1), baseAmount: expense.amount,
               category: expense.expenseType.landedCostCategory,
               isCapitalizable: expense.isCostable && expense.expenseType.isCapitalizable
-                && !expense.expenseType.isRecoverableTax,
+                && !expense.expenseType.isRecoverableTax
+                && expense.expenseType.landedCostCategory !== 'IMPORT_VAT',
               isRecoverableTax: expense.expenseType.isRecoverableTax,
               isCifComponent: expense.expenseType.isCifComponent,
               allocationMethod: expense.expenseType.defaultAllocationMethod,
@@ -195,6 +200,34 @@ export function createRetaceosService({
         const updated = await get(companyId, id, client);
         await record(companyId, old, updated, context, { reason: 'DELETE_COST', costId }, client);
         return { deletedCostId: costId, retaceoUpdatedAt: updated.updatedAt };
+      });
+    },
+    async calculate(companyId, id, data, context) {
+      const old = await get(companyId, id);
+      ensureDraft(old);
+      let calculation;
+      try {
+        calculation = calculateRetaceo({
+          details: old.details,
+          costs: old.costs,
+          manualAllocations: data.manualAllocations,
+        });
+      } catch (error) {
+        if (error instanceof RetaceoCalculationError)
+          throw invalid(error.message, 400, error.details);
+        throw error;
+      }
+      return runInTransaction(async (client) => {
+        const updated = await repository.applyCalculation(
+          companyId, id, new Date(data.expectedUpdatedAt), calculation,
+          context.actorUserId, client,
+        );
+        if (!updated) throw concurrencyConflict('retaceo', old.updatedAt);
+        await record(companyId, old, updated, context, {
+          reason: 'CALCULATE',
+          calculationVersion: updated.calculationVersion,
+        }, client);
+        return updated;
       });
     },
   };

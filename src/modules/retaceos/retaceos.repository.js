@@ -15,6 +15,11 @@ const costSelect = {
   isCifComponent: true, allocationMethod: true, createdAt: true, updatedAt: true,
   expenseType: { select: { id: true, code: true, name: true } },
   createdBy: { select: user },
+  allocations: { orderBy: { retaceoDetailId: 'asc' }, select: {
+    id: true, retaceoDetailId: true, allocationMethod: true,
+    baseValue: true, totalBaseValue: true, allocationFactor: true,
+    originalCost: true, allocatedCost: true, roundingAdjustment: true,
+  } },
 };
 const select = {
   id: true, uuid: true, companyId: true, code: true, purchaseId: true,
@@ -157,6 +162,34 @@ export function createRetaceosRepository(prisma) {
     },
     deleteCost(companyId, retaceoId, id, client = prisma) {
       return client.retaceoCost.deleteMany({ where: { id, companyId, retaceoId } });
+    },
+    async applyCalculation(companyId, id, expectedUpdatedAt, calculation, actorUserId, client = prisma) {
+      const result = await client.retaceo.updateMany({
+        where: { id, companyId, status: 'DRAFT', updatedAt: expectedUpdatedAt },
+        data: {
+          ...calculation.totals,
+          status: 'CALCULATED',
+          calculationVersion: { increment: 1 },
+          calculatedAt: new Date(),
+          calculatedByUserId: actorUserId,
+        },
+      });
+      if (result.count !== 1) return null;
+      await client.retaceoAllocation.deleteMany({
+        where: { companyId, retaceoCost: { retaceoId: id } },
+      });
+      if (calculation.allocations.length) await client.retaceoAllocation.createMany({
+        data: calculation.allocations.map((item) => ({ companyId, ...item })),
+      });
+      for (const detail of calculation.details) await client.retaceoDetail.updateMany({
+        where: { id: detail.id, retaceoId: id, companyId },
+        data: {
+          allocatedCapitalizableCost: detail.allocatedCapitalizableCost,
+          totalCost: detail.totalCost,
+          unitCost: detail.unitCost,
+        },
+      });
+      return this.find(companyId, id, client);
     },
   };
 }
