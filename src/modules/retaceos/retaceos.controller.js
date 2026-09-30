@@ -68,5 +68,23 @@ export function createRetaceosController(service, auditService) {
         () => service.calculate(request.tenant.companyId, request.validated.params.id, request.validated.body, context(request)),
       ));
     },
+    async verify(request, response) {
+      return sendSuccess(response, await audited(
+        request, auditActions.retaceoVerified, request.validated.params.id,
+        () => service.verify(request.tenant.companyId, request.validated.params.id, request.validated.body, context(request)),
+      ));
+    },
+    async close(request, response) {
+      return sendSuccess(response, await audited(
+        request, auditActions.retaceoClosed, request.validated.params.id,
+        () => service.close(request.tenant.companyId, request.validated.params.id, request.validated.body, context(request)),
+      ));
+    },
+    async cancel(request, response) {
+      return sendSuccess(response, await audited(
+        request, auditActions.retaceoCancelled, request.validated.params.id,
+        () => service.cancel(request.tenant.companyId, request.validated.params.id, request.validated.body, context(request)),
+      ));
+    },
   };
 }

@@ -28,8 +28,10 @@ const select = {
   importInvoiceNumber: true, importInvoiceDate: true, importPolicyNumber: true,
   importPolicyDate: true, calculationVersion: true, totalFob: true, totalCif: true,
   totalCapitalizableCosts: true, totalRecoverableTaxes: true, totalLandedCost: true,
-  status: true, notes: true, calculatedAt: true, verifiedAt: true, closedAt: true,
-  cancelledAt: true, cancellationReason: true, createdAt: true, updatedAt: true,
+  status: true, notes: true, calculatedAt: true, calculatedByUserId: true,
+  verifiedAt: true, verifiedByUserId: true, closedAt: true, closedByUserId: true,
+  cancelledAt: true, cancelledByUserId: true, cancellationReason: true,
+  createdAt: true, updatedAt: true,
   purchase: { select: { id: true, code: true, status: true, purchaseDate: true } },
   supplier: { select: { id: true, code: true, name: true } },
   originCountry: { select: { id: true, iso2: true, name: true } },
@@ -190,6 +192,13 @@ export function createRetaceosRepository(prisma) {
         },
       });
       return this.find(companyId, id, client);
+    },
+    async transition(companyId, id, expectedUpdatedAt, from, data, client = prisma) {
+      const result = await client.retaceo.updateMany({
+        where: { id, companyId, status: { in: from }, updatedAt: expectedUpdatedAt },
+        data,
+      });
+      return result.count === 1 ? this.find(companyId, id, client) : null;
     },
   };
 }

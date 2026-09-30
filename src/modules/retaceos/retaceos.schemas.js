@@ -98,3 +98,9 @@ export const calculateRetaceoBody = z.object({
     allocations: z.array(manualAllocation).min(1).max(500),
   })).max(500).default([]),
 });
+export const retaceoTransitionBody = z.object({
+  expectedUpdatedAt: z.string().datetime(),
+});
+export const cancelRetaceoBody = retaceoTransitionBody.extend({
+  reason: z.string().trim().min(1).max(5000),
+});

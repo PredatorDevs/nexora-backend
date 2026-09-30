@@ -4,9 +4,10 @@ import { authorizeCompany } from '../../core/middleware/authorize.js';
 import { validate } from '../../core/middleware/validate.js';
 import { createRetaceosController } from './retaceos.controller.js';
 import {
-  calculateRetaceoBody, createRetaceoBody, createRetaceoCostBody, deleteRetaceoCostBody,
+  calculateRetaceoBody, cancelRetaceoBody, createRetaceoBody,
+  createRetaceoCostBody, deleteRetaceoCostBody,
   eligiblePurchasesQuery, retaceoCostParams, retaceoIdParams,
-  retaceosListQuery, updateRetaceoBody, updateRetaceoCostBody,
+  retaceosListQuery, retaceoTransitionBody, updateRetaceoBody, updateRetaceoCostBody,
 } from './retaceos.schemas.js';
 
 export function createRetaceosRouter(service, auditService) {
@@ -22,5 +23,8 @@ export function createRetaceosRouter(service, auditService) {
   router.put('/:id/costs/:costId', authorizeCompany('retaceos.update'), validate({ params: retaceoCostParams, body: updateRetaceoCostBody }), controller.updateCost);
   router.delete('/:id/costs/:costId', authorizeCompany('retaceos.update'), validate({ params: retaceoCostParams, body: deleteRetaceoCostBody }), controller.deleteCost);
   router.post('/:id/calculate', authorizeCompany('retaceos.calculate'), validate({ params: retaceoIdParams, body: calculateRetaceoBody }), controller.calculate);
+  router.post('/:id/verify', authorizeCompany('retaceos.verify'), validate({ params: retaceoIdParams, body: retaceoTransitionBody }), controller.verify);
+  router.post('/:id/close', authorizeCompany('retaceos.close'), validate({ params: retaceoIdParams, body: retaceoTransitionBody }), controller.close);
+  router.post('/:id/cancel', authorizeCompany('retaceos.cancel'), validate({ params: retaceoIdParams, body: cancelRetaceoBody }), controller.cancel);
   return router;
 }

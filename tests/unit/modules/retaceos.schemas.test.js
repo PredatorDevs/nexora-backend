@@ -3,6 +3,7 @@ import {
   createRetaceoBody,
   createRetaceoCostBody,
   calculateRetaceoBody,
+  cancelRetaceoBody,
   retaceosListQuery,
 } from '../../../src/modules/retaceos/retaceos.schemas.js';
 
@@ -29,6 +30,12 @@ describe('retaceos schemas', () => {
         allocations: [{ retaceoDetailId: 2, amount: '10.25' }],
       }],
     }).manualAllocations[0].allocations[0].amount).toBe(10.25);
+  });
+
+  it('requires a reason when cancelling', () => {
+    expect(cancelRetaceoBody.safeParse({
+      expectedUpdatedAt: '2026-09-30T12:00:00.000Z', reason: ' ',
+    }).success).toBe(false);
   });
 
   it('rejects a recoverable tax marked as capitalizable', () => {

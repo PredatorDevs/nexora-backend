@@ -116,7 +116,7 @@ suman a `total_landed_cost`.
 
 ```text
 DRAFT -> CALCULATED -> VERIFIED -> CLOSED
-   \---------------------------> CANCELLED
+  \----------\----------\-----> CANCELLED
 ```
 
 - `DRAFT`: expediente editable.
@@ -167,6 +167,9 @@ POST   /api/v1/retaceos/:id/costs
 PUT    /api/v1/retaceos/:id/costs/:costId
 DELETE /api/v1/retaceos/:id/costs/:costId
 POST   /api/v1/retaceos/:id/calculate
+POST   /api/v1/retaceos/:id/verify
+POST   /api/v1/retaceos/:id/close
+POST   /api/v1/retaceos/:id/cancel
 ```
 
 Solo una compra `VERIFIED` o `CLOSED` sin retaceo previo aparece como elegible.
@@ -176,3 +179,8 @@ conserva una instantánea de la clasificación configurada en su tipo de gasto.
 
 La edición del encabezado, peso, volumen y costos se permite únicamente en
 `DRAFT` y utiliza `updatedAt` para impedir sobrescrituras concurrentes.
+
+La verificación vuelve a comprobar todas las cuadraturas y congela el cálculo.
+El cierre repite estas validaciones antes de dejar el expediente inmutable. La
+cancelación requiere motivo y se admite antes del cierre; nunca elimina datos.
+Cerrar un retaceo todavía no genera existencias ni asientos contables.

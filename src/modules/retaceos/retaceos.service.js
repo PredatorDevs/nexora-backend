@@ -7,6 +7,7 @@ import { paginationMeta } from '../../core/validation/pagination.js';
 import { entityChangeOperations, entitySchemas, entityTypes } from '../entity-changes/entity-change.constants.js';
 import { retaceoSnapshot } from '../entity-changes/entity-change.snapshots.js';
 import { calculateRetaceo, RetaceoCalculationError } from './retaceo-calculator.js';
+import { validateCalculatedRetaceo, RetaceoValidationError } from './retaceo-validator.js';
 
 const decimal = (value) => new Prisma.Decimal(value ?? 0);
 const round = (value) => value.toDecimalPlaces(6, Prisma.Decimal.ROUND_HALF_UP);
@@ -66,6 +67,15 @@ export function createRetaceosService({
       isCifComponent: input.isCifComponent ?? type.isCifComponent,
       allocationMethod: input.allocationMethod ?? type.defaultAllocationMethod,
     };
+  };
+  const validateCalculation = (value) => {
+    try {
+      validateCalculatedRetaceo(value);
+    } catch (error) {
+      if (error instanceof RetaceoValidationError)
+        throw invalid(error.message, 409, error.details);
+      throw error;
+    }
   };
 
   return {
@@ -227,6 +237,55 @@ export function createRetaceosService({
           reason: 'CALCULATE',
           calculationVersion: updated.calculationVersion,
         }, client);
+        return updated;
+      });
+    },
+    async verify(companyId, id, data, context) {
+      const old = await get(companyId, id);
+      if (old.status !== 'CALCULATED')
+        throw invalid('Solo puede verificarse un retaceo calculado.', 409);
+      validateCalculation(old);
+      return runInTransaction(async (client) => {
+        const updated = await repository.transition(
+          companyId, id, new Date(data.expectedUpdatedAt), ['CALCULATED'],
+          { status: 'VERIFIED', verifiedAt: new Date(), verifiedByUserId: context.actorUserId },
+          client,
+        );
+        if (!updated) throw concurrencyConflict('retaceo', old.updatedAt);
+        await record(companyId, old, updated, context, { reason: 'VERIFY' }, client);
+        return updated;
+      });
+    },
+    async close(companyId, id, data, context) {
+      const old = await get(companyId, id);
+      if (old.status !== 'VERIFIED')
+        throw invalid('Solo puede cerrarse un retaceo verificado.', 409);
+      validateCalculation(old);
+      return runInTransaction(async (client) => {
+        const updated = await repository.transition(
+          companyId, id, new Date(data.expectedUpdatedAt), ['VERIFIED'],
+          { status: 'CLOSED', closedAt: new Date(), closedByUserId: context.actorUserId },
+          client,
+        );
+        if (!updated) throw concurrencyConflict('retaceo', old.updatedAt);
+        await record(companyId, old, updated, context, { reason: 'CLOSE' }, client);
+        return updated;
+      });
+    },
+    async cancel(companyId, id, data, context) {
+      const old = await get(companyId, id);
+      if (!['DRAFT', 'CALCULATED', 'VERIFIED'].includes(old.status))
+        throw invalid('El retaceo ya no puede cancelarse en su estado actual.', 409);
+      return runInTransaction(async (client) => {
+        const updated = await repository.transition(
+          companyId, id, new Date(data.expectedUpdatedAt),
+          ['DRAFT', 'CALCULATED', 'VERIFIED'], {
+            status: 'CANCELLED', cancelledAt: new Date(),
+            cancelledByUserId: context.actorUserId, cancellationReason: data.reason,
+          }, client,
+        );
+        if (!updated) throw concurrencyConflict('retaceo', old.updatedAt);
+        await record(companyId, old, updated, context, { reason: 'CANCEL' }, client);
         return updated;
       });
     },
