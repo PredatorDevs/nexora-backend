@@ -50,6 +50,11 @@ export function createRetaceosRepository(prisma) {
         ...(query.status ? { status: query.status } : {}),
         ...(query.supplierId ? { supplierId: query.supplierId } : {}),
         ...(query.purchaseId ? { purchaseId: query.purchaseId } : {}),
+        ...(query.originCountryId ? { originCountryId: query.originCountryId } : {}),
+        ...(query.dateFrom || query.dateTo ? { retaceoDate: {
+          ...(query.dateFrom ? { gte: query.dateFrom } : {}),
+          ...(query.dateTo ? { lte: query.dateTo } : {}),
+        } } : {}),
         ...(query.search ? { OR: [
           { code: { contains: query.search } },
           { purchase: { code: { contains: query.search } } },

@@ -1,0 +1,1 @@
+import{o as e,u as t}from"./index-yRKMMAzR.js";function n({permission:n,anyOf:r,allOf:i,fallback:a=null,children:o}){let{permissions:s}=e();return t(s,{permission:n,anyOf:r,allOf:i})?o:a}export{n as t};

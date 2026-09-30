@@ -6,6 +6,10 @@ export const purchaseOrderDocumentParams = purchaseOrderExpenseParams.extend({ d
 export const purchaseOrdersListQuery = createListQuerySchema(['createdAt','orderDate','expectedDate','code','status','total']).extend({
   status: z.enum(['DRAFT','PENDING_APPROVAL','APPROVED','SENT','PARTIALLY_RECEIVED','RECEIVED','CANCELLED','CLOSED']).optional(),
   supplierId: z.coerce.number().int().positive().optional(),
+  branchId: z.coerce.number().int().positive().optional(),
+  warehouseId: z.coerce.number().int().positive().optional(),
+  dateFrom: z.coerce.date().optional(),
+  dateTo: z.coerce.date().optional(),
 });
 export const generatePurchaseOrdersBody = z.object({
   purchaseRequestId: z.number().int().positive(),

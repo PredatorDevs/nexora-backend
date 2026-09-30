@@ -21,6 +21,9 @@ export const retaceosListQuery = createListQuerySchema([
   status: z.enum(['DRAFT', 'CALCULATED', 'VERIFIED', 'CLOSED', 'CANCELLED']).optional(),
   supplierId: z.coerce.number().int().positive().optional(),
   purchaseId: z.coerce.number().int().positive().optional(),
+  originCountryId: z.coerce.number().int().positive().optional(),
+  dateFrom: z.coerce.date().optional(),
+  dateTo: z.coerce.date().optional(),
 });
 export const eligiblePurchasesQuery = createListQuerySchema([
   'purchaseDate', 'code', 'createdAt',

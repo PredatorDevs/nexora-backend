@@ -8,6 +8,10 @@ export const purchasesListQuery = createListQuerySchema(['createdAt','purchaseDa
   status: z.enum(['DRAFT','RECEIVED','VERIFIED','CANCELLED','CLOSED']).optional(),
   supplierId: z.coerce.number().int().positive().optional(),
   purchaseOrderId: z.coerce.number().int().positive().optional(),
+  branchId: z.coerce.number().int().positive().optional(),
+  warehouseId: z.coerce.number().int().positive().optional(),
+  dateFrom: z.coerce.date().optional(),
+  dateTo: z.coerce.date().optional(),
 });
 const nullableText=(max)=>z.string().trim().min(1).max(max).nullable().optional();
 const detail=z.object({purchaseOrderDetailId:z.number().int().positive(),quantityReceived:z.coerce.number().positive().max(1e14),notes:nullableText(5000)});
