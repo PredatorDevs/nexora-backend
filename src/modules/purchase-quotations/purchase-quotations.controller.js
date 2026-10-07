@@ -50,6 +50,15 @@ export function createPurchaseQuotationsController(service, auditService) {
         await service.get(r.tenant.companyId, r.validated.params.id),
       );
     },
+    async sources(r, s) {
+      return sendSuccess(
+        s,
+        await service.sources(
+          r.tenant.companyId,
+          r.validated.query.supplierId,
+        ),
+      );
+    },
     async comparison(r, s) {
       return sendSuccess(
         s,

@@ -6,6 +6,9 @@ export const purchaseQuotationIdParams = z.object({
 export const purchaseQuotationComparisonParams = z.object({
   purchaseRequestId: z.coerce.number().int().positive(),
 });
+export const purchaseQuotationSourcesQuery = z.object({
+  supplierId: z.coerce.number().int().positive(),
+});
 export const purchaseQuotationsListQuery = createListQuerySchema([
   'createdAt',
   'quotationDate',
@@ -33,6 +36,7 @@ export const purchaseQuotationsListQuery = createListQuerySchema([
 });
 const nullable = (max) => z.string().trim().min(1).max(max).nullable();
 const detail = z.object({
+  purchaseRequestDetailId: z.number().int().positive().optional(),
   productId: z.number().int().positive(),
   productUnitId: z.number().int().positive(),
   quantity: z.coerce.number().positive().max(1e14),
@@ -60,9 +64,32 @@ const body = z
     paymentTerms: nullable(500).optional(),
     deliveryDays: z.number().int().min(0).max(65535).nullable().optional(),
     notes: nullable(5000).optional(),
+    source: z
+      .object({
+        mode: z.enum(['FULL_REQUEST', 'SEGMENT']),
+        purchaseRequestId: z.number().int().positive(),
+        segmentId: z.number().int().positive().nullable().optional(),
+      })
+      .nullable()
+      .optional(),
     details: z.array(detail).min(1).max(500),
   })
   .superRefine((value, context) => {
+    if (value.source?.mode === 'SEGMENT' && !value.source.segmentId)
+      context.addIssue({
+        code: 'custom',
+        path: ['source', 'segmentId'],
+        message: 'Debes seleccionar un segmento.',
+      });
+    if (value.source)
+      value.details.forEach((item, index) => {
+        if (!item.purchaseRequestDetailId)
+          context.addIssue({
+            code: 'custom',
+            path: ['details', index, 'purchaseRequestDetailId'],
+            message: 'No se pudo identificar la línea de solicitud de origen.',
+          });
+      });
     if (new Date(value.validUntil) < new Date(value.quotationDate))
       context.addIssue({
         code: 'custom',

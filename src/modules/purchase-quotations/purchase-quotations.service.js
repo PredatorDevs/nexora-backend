@@ -124,6 +124,56 @@ export function createPurchaseQuotationsService({
     });
     return refs;
   }
+  async function validateSource(companyId, data, client) {
+    if (!data.source) return null;
+    const source = await repository.findSource(
+      companyId,
+      data.source.purchaseRequestId,
+      data.supplierId,
+      data.source.mode === 'SEGMENT' ? data.source.segmentId : null,
+      client,
+    );
+    if (!source)
+      throw invalid('La solicitud seleccionada ya no está disponible para cotizar.', [
+        'source.purchaseRequestId',
+      ], 409);
+    const segment = data.source.mode === 'SEGMENT'
+      ? source.supplierSegments?.[0]
+      : null;
+    if (data.source.mode === 'SEGMENT' && !segment)
+      throw invalid(
+        'El segmento no está emitido o no pertenece al proveedor seleccionado.',
+        ['source.segmentId'],
+        409,
+      );
+    const requestDetails = new Map(source.details.map((item) => [item.id, item]));
+    const allowed = new Map(
+      (segment?.details ?? source.details).map((item) => [
+        item.purchaseRequestDetailId ?? item.id,
+        item.quantity,
+      ]),
+    );
+    data.details.forEach((item, index) => {
+      const requestDetail = requestDetails.get(item.purchaseRequestDetailId);
+      const maximum = allowed.get(item.purchaseRequestDetailId);
+      if (!requestDetail || maximum == null)
+        throw invalid('La línea no pertenece al origen seleccionado.', [
+          `details.${index}.purchaseRequestDetailId`,
+        ]);
+      if (
+        requestDetail.productId !== item.productId ||
+        requestDetail.productUnitId !== item.productUnitId
+      )
+        throw invalid('El producto o la unidad no coinciden con la solicitud.', [
+          `details.${index}.productId`,
+        ]);
+      if (d(item.quantity).greaterThan(d(maximum)))
+        throw invalid('La cantidad cotizada supera la cantidad del origen.', [
+          `details.${index}.quantity`,
+        ]);
+    });
+    return source;
+  }
   const record = (companyId, oldValue, newValue, context, metadata, client) =>
     entityChangeService?.record(
       {
@@ -270,15 +320,21 @@ export function createPurchaseQuotationsService({
       };
     },
     get,
+    sources(companyId, supplierId) {
+      return repository.listSources(companyId, supplierId);
+    },
     comparison,
     create(companyId, data, context) {
       return runInTransaction(async (client) => {
         const refs = await validate(companyId, data, client);
+        const source = await validateSource(companyId, data, client);
         const calculated = calculate(data.details);
+        const quotationData = { ...data };
+        delete quotationData.source;
         const created = await repository.create(
           companyId,
           {
-            ...data,
+            ...quotationData,
             supplierContactId: data.supplierContactId ?? null,
             supplierQuotationNumber: data.supplierQuotationNumber || null,
             quotationDate: new Date(data.quotationDate),
@@ -304,8 +360,43 @@ export function createPurchaseQuotationsService({
           },
           client,
         );
-        await record(companyId, null, created, context, null, client);
-        return created;
+        let result = created;
+        if (source) {
+          const detailByLine = new Map(
+            created.details.map((item) => [item.lineNumber, item]),
+          );
+          const links = data.details.map((item, index) => ({
+            purchaseQuotationDetailId: detailByLine.get(index + 1).id,
+            purchaseRequestDetailId: item.purchaseRequestDetailId,
+            quantity: d(item.quantity),
+          }));
+          result = await repository.replaceRequestLinks(
+            companyId,
+            created.id,
+            created.updatedAt,
+            links,
+            source.details.map((item) => ({
+              ...item,
+              purchaseRequestId: source.id,
+            })),
+            client,
+          );
+        }
+        await record(
+          companyId,
+          null,
+          result,
+          context,
+          source
+            ? {
+                reason: 'CREATED_FROM_PURCHASE_REQUEST',
+                purchaseRequestId: source.id,
+                segmentId: data.source.segmentId ?? null,
+              }
+            : null,
+          client,
+        );
+        return result;
       });
     },
     async update(companyId, id, data, context) {
@@ -322,27 +413,29 @@ export function createPurchaseQuotationsService({
       return runInTransaction(async (client) => {
         const refs = await validate(companyId, changes, client);
         const calculated = calculate(changes.details);
+        const quotationChanges = { ...changes };
+        delete quotationChanges.source;
         const updated = await repository.replace(
           companyId,
           id,
           new Date(expectedUpdatedAt),
           {
-            ...changes,
-            supplierContactId: changes.supplierContactId ?? null,
-            supplierQuotationNumber: changes.supplierQuotationNumber || null,
-            quotationDate: new Date(changes.quotationDate),
-            validUntil: new Date(changes.validUntil),
+            ...quotationChanges,
+            supplierContactId: quotationChanges.supplierContactId ?? null,
+            supplierQuotationNumber: quotationChanges.supplierQuotationNumber || null,
+            quotationDate: new Date(quotationChanges.quotationDate),
+            validUntil: new Date(quotationChanges.validUntil),
             exchangeRate:
-              changes.currencyCode === refs.company.defaultCurrencyCode
+              quotationChanges.currencyCode === refs.company.defaultCurrencyCode
                 ? d(1)
-                : d(changes.exchangeRate),
+                : d(quotationChanges.exchangeRate),
             exchangeRateDate:
-              changes.currencyCode === refs.company.defaultCurrencyCode
+              quotationChanges.currencyCode === refs.company.defaultCurrencyCode
                 ? null
-                : new Date(changes.exchangeRateDate),
-            paymentTerms: changes.paymentTerms || null,
-            deliveryDays: changes.deliveryDays ?? null,
-            notes: changes.notes || null,
+                : new Date(quotationChanges.exchangeRateDate),
+            paymentTerms: quotationChanges.paymentTerms || null,
+            deliveryDays: quotationChanges.deliveryDays ?? null,
+            notes: quotationChanges.notes || null,
             ...calculated,
           },
           client,

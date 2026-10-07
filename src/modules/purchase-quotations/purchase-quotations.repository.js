@@ -200,6 +200,98 @@ export function createPurchaseQuotationsRepository(prisma) {
       });
       return withComparativeTotals(quotation);
     },
+    listSources(companyId, supplierId, client = prisma) {
+      return client.purchaseRequest.findMany({
+        where: {
+          companyId,
+          requestType: 'CONSOLIDATED',
+          status: { in: ['APPROVED', 'IN_QUOTATION'] },
+        },
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          code: true,
+          requestDate: true,
+          requiredDate: true,
+          justification: true,
+          branch: { select: { id: true, code: true, name: true } },
+          warehouse: { select: { id: true, code: true, name: true } },
+          details: {
+            orderBy: { lineNumber: 'asc' },
+            select: {
+              id: true,
+              lineNumber: true,
+              productId: true,
+              productUnitId: true,
+              quantity: true,
+              description: true,
+              notes: true,
+              product: {
+                select: { id: true, internalCode: true, name: true, isActive: true },
+              },
+              productUnit: {
+                select: { id: true, code: true, name: true, isActive: true },
+              },
+            },
+          },
+          supplierSegments: {
+            where: { supplierId, status: 'ISSUED' },
+            orderBy: { segmentNumber: 'asc' },
+            select: {
+              id: true,
+              code: true,
+              supplierId: true,
+              supplierContactId: true,
+              notes: true,
+              details: {
+                orderBy: { purchaseRequestDetail: { lineNumber: 'asc' } },
+                select: {
+                  purchaseRequestDetailId: true,
+                  quantity: true,
+                  notes: true,
+                },
+              },
+            },
+          },
+        },
+      });
+    },
+    findSource(companyId, purchaseRequestId, supplierId, segmentId, client = prisma) {
+      return client.purchaseRequest.findFirst({
+        where: {
+          id: purchaseRequestId,
+          companyId,
+          requestType: 'CONSOLIDATED',
+          status: { in: ['APPROVED', 'IN_QUOTATION'] },
+        },
+        select: {
+          id: true,
+          status: true,
+          details: {
+            select: {
+              id: true,
+              productId: true,
+              productUnitId: true,
+              quantity: true,
+            },
+          },
+          supplierSegments: segmentId
+            ? {
+                where: { id: segmentId, supplierId, status: 'ISSUED' },
+                select: {
+                  id: true,
+                  details: {
+                    select: {
+                      purchaseRequestDetailId: true,
+                      quantity: true,
+                    },
+                  },
+                },
+              }
+            : false,
+        },
+      });
+    },
     async references(companyId, data, client = prisma) {
       const [company, supplier, contact, products] = await Promise.all([
         client.company.findUnique({

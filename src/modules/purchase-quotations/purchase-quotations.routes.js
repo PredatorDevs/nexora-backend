@@ -7,6 +7,7 @@ import {
   createPurchaseQuotationBody,
   purchaseQuotationIdParams,
   purchaseQuotationComparisonParams,
+  purchaseQuotationSourcesQuery,
   purchaseQuotationReasonTransitionBody,
   purchaseQuotationsListQuery,
   purchaseQuotationTransitionBody,
@@ -24,6 +25,12 @@ export function createPurchaseQuotationsRouter(service, auditService) {
     authorizeCompany('purchase_quotations.read'),
     validate({ query: purchaseQuotationsListQuery }),
     controller.list,
+  );
+  router.get(
+    '/sources',
+    authorizeCompany('purchase_quotations.create'),
+    validate({ query: purchaseQuotationSourcesQuery }),
+    controller.sources,
   );
   router.get(
     '/comparison/:purchaseRequestId',

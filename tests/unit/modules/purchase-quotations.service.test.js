@@ -37,6 +37,74 @@ describe('purchase quotations service', () => {
     expect(result.details[0].subtotal.toString()).toBe('180');
   });
 
+  it('creates a quotation and its request links atomically from an issued segment', async () => {
+    const source = {
+      id: 8,
+      details: [
+        { id: 70, productId: 7, productUnitId: 9, quantity: '10' },
+      ],
+      supplierSegments: [
+        {
+          id: 15,
+          details: [{ purchaseRequestDetailId: 70, quantity: '6' }],
+        },
+      ],
+    };
+    const created = {
+      id: 4,
+      updatedAt: new Date('2026-10-07T10:00:00.000Z'),
+      details: [{ id: 40, lineNumber: 1 }],
+    };
+    const repository = {
+      references: vi.fn().mockResolvedValue({
+        company: { status: 'ACTIVE', defaultCurrencyCode: 'USD' },
+        supplier: { id: 3, isActive: true },
+        contact: null,
+        products: [{ id: 7, isActive: true, purchaseUnitId: 9, purchaseUnit: { isActive: true, type: 'PURCHASE' } }],
+      }),
+      findSource: vi.fn().mockResolvedValue(source),
+      create: vi.fn().mockResolvedValue(created),
+      replaceRequestLinks: vi.fn().mockResolvedValue({ ...created, requestLinks: [{ purchaseRequestId: 8 }] }),
+    };
+    const service = createPurchaseQuotationsService({
+      repository,
+      runInTransaction: (operation) => operation({ transaction: true }),
+      generateCode: vi.fn().mockResolvedValue('COT-000001'),
+    });
+
+    await service.create(6, {
+      supplierId: 3,
+      supplierContactId: null,
+      quotationDate: '2026-10-07T00:00:00.000Z',
+      validUntil: '2026-10-22T00:00:00.000Z',
+      currencyCode: 'USD',
+      exchangeRate: 1,
+      exchangeRateDate: null,
+      source: { mode: 'SEGMENT', purchaseRequestId: 8, segmentId: 15 },
+      details: [{
+        purchaseRequestDetailId: 70,
+        productId: 7,
+        productUnitId: 9,
+        quantity: 6,
+        unitPrice: 10,
+        discountRate: 0,
+        taxRate: 13,
+      }],
+    }, { actorUserId: 1 });
+
+    expect(repository.replaceRequestLinks).toHaveBeenCalledWith(
+      6,
+      4,
+      created.updatedAt,
+      [expect.objectContaining({
+        purchaseQuotationDetailId: 40,
+        purchaseRequestDetailId: 70,
+      })],
+      [expect.objectContaining({ id: 70, purchaseRequestId: 8 })],
+      expect.anything(),
+    );
+  });
+
   it('links approved request lines with exact product, unit, and quantity coverage', async () => {
     const old = {
       id: 4,
