@@ -58,4 +58,30 @@ describe('purchase request PDF', () => {
     expect(buffer.subarray(0, 5).toString()).toBe('%PDF-');
     expect(buffer.length).toBeGreaterThan(1_000);
   });
+
+  it('reuses the template for a supplier-directed segment', async () => {
+    const segment = {
+      code: 'PR-000050-S001',
+      notes: 'Confirmar disponibilidad y plazo de entrega.',
+      supplier: {
+        code: 'SUP-000001',
+        name: 'Proveedor de prueba',
+        email: 'ventas@example.com',
+        phone: '2222-0000',
+      },
+      supplierContact: {
+        fullName: 'Ana Compras',
+        email: 'ana@example.com',
+        phone: '7777-0000',
+      },
+    };
+
+    const definition = buildPurchaseRequestDocument(request, { segment });
+    const serialized = JSON.stringify(definition);
+    expect(serialized).toContain('Proveedor de prueba');
+    expect(serialized).toContain('PR-000050-S001');
+
+    const buffer = await generatePurchaseRequestPdf(request, { segment });
+    expect(buffer.subarray(0, 5).toString()).toBe('%PDF-');
+  });
 });

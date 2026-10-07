@@ -126,6 +126,61 @@ const detailData = (details) =>
     description: item.description || null,
     notes: item.notes || null,
   }));
+const segmentSelect = {
+  id: true,
+  uuid: true,
+  companyId: true,
+  purchaseRequestId: true,
+  supplierId: true,
+  supplierContactId: true,
+  segmentNumber: true,
+  code: true,
+  status: true,
+  notes: true,
+  createdByUserId: true,
+  issuedAt: true,
+  issuedByUserId: true,
+  cancelledAt: true,
+  cancelledByUserId: true,
+  cancellationReason: true,
+  createdAt: true,
+  updatedAt: true,
+  supplier: { select: {
+    id: true, code: true, name: true, addressLine: true,
+    phone: true, email: true, isActive: true,
+  } },
+  supplierContact: { select: {
+    id: true, fullName: true, jobTitle: true, phone: true, email: true,
+    isActive: true,
+  } },
+  createdBy: { select: userSelect },
+  issuedBy: { select: userSelect },
+  cancelledBy: { select: userSelect },
+  details: {
+    orderBy: { purchaseRequestDetail: { lineNumber: 'asc' } },
+    select: {
+      id: true,
+      purchaseRequestDetailId: true,
+      quantity: true,
+      notes: true,
+      createdAt: true,
+      updatedAt: true,
+      purchaseRequestDetail: {
+        select: {
+          id: true,
+          lineNumber: true,
+          productId: true,
+          productUnitId: true,
+          quantity: true,
+          description: true,
+          notes: true,
+          product: { select: { id: true, internalCode: true, sku: true, name: true } },
+          productUnit: { select: { id: true, code: true, name: true } },
+        },
+      },
+    },
+  },
+};
 
 export function createPurchaseRequestsRepository(prisma) {
   return {
@@ -185,6 +240,94 @@ export function createPurchaseRequestsRepository(prisma) {
         where: { id, companyId },
         select,
       });
+    },
+    listSegments(companyId, purchaseRequestId, client = prisma) {
+      return client.purchaseRequestSupplierSegment.findMany({
+        where: { companyId, purchaseRequestId },
+        select: segmentSelect,
+        orderBy: { segmentNumber: 'asc' },
+      });
+    },
+    findSegment(companyId, purchaseRequestId, segmentId, client = prisma) {
+      return client.purchaseRequestSupplierSegment.findFirst({
+        where: { id: segmentId, companyId, purchaseRequestId },
+        select: segmentSelect,
+      });
+    },
+    async lockForSegment(companyId, purchaseRequestId, client = prisma) {
+      await client.$queryRaw`
+        SELECT id FROM purchase_requests
+        WHERE id = ${purchaseRequestId} AND company_id = ${companyId}
+        FOR UPDATE
+      `;
+    },
+    async findSegmentReferences(companyId, purchaseRequestId, supplierId, contactId, detailIds, client = prisma) {
+      const [supplier, contact, details] = await Promise.all([
+        client.supplier.findFirst({
+          where: { id: supplierId, companyId },
+          select: { id: true, isActive: true },
+        }),
+        contactId ? client.supplierContact.findFirst({
+          where: { id: contactId, companyId },
+          select: { id: true, supplierId: true, isActive: true },
+        }) : null,
+        client.purchaseRequestDetail.findMany({
+          where: { companyId, purchaseRequestId, id: { in: detailIds } },
+          select: { id: true, quantity: true },
+        }),
+      ]);
+      return { supplier, contact, details };
+    },
+    nextSegmentNumber(companyId, purchaseRequestId, client = prisma) {
+      return client.purchaseRequestSupplierSegment.aggregate({
+        where: { companyId, purchaseRequestId },
+        _max: { segmentNumber: true },
+      });
+    },
+    async createSegment(data, details, client = prisma) {
+      const created = await client.purchaseRequestSupplierSegment.create({
+        data,
+        select: { id: true },
+      });
+      await client.purchaseRequestSupplierSegmentDetail.createMany({
+        data: details.map((detail) => ({
+          companyId: data.companyId,
+          segmentId: created.id,
+          purchaseRequestDetailId: detail.purchaseRequestDetailId,
+          quantity: detail.quantity,
+          notes: detail.notes ?? null,
+        })),
+      });
+      return this.findSegment(data.companyId, data.purchaseRequestId, created.id, client);
+    },
+    async replaceSegment(companyId, purchaseRequestId, segmentId, expectedUpdatedAt, data, details, client = prisma) {
+      const updated = await client.purchaseRequestSupplierSegment.updateMany({
+        where: { id: segmentId, companyId, purchaseRequestId, status: 'DRAFT', updatedAt: expectedUpdatedAt },
+        data,
+      });
+      if (updated.count !== 1) return null;
+      await client.purchaseRequestSupplierSegmentDetail.deleteMany({
+        where: { companyId, segmentId },
+      });
+      await client.purchaseRequestSupplierSegmentDetail.createMany({
+        data: details.map((detail) => ({
+          companyId,
+          segmentId,
+          purchaseRequestDetailId: detail.purchaseRequestDetailId,
+          quantity: detail.quantity,
+          notes: detail.notes ?? null,
+        })),
+      });
+      return this.findSegment(companyId, purchaseRequestId, segmentId, client);
+    },
+    async transitionSegment(companyId, purchaseRequestId, segmentId, expectedUpdatedAt, from, data, client = prisma) {
+      const updated = await client.purchaseRequestSupplierSegment.updateMany({
+        where: { id: segmentId, companyId, purchaseRequestId, status: { in: from }, updatedAt: expectedUpdatedAt },
+        data,
+      });
+      return updated.count === 1
+        ? this.findSegment(companyId, purchaseRequestId, segmentId, client)
+        : null;
     },
     findConsolidationSources(companyId, ids, client = prisma) {
       return client.purchaseRequest.findMany({

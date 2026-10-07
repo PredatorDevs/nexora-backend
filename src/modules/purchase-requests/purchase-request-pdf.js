@@ -48,7 +48,7 @@ function address(entity) {
     .join(', ');
 }
 
-export function buildPurchaseRequestDocument(request) {
+export function buildPurchaseRequestDocument(request, { segment } = {}) {
   const { company } = request;
   const date = formatter(company, { dateStyle: 'medium' });
   const dateTime = formatter(company, {
@@ -127,6 +127,25 @@ export function buildPurchaseRequestDocument(request) {
         },
         layout: 'lightHorizontalLines',
       },
+      ...(segment
+        ? [
+            { text: 'Proveedor destinatario', style: 'sectionTitle' },
+            {
+              table: {
+                widths: [90, '*', 90, '*'],
+                body: [
+                  ['Proveedor', `${segment.supplier.code} · ${segment.supplier.name}`, 'Segmento', segment.code],
+                  ['Contacto', valueOrDash(segment.supplierContact?.fullName), 'Correo', valueOrDash(segment.supplierContact?.email ?? segment.supplier.email)],
+                  ['Teléfono', valueOrDash(segment.supplierContact?.phone ?? segment.supplier.phone), 'Estado', 'EMITIDO'],
+                ],
+              },
+              layout: 'lightHorizontalLines',
+            },
+            ...(segment.notes
+              ? [{ text: 'Indicaciones para el proveedor', style: 'sectionTitle' }, { text: segment.notes }]
+              : []),
+          ]
+        : []),
       { text: 'Destino', style: 'sectionTitle' },
       { text: valueOrDash(address(request.branch)) },
       {
@@ -234,6 +253,6 @@ export function buildPurchaseRequestDocument(request) {
   };
 }
 
-export async function generatePurchaseRequestPdf(request) {
-  return pdfmake.createPdf(buildPurchaseRequestDocument(request)).getBuffer();
+export async function generatePurchaseRequestPdf(request, options) {
+  return pdfmake.createPdf(buildPurchaseRequestDocument(request, options)).getBuffer();
 }

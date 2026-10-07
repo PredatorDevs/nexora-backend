@@ -101,6 +101,14 @@ enum PurchaseRequestType {
   @@map("purchase_request_type")
 }
 
+enum PurchaseRequestSupplierSegmentStatus {
+  DRAFT
+  ISSUED
+  CANCELLED
+
+  @@map("purchase_request_supplier_segment_status")
+}
+
 enum PurchaseQuotationStatus {
   DRAFT
   RECEIVED
@@ -210,6 +218,9 @@ model User {
   purchaseRequestsRejected       PurchaseRequest[]              @relation("PurchaseRequestRejectedBy")
   purchaseRequestsCancelled      PurchaseRequest[]              @relation("PurchaseRequestCancelledBy")
   purchaseRequestsConsolidated   PurchaseRequest[]              @relation("PurchaseRequestConsolidatedBy")
+  purchaseRequestSegmentsCreated PurchaseRequestSupplierSegment[] @relation("PurchaseRequestSegmentCreatedBy")
+  purchaseRequestSegmentsIssued PurchaseRequestSupplierSegment[] @relation("PurchaseRequestSegmentIssuedBy")
+  purchaseRequestSegmentsCancelled PurchaseRequestSupplierSegment[] @relation("PurchaseRequestSegmentCancelledBy")
   purchaseQuotationsRegistered   PurchaseQuotation[]            @relation("PurchaseQuotationRegisteredBy")
   purchaseQuotationsCancelled    PurchaseQuotation[]            @relation("PurchaseQuotationCancelledBy")
   purchaseQuotationsSelected     PurchaseQuotation[]            @relation("PurchaseQuotationSelectedBy")
@@ -530,6 +541,8 @@ model Company {
   purchaseRequests                    PurchaseRequest[]
   purchaseRequestDetails              PurchaseRequestDetail[]
   purchaseRequestConsolidationDetails PurchaseRequestConsolidationDetail[]
+  purchaseRequestSupplierSegments     PurchaseRequestSupplierSegment[]
+  purchaseRequestSupplierSegmentDetails PurchaseRequestSupplierSegmentDetail[]
   expenseTypes                        ExpenseType[]
   purchaseQuotations                  PurchaseQuotation[]
   purchaseQuotationDetails            PurchaseQuotationDetail[]
@@ -843,6 +856,7 @@ model Supplier {
   purchaseOrders            PurchaseOrder[]
   purchases                 Purchase[]
   retaceos                  Retaceo[]
+  purchaseRequestSegments   PurchaseRequestSupplierSegment[]
 
   @@unique([companyId, code], map: "suppliers_company_code_key")
   @@unique([companyId, countryId, nit], map: "suppliers_company_country_nit_key")
@@ -876,6 +890,7 @@ model SupplierContact {
   supplier           Supplier            @relation(fields: [supplierId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
   purchaseQuotations PurchaseQuotation[]
   purchaseOrders     PurchaseOrder[]
+  purchaseRequestSegments PurchaseRequestSupplierSegment[]
 
   @@unique([id, companyId], map: "supplier_contacts_id_company_key")
   @@index([companyId, supplierId, isActive, isPrimary], map: "supplier_contacts_supplier_active_primary_idx")
@@ -923,6 +938,7 @@ model PurchaseRequest {
   sourceRequests       PurchaseRequest[]          @relation("PurchaseRequestConsolidation")
   details              PurchaseRequestDetail[]
   quotationLinks       PurchaseQuotationRequest[]
+  supplierSegments     PurchaseRequestSupplierSegment[]
 
   @@unique([uuid], map: "purchase_requests_uuid_key")
   @@unique([companyId, code], map: "purchase_requests_company_code_key")
@@ -958,6 +974,7 @@ model PurchaseRequestDetail {
   quotationLinks       PurchaseQuotationRequestDetail[]
   consolidationSources PurchaseRequestConsolidationDetail[] @relation("ConsolidatedRequestDetail")
   consolidationTargets PurchaseRequestConsolidationDetail[] @relation("SourceRequestDetail")
+  supplierSegmentDetails PurchaseRequestSupplierSegmentDetail[]
 
   @@unique([companyId, purchaseRequestId, lineNumber], map: "purchase_request_details_line_key")
   @@unique([companyId, purchaseRequestId, productId, productUnitId], map: "purchase_request_details_product_unit_key")
@@ -982,6 +999,65 @@ model PurchaseRequestConsolidationDetail {
   @@unique([sourceRequestDetailId, companyId], map: "purchase_request_consolidation_details_source_key")
   @@index([companyId, consolidatedRequestDetailId], map: "purchase_request_consolidation_details_target_idx")
   @@map("purchase_request_consolidation_details")
+}
+
+model PurchaseRequestSupplierSegment {
+  id                 Int                                  @id @default(autoincrement()) @db.UnsignedInt
+  uuid               String                               @default(uuid()) @db.Char(36)
+  companyId          Int                                  @map("company_id") @db.UnsignedInt
+  purchaseRequestId  Int                                  @map("purchase_request_id") @db.UnsignedInt
+  supplierId         Int                                  @map("supplier_id") @db.UnsignedInt
+  supplierContactId  Int?                                 @map("supplier_contact_id") @db.UnsignedInt
+  segmentNumber      Int                                  @map("segment_number") @db.UnsignedSmallInt
+  code               String                               @db.VarChar(70)
+  status             PurchaseRequestSupplierSegmentStatus @default(DRAFT)
+  notes              String?                              @db.Text
+  createdByUserId    Int                                  @map("created_by_user_id") @db.UnsignedInt
+  issuedAt           DateTime?                            @map("issued_at") @db.DateTime(3)
+  issuedByUserId     Int?                                 @map("issued_by_user_id") @db.UnsignedInt
+  cancelledAt        DateTime?                            @map("cancelled_at") @db.DateTime(3)
+  cancelledByUserId  Int?                                 @map("cancelled_by_user_id") @db.UnsignedInt
+  cancellationReason String?                              @map("cancellation_reason") @db.Text
+  createdAt          DateTime                             @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt          DateTime                             @updatedAt @map("updated_at") @db.DateTime(3)
+  company            Company                              @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  purchaseRequest    PurchaseRequest                      @relation(fields: [purchaseRequestId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  supplier           Supplier                             @relation(fields: [supplierId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  supplierContact    SupplierContact?                     @relation(fields: [supplierContactId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  createdBy          User                                 @relation("PurchaseRequestSegmentCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  issuedBy           User?                                @relation("PurchaseRequestSegmentIssuedBy", fields: [issuedByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  cancelledBy        User?                                @relation("PurchaseRequestSegmentCancelledBy", fields: [cancelledByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  details            PurchaseRequestSupplierSegmentDetail[]
+
+  @@unique([uuid], map: "purchase_request_supplier_segments_uuid_key")
+  @@unique([companyId, code], map: "purchase_request_supplier_segments_company_code_key")
+  @@unique([companyId, purchaseRequestId, segmentNumber], map: "purchase_request_supplier_segments_number_key")
+  @@unique([id, companyId], map: "purchase_request_supplier_segments_id_company_key")
+  @@index([companyId, purchaseRequestId, status], map: "purchase_request_supplier_segments_request_status_idx")
+  @@index([companyId, supplierId, status], map: "purchase_request_supplier_segments_supplier_status_idx")
+  @@index([companyId, supplierContactId], map: "purchase_request_supplier_segments_contact_idx")
+  @@index([createdByUserId], map: "purchase_request_supplier_segments_created_by_idx")
+  @@index([issuedByUserId], map: "purchase_request_supplier_segments_issued_by_idx")
+  @@index([cancelledByUserId], map: "purchase_request_supplier_segments_cancelled_by_idx")
+  @@map("purchase_request_supplier_segments")
+}
+
+model PurchaseRequestSupplierSegmentDetail {
+  id                      Int                            @id @default(autoincrement()) @db.UnsignedInt
+  companyId               Int                            @map("company_id") @db.UnsignedInt
+  segmentId               Int                            @map("segment_id") @db.UnsignedInt
+  purchaseRequestDetailId Int                            @map("purchase_request_detail_id") @db.UnsignedInt
+  quantity                Decimal                        @db.Decimal(18, 4)
+  notes                   String?                        @db.Text
+  createdAt               DateTime                       @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt               DateTime                       @updatedAt @map("updated_at") @db.DateTime(3)
+  company                 Company                        @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  segment                 PurchaseRequestSupplierSegment @relation(fields: [segmentId, companyId], references: [id, companyId], onDelete: Cascade, onUpdate: Cascade)
+  purchaseRequestDetail   PurchaseRequestDetail          @relation(fields: [purchaseRequestDetailId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([companyId, segmentId, purchaseRequestDetailId], map: "purchase_request_supplier_segment_details_line_key")
+  @@index([companyId, purchaseRequestDetailId], map: "purchase_request_supplier_segment_details_request_line_idx")
+  @@map("purchase_request_supplier_segment_details")
 }
 
 model ExpenseType {

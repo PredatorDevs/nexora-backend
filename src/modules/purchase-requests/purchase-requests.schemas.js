@@ -4,6 +4,9 @@ import { createListQuerySchema } from '../../core/validation/pagination.js';
 export const purchaseRequestIdParams = z.object({
   id: z.coerce.number().int().positive(),
 });
+export const purchaseRequestSegmentParams = purchaseRequestIdParams.extend({
+  segmentId: z.coerce.number().int().positive(),
+});
 export const purchaseRequestsListQuery = createListQuerySchema([
   'createdAt',
   'requestDate',
@@ -78,3 +81,40 @@ export const consolidatePurchaseRequestsBody = z.object({
   justification: z.string().trim().min(1).max(5000),
   notes: z.string().trim().min(1).max(5000).nullable().optional(),
 });
+
+const segmentDetail = z.object({
+  purchaseRequestDetailId: z.number().int().positive(),
+  quantity: z.coerce.number().positive().max(1e14),
+  notes: z.string().trim().min(1).max(5000).nullable().optional(),
+});
+const segmentFields = {
+  supplierId: z.number().int().positive(),
+  supplierContactId: z.number().int().positive().nullable().optional(),
+  notes: z.string().trim().min(1).max(5000).nullable().optional(),
+  details: z.array(segmentDetail).min(1).max(500),
+};
+const validateSegmentDetails = (schema) => schema.superRefine((value, context) => {
+  const seen = new Set();
+  value.details.forEach((detail, index) => {
+    if (seen.has(detail.purchaseRequestDetailId))
+      context.addIssue({
+        code: 'custom',
+        path: ['details', index, 'purchaseRequestDetailId'],
+        message: 'Una línea de la solicitud no puede repetirse dentro del mismo segmento.',
+      });
+    seen.add(detail.purchaseRequestDetailId);
+  });
+});
+export const createPurchaseRequestSegmentBody = validateSegmentDetails(
+  z.object(segmentFields),
+);
+export const updatePurchaseRequestSegmentBody = validateSegmentDetails(
+  z.object({ ...segmentFields, expectedUpdatedAt: z.string().datetime() }),
+);
+export const purchaseRequestSegmentTransitionBody = z.object({
+  expectedUpdatedAt: z.string().datetime(),
+});
+export const cancelPurchaseRequestSegmentBody =
+  purchaseRequestSegmentTransitionBody.extend({
+    reason: z.string().trim().min(1).max(5000),
+  });

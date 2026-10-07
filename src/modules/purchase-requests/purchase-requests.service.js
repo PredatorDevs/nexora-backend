@@ -104,6 +104,45 @@ export function createPurchaseRequestsService({
     if (!value) throw notFound();
     return value;
   }
+  const segmentableStatuses = ['APPROVED', 'IN_QUOTATION'];
+  const ensureSegmentableRequest = (value) => {
+    if (
+      value.requestType !== 'CONSOLIDATED' ||
+      !segmentableStatuses.includes(value.status)
+    )
+      throw fail(
+        'Solo pueden segmentarse solicitudes consolidadas aprobadas o en cotización.',
+        ['status'],
+        409,
+      );
+  };
+  async function validateSegment(companyId, request, data, client) {
+    const detailIds = data.details.map((item) => item.purchaseRequestDetailId);
+    const refs = await repository.findSegmentReferences(
+      companyId,
+      request.id,
+      data.supplierId,
+      data.supplierContactId,
+      detailIds,
+      client,
+    );
+    if (!refs.supplier?.isActive)
+      throw fail('El proveedor seleccionado no existe o está inactivo.', ['supplierId']);
+    if (
+      data.supplierContactId &&
+      (!refs.contact?.isActive || refs.contact.supplierId !== data.supplierId)
+    )
+      throw fail('El contacto no está activo o no pertenece al proveedor.', ['supplierContactId']);
+    if (refs.details.length !== detailIds.length)
+      throw fail('Una de las líneas no pertenece a la solicitud consolidada.', ['details']);
+    const byId = new Map(refs.details.map((item) => [item.id, item]));
+    data.details.forEach((item, index) => {
+      if (new Prisma.Decimal(item.quantity).greaterThan(byId.get(item.purchaseRequestDetailId).quantity))
+        throw fail('La cantidad dirigida al proveedor no puede exceder la solicitada.', [
+          `details.${index}.quantity`,
+        ]);
+    });
+  }
   async function transition(companyId, id, body, context, rule) {
     const old = await get(companyId, id);
     if (!rule.from.includes(old.status))
@@ -154,6 +193,116 @@ export function createPurchaseRequestsService({
       };
     },
     get,
+    async listSegments(companyId, id) {
+      const request = await get(companyId, id);
+      if (request.requestType !== 'CONSOLIDATED')
+        throw fail('La segmentación solo aplica a solicitudes consolidadas.', ['requestType'], 409);
+      return repository.listSegments(companyId, id);
+    },
+    async createSegment(companyId, id, data, context) {
+      return runInTransaction(async (client) => {
+        await repository.lockForSegment(companyId, id, client);
+        const request = await get(companyId, id, client);
+        ensureSegmentableRequest(request);
+        await validateSegment(companyId, request, data, client);
+        const sequence = await repository.nextSegmentNumber(companyId, id, client);
+        const segmentNumber = (sequence._max.segmentNumber ?? 0) + 1;
+        return repository.createSegment({
+          companyId,
+          purchaseRequestId: id,
+          supplierId: data.supplierId,
+          supplierContactId: data.supplierContactId ?? null,
+          segmentNumber,
+          code: `${request.code}-S${String(segmentNumber).padStart(3, '0')}`,
+          notes: data.notes ?? null,
+          createdByUserId: context.actorUserId,
+        }, data.details.map((item) => ({
+          ...item,
+          quantity: new Prisma.Decimal(item.quantity),
+        })), client);
+      });
+    },
+    async updateSegment(companyId, id, segmentId, data) {
+      const request = await get(companyId, id);
+      ensureSegmentableRequest(request);
+      const old = await repository.findSegment(companyId, id, segmentId);
+      if (!old) throw fail('No se encontró el segmento solicitado.', undefined, 404);
+      if (old.status !== 'DRAFT')
+        throw fail('Solo puede editarse un segmento en borrador.', ['status'], 409);
+      return runInTransaction(async (client) => {
+        await validateSegment(companyId, request, data, client);
+        const updated = await repository.replaceSegment(
+          companyId,
+          id,
+          segmentId,
+          new Date(data.expectedUpdatedAt),
+          {
+            supplierId: data.supplierId,
+            supplierContactId: data.supplierContactId ?? null,
+            notes: data.notes ?? null,
+          },
+          data.details.map((item) => ({
+            ...item,
+            quantity: new Prisma.Decimal(item.quantity),
+          })),
+          client,
+        );
+        if (!updated) throw concurrencyConflict('supplier segment', old.updatedAt);
+        return updated;
+      });
+    },
+    async issueSegment(companyId, id, segmentId, data, context) {
+      const request = await get(companyId, id);
+      ensureSegmentableRequest(request);
+      const old = await repository.findSegment(companyId, id, segmentId);
+      if (!old) throw fail('No se encontró el segmento solicitado.', undefined, 404);
+      if (old.status !== 'DRAFT')
+        throw fail('Solo puede emitirse un segmento en borrador.', ['status'], 409);
+      const updated = await repository.transitionSegment(
+        companyId, id, segmentId, new Date(data.expectedUpdatedAt), ['DRAFT'],
+        { status: 'ISSUED', issuedAt: new Date(), issuedByUserId: context.actorUserId },
+      );
+      if (!updated) throw concurrencyConflict('supplier segment', old.updatedAt);
+      return updated;
+    },
+    async cancelSegment(companyId, id, segmentId, data, context) {
+      const old = await repository.findSegment(companyId, id, segmentId);
+      if (!old) throw fail('No se encontró el segmento solicitado.', undefined, 404);
+      if (!['DRAFT', 'ISSUED'].includes(old.status))
+        throw fail('El segmento ya no puede cancelarse.', ['status'], 409);
+      const updated = await repository.transitionSegment(
+        companyId, id, segmentId, new Date(data.expectedUpdatedAt),
+        ['DRAFT', 'ISSUED'], {
+          status: 'CANCELLED',
+          cancelledAt: new Date(),
+          cancelledByUserId: context.actorUserId,
+          cancellationReason: data.reason,
+        },
+      );
+      if (!updated) throw concurrencyConflict('supplier segment', old.updatedAt);
+      return updated;
+    },
+    async segmentPdf(companyId, id, segmentId) {
+      const [request, segment] = await Promise.all([
+        get(companyId, id),
+        repository.findSegment(companyId, id, segmentId),
+      ]);
+      if (!segment) throw fail('No se encontró el segmento solicitado.', undefined, 404);
+      if (segment.status !== 'ISSUED')
+        throw fail('Emite el segmento antes de descargar su PDF.', ['status'], 409);
+      const printable = {
+        ...request,
+        details: segment.details.map((item) => ({
+          ...item.purchaseRequestDetail,
+          quantity: item.quantity,
+          notes: item.notes ?? item.purchaseRequestDetail.notes,
+        })),
+      };
+      return {
+        buffer: await generatePdf(printable, { segment }),
+        filename: `solicitud-${segment.code}-${segment.supplier.code}.pdf`,
+      };
+    },
     async pdf(companyId, id) {
       const value = await get(companyId, id);
       const printableStatuses = ['APPROVED', 'IN_QUOTATION', 'COMPLETED'];

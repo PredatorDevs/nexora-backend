@@ -39,6 +39,15 @@ function setup(sources) {
       ],
     }),
     createConsolidation: vi.fn().mockResolvedValue(created),
+    lockForSegment: vi.fn(),
+    findSegmentReferences: vi.fn().mockResolvedValue({
+      supplier: { id: 30, isActive: true },
+      contact: { id: 31, supplierId: 30, isActive: true },
+      details: [{ id: 101, quantity: new Prisma.Decimal(10) }],
+    }),
+    nextSegmentNumber: vi.fn().mockResolvedValue({ _max: { segmentNumber: 1 } }),
+    createSegment: vi.fn().mockResolvedValue({ id: 70, code: 'PR-000050-S002' }),
+    findSegment: vi.fn(),
   };
   const entityChangeService = { record: vi.fn() };
   const generatePdf = vi.fn().mockResolvedValue(Buffer.from('%PDF-test'));
@@ -128,5 +137,80 @@ describe('purchase requests service consolidation', () => {
 
     await expect(service.pdf(6, 1)).rejects.toMatchObject({ statusCode: 409 });
     expect(generatePdf).not.toHaveBeenCalled();
+  });
+
+  it('creates a supplier segment with selected request lines', async () => {
+    const { service, repository } = setup([]);
+    repository.find.mockResolvedValue({
+      id: 50,
+      code: 'PR-000050',
+      requestType: 'CONSOLIDATED',
+      status: 'APPROVED',
+    });
+
+    await service.createSegment(6, 50, {
+      supplierId: 30,
+      supplierContactId: 31,
+      notes: 'Cotizar antes del viernes',
+      details: [{ purchaseRequestDetailId: 101, quantity: 8 }],
+    }, context);
+
+    expect(repository.createSegment).toHaveBeenCalledWith(
+      expect.objectContaining({
+        companyId: 6,
+        purchaseRequestId: 50,
+        segmentNumber: 2,
+        code: 'PR-000050-S002',
+        createdByUserId: 9,
+      }),
+      [expect.objectContaining({
+        purchaseRequestDetailId: 101,
+        quantity: new Prisma.Decimal(8),
+      })],
+      expect.anything(),
+    );
+  });
+
+  it('generates an issued segment PDF using only its selected lines', async () => {
+    const { service, repository, generatePdf } = setup([]);
+    const detail = {
+      id: 101,
+      lineNumber: 1,
+      quantity: new Prisma.Decimal(10),
+      notes: null,
+    };
+    const request = {
+      id: 50,
+      code: 'PR-000050',
+      requestType: 'CONSOLIDATED',
+      status: 'APPROVED',
+      details: [detail],
+    };
+    const segment = {
+      id: 70,
+      code: 'PR-000050-S001',
+      status: 'ISSUED',
+      supplier: { code: 'SUP-000001' },
+      details: [{
+        quantity: new Prisma.Decimal(4),
+        notes: 'Empaque sellado',
+        purchaseRequestDetail: detail,
+      }],
+    };
+    repository.find.mockResolvedValue(request);
+    repository.findSegment.mockResolvedValue(segment);
+
+    await service.segmentPdf(6, 50, 70);
+
+    expect(generatePdf).toHaveBeenCalledWith(
+      expect.objectContaining({
+        details: [expect.objectContaining({
+          id: 101,
+          quantity: new Prisma.Decimal(4),
+          notes: 'Empaque sellado',
+        })],
+      }),
+      { segment },
+    );
   });
 });

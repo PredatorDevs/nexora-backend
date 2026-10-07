@@ -73,6 +73,96 @@ export function createPurchaseRequestsController(service, auditService) {
       });
       return response.send(result.buffer);
     },
+    async listSegments(request, response) {
+      return sendSuccess(
+        response,
+        await service.listSegments(
+          request.tenant.companyId,
+          request.validated.params.id,
+        ),
+      );
+    },
+    async createSegment(request, response) {
+      return sendSuccess(
+        response,
+        await audited(
+          request,
+          auditActions.purchaseRequestSegmentCreated,
+          () => service.createSegment(
+            request.tenant.companyId,
+            request.validated.params.id,
+            request.validated.body,
+            context(request),
+          ),
+        ),
+        { statusCode: 201 },
+      );
+    },
+    async updateSegment(request, response) {
+      return sendSuccess(
+        response,
+        await audited(
+          request,
+          auditActions.purchaseRequestSegmentUpdated,
+          () => service.updateSegment(
+            request.tenant.companyId,
+            request.validated.params.id,
+            request.validated.params.segmentId,
+            request.validated.body,
+            context(request),
+          ),
+        ),
+      );
+    },
+    async issueSegment(request, response) {
+      return sendSuccess(
+        response,
+        await audited(
+          request,
+          auditActions.purchaseRequestSegmentIssued,
+          () => service.issueSegment(
+            request.tenant.companyId,
+            request.validated.params.id,
+            request.validated.params.segmentId,
+            request.validated.body,
+            context(request),
+          ),
+        ),
+      );
+    },
+    async cancelSegment(request, response) {
+      return sendSuccess(
+        response,
+        await audited(
+          request,
+          auditActions.purchaseRequestSegmentCancelled,
+          () => service.cancelSegment(
+            request.tenant.companyId,
+            request.validated.params.id,
+            request.validated.params.segmentId,
+            request.validated.body,
+            context(request),
+          ),
+        ),
+      );
+    },
+    async segmentPdf(request, response) {
+      const result = await audited(
+        request,
+        auditActions.purchaseRequestSegmentPdfDownloaded,
+        () => service.segmentPdf(
+          request.tenant.companyId,
+          request.validated.params.id,
+          request.validated.params.segmentId,
+        ),
+      );
+      response.set({
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename="${result.filename}"`,
+        'Content-Length': result.buffer.length,
+      });
+      return response.send(result.buffer);
+    },
     create: async (request, response) =>
       sendSuccess(
         response,

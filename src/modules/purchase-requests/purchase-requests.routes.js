@@ -6,6 +6,11 @@ import { createPurchaseRequestsController } from './purchase-requests.controller
 import {
   createPurchaseRequestBody,
   consolidatePurchaseRequestsBody,
+  createPurchaseRequestSegmentBody,
+  updatePurchaseRequestSegmentBody,
+  purchaseRequestSegmentParams,
+  purchaseRequestSegmentTransitionBody,
+  cancelPurchaseRequestSegmentBody,
   purchaseRequestIdParams,
   purchaseRequestReasonTransitionBody,
   purchaseRequestsListQuery,
@@ -22,6 +27,42 @@ export function createPurchaseRequestsRouter(service, auditService) {
     authorizeCompany('purchase_requests.read'),
     validate({ query: purchaseRequestsListQuery }),
     controller.list,
+  );
+  router.get(
+    '/:id/segments',
+    authorizeCompany('purchase_requests.read'),
+    validate({ params: purchaseRequestIdParams }),
+    controller.listSegments,
+  );
+  router.get(
+    '/:id/segments/:segmentId/pdf',
+    authorizeCompany('purchase_requests.read'),
+    validate({ params: purchaseRequestSegmentParams }),
+    controller.segmentPdf,
+  );
+  router.post(
+    '/:id/segments',
+    authorizeCompany('purchase_requests.manage_segments'),
+    validate({ params: purchaseRequestIdParams, body: createPurchaseRequestSegmentBody }),
+    controller.createSegment,
+  );
+  router.put(
+    '/:id/segments/:segmentId',
+    authorizeCompany('purchase_requests.manage_segments'),
+    validate({ params: purchaseRequestSegmentParams, body: updatePurchaseRequestSegmentBody }),
+    controller.updateSegment,
+  );
+  router.post(
+    '/:id/segments/:segmentId/issue',
+    authorizeCompany('purchase_requests.manage_segments'),
+    validate({ params: purchaseRequestSegmentParams, body: purchaseRequestSegmentTransitionBody }),
+    controller.issueSegment,
+  );
+  router.post(
+    '/:id/segments/:segmentId/cancel',
+    authorizeCompany('purchase_requests.manage_segments'),
+    validate({ params: purchaseRequestSegmentParams, body: cancelPurchaseRequestSegmentBody }),
+    controller.cancelSegment,
   );
   router.get(
     '/:id/pdf',
