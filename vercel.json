@@ -2,7 +2,10 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
     "src/app.js": {
-      "includeFiles": "planning/*.sql"
+      "includeFiles": [
+        "planning/*.sql",
+        "node_modules/pdfmake/fonts/Roboto/*.ttf"
+      ]
     }
   },
   "rewrites": [
