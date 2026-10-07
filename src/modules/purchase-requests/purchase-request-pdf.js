@@ -1,23 +1,18 @@
-import { createRequire } from 'node:module';
-import { dirname, join, resolve, sep } from 'node:path';
 import pdfmake from 'pdfmake';
+import robotoVirtualFiles from 'pdfmake/build/vfs_fonts.js';
 
-const require = createRequire(import.meta.url);
-const packageDirectory = dirname(require.resolve('pdfmake/package.json'));
-const fontDirectory = join(packageDirectory, 'fonts', 'Roboto');
-const allowedFontPrefix = `${resolve(fontDirectory)}${sep}`;
+for (const [filename, contents] of Object.entries(robotoVirtualFiles))
+  pdfmake.virtualfs.writeFileSync(filename, contents, 'base64');
 
 pdfmake.setUrlAccessPolicy(() => false);
-pdfmake.setLocalAccessPolicy((path) =>
-  resolve(path).startsWith(allowedFontPrefix),
-);
+pdfmake.setLocalAccessPolicy(() => false);
 
 pdfmake.addFonts({
   Roboto: {
-    normal: join(fontDirectory, 'Roboto-Regular.ttf'),
-    bold: join(fontDirectory, 'Roboto-Medium.ttf'),
-    italics: join(fontDirectory, 'Roboto-Italic.ttf'),
-    bolditalics: join(fontDirectory, 'Roboto-MediumItalic.ttf'),
+    normal: 'Roboto-Regular.ttf',
+    bold: 'Roboto-Medium.ttf',
+    italics: 'Roboto-Italic.ttf',
+    bolditalics: 'Roboto-MediumItalic.ttf',
   },
 });
 
