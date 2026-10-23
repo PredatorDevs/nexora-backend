@@ -387,6 +387,7 @@ export function purchaseQuotationSnapshot(value) {
     discount: decimal(value.discount),
     tax: decimal(value.tax),
     total: decimal(value.total),
+    costingMode: value.costingMode,
     status: value.status,
     notes: value.notes,
     registeredByUserId: value.registeredByUserId,

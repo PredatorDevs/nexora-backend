@@ -19,6 +19,7 @@ const draft=z.object({
   purchaseOrderId:z.number().int().positive(),
   expectedOrderUpdatedAt:z.string().datetime(),
   purchaseDate:z.string().datetime(),
+  costingMode:z.enum(['DIRECT','LANDED_COST']).default('DIRECT'),
   supplierInvoiceNumber:nullableText(100),
   supplierInvoiceDate:z.string().date().nullable().optional(),
   notes:nullableText(5000),

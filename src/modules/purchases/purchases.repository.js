@@ -1,6 +1,6 @@
 const user={id:true,displayName:true,email:true};
 const select={
-  id:true,uuid:true,companyId:true,code:true,purchaseOrderId:true,supplierId:true,branchId:true,warehouseId:true,receivedByUserId:true,purchaseDate:true,supplierInvoiceNumber:true,supplierInvoiceDate:true,currencyCode:true,exchangeRate:true,exchangeRateDate:true,subtotal:true,discount:true,tax:true,total:true,status:true,notes:true,receivedAt:true,verifiedAt:true,verifiedByUserId:true,cancelledAt:true,cancelledByUserId:true,cancellationReason:true,closedAt:true,createdAt:true,updatedAt:true,
+  id:true,uuid:true,companyId:true,code:true,purchaseOrderId:true,supplierId:true,branchId:true,warehouseId:true,receivedByUserId:true,purchaseDate:true,supplierInvoiceNumber:true,supplierInvoiceDate:true,currencyCode:true,exchangeRate:true,exchangeRateDate:true,subtotal:true,discount:true,tax:true,total:true,costingMode:true,status:true,notes:true,receivedAt:true,verifiedAt:true,verifiedByUserId:true,cancelledAt:true,cancelledByUserId:true,cancellationReason:true,closedAt:true,createdAt:true,updatedAt:true,
   purchaseOrder:{select:{id:true,code:true,status:true,updatedAt:true}},supplier:{select:{id:true,code:true,name:true}},branch:{select:{id:true,code:true,name:true}},warehouse:{select:{id:true,code:true,name:true}},receivedBy:{select:user},verifiedBy:{select:user},cancelledBy:{select:user},
   details:{orderBy:{lineNumber:'asc'},include:{product:{select:{id:true,internalCode:true,name:true}},productUnit:{select:{id:true,code:true,name:true}}}},
 };

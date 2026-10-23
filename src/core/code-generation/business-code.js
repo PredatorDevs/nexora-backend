@@ -17,6 +17,7 @@ export const businessCodeEntities = Object.freeze({
   purchaseOrder: 'purchase_order',
   purchase: 'purchase',
   retaceo: 'retaceo',
+  inventoryLot: 'inventory_lot',
 });
 
 const definitions = Object.freeze({
@@ -38,6 +39,7 @@ const definitions = Object.freeze({
   [businessCodeEntities.purchaseOrder]: { prefix: 'OC', scope: 'company' },
   [businessCodeEntities.purchase]: { prefix: 'C', scope: 'company' },
   [businessCodeEntities.retaceo]: { prefix: 'RTC', scope: 'company' },
+  [businessCodeEntities.inventoryLot]: { prefix: 'LOT', scope: 'company' },
 });
 
 export async function generateBusinessCode(

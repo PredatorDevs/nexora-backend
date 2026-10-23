@@ -144,6 +144,45 @@ enum PurchaseStatus {
   @@map("purchase_status")
 }
 
+enum PurchaseCostingMode {
+  DIRECT
+  LANDED_COST
+
+  @@map("purchase_costing_mode")
+}
+
+enum InventoryLotStatus {
+  PENDING
+  AVAILABLE
+  DEPLETED
+  CANCELLED
+
+  @@map("inventory_lot_status")
+}
+
+enum InventoryMovementType {
+  PURCHASE_RECEIPT
+  TRANSFER_OUT
+  TRANSFER_IN
+  SALE_ISSUE
+  CUSTOMER_RETURN
+  ADJUSTMENT_IN
+  ADJUSTMENT_OUT
+  REVERSAL
+
+  @@map("inventory_movement_type")
+}
+
+enum InventoryReferenceType {
+  PURCHASE
+  TRANSFER
+  SALE
+  RETURN
+  ADJUSTMENT
+
+  @@map("inventory_reference_type")
+}
+
 enum RetaceoStatus {
   DRAFT
   CALCULATED
@@ -240,6 +279,9 @@ model User {
   retaceosClosed                 Retaceo[]                      @relation("RetaceoClosedBy")
   retaceosCancelled              Retaceo[]                      @relation("RetaceoCancelledBy")
   retaceoCostsCreated            RetaceoCost[]                  @relation("RetaceoCostCreatedBy")
+  inventoryLotsCreated           InventoryLot[]                 @relation("InventoryLotCreatedBy")
+  inventoryMovementsConfirmed    InventoryMovement[]            @relation("InventoryMovementConfirmedBy")
+  inventoryLabelsPrinted         InventoryLabelPrint[]          @relation("InventoryLabelPrintedBy")
 
   @@index([status], map: "users_status_idx")
   @@map("users")
@@ -559,6 +601,11 @@ model Company {
   retaceoDetails                      RetaceoDetail[]
   retaceoCosts                        RetaceoCost[]
   retaceoAllocations                  RetaceoAllocation[]
+  inventoryLots                       InventoryLot[]
+  inventoryLocationDetails            InventoryLocationDetail[]
+  inventoryMovements                  InventoryMovement[]
+  inventoryCostAverages               InventoryCostAverage[]
+  inventoryLabelPrints                InventoryLabelPrint[]
 
   @@index([status, legalName], map: "companies_status_legal_name_idx")
   @@index([countryId], map: "companies_country_id_idx")
@@ -588,6 +635,8 @@ model ProductUnit {
   purchaseOrderDetails     PurchaseOrderDetail[]
   purchaseDetails          PurchaseDetail[]
   retaceoDetails           RetaceoDetail[]
+  inventoryLotsReceived    InventoryLot[] @relation("InventoryLotReceivedUnit")
+  inventoryLotsStock       InventoryLot[] @relation("InventoryLotStockUnit")
 
   @@unique([companyId, code], map: "product_units_company_code_key")
   @@unique([companyId, type, name], map: "product_units_company_type_name_key")
@@ -673,6 +722,9 @@ model Product {
   purchaseOrderDetails     PurchaseOrderDetail[]
   purchaseDetails          PurchaseDetail[]
   retaceoDetails           RetaceoDetail[]
+  inventoryLots            InventoryLot[]
+  inventoryMovements       InventoryMovement[]
+  inventoryCostAverages    InventoryCostAverage[]
 
   @@unique([uuid], map: "products_uuid_key")
   @@unique([companyId, internalCode], map: "products_company_internal_code_key")
@@ -792,6 +844,7 @@ model Warehouse {
   purchaseRequests    PurchaseRequest[]
   purchaseOrders      PurchaseOrder[]
   purchases           Purchase[]
+  inventoryMovements  InventoryMovement[]
 
   @@unique([companyId, code], map: "warehouses_company_code_key")
   @@unique([companyId, branchId, name], map: "warehouses_company_branch_name_key")
@@ -818,6 +871,8 @@ model Location {
   updatedAt    DateTime              @updatedAt @map("updated_at") @db.DateTime(3)
   company      Company               @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   warehouse    Warehouse             @relation(fields: [warehouseId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  inventoryLocationDetails InventoryLocationDetail[]
+  inventoryMovements InventoryMovement[]
 
   @@unique([companyId, warehouseId, code], map: "locations_company_warehouse_code_key")
   @@unique([companyId, warehouseId, aisle, rack, level, position], map: "locations_physical_coordinates_key")
@@ -1363,6 +1418,7 @@ model Purchase {
   discount              Decimal          @default(0) @db.Decimal(18, 6)
   tax                   Decimal          @default(0) @db.Decimal(18, 6)
   total                 Decimal          @default(0) @db.Decimal(18, 6)
+  costingMode           PurchaseCostingMode @default(DIRECT) @map("costing_mode")
   status                PurchaseStatus   @default(DRAFT)
   notes                 String?          @db.Text
   receivedAt            DateTime?        @map("received_at") @db.DateTime(3)
@@ -1425,6 +1481,7 @@ model PurchaseDetail {
   product               Product             @relation(fields: [productId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
   productUnit           ProductUnit         @relation(fields: [productUnitId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
   retaceoDetails        RetaceoDetail[]
+  inventoryLot          InventoryLot?
 
   @@unique([companyId, purchaseId, lineNumber], map: "purchase_details_line_key")
   @@unique([companyId, purchaseId, purchaseOrderDetailId], map: "purchase_details_order_line_key")
@@ -1589,6 +1646,135 @@ model RetaceoAllocation {
   @@unique([companyId, retaceoCostId, retaceoDetailId], map: "retaceo_allocations_cost_detail_key")
   @@index([companyId, retaceoDetailId], map: "retaceo_allocations_detail_idx")
   @@map("retaceo_allocations")
+}
+
+model InventoryLot {
+  id                     Int                @id @default(autoincrement()) @db.UnsignedInt
+  uuid                   String             @default(uuid()) @db.Char(36)
+  companyId              Int                @map("company_id") @db.UnsignedInt
+  code                   String             @db.VarChar(50)
+  productId              Int                @map("product_id") @db.UnsignedInt
+  purchaseDetailId       Int                @map("purchase_detail_id") @db.UnsignedInt
+  receivedUnitId         Int                @map("received_unit_id") @db.UnsignedInt
+  stockUnitId            Int                @map("stock_unit_id") @db.UnsignedInt
+  receivedQuantity       Decimal            @map("received_quantity") @db.Decimal(18, 4)
+  conversionFactor       Decimal            @map("conversion_factor") @db.Decimal(18, 6)
+  stockQuantity          Decimal            @map("stock_quantity") @db.Decimal(18, 4)
+  unitCost               Decimal            @map("unit_cost") @db.Decimal(18, 6)
+  totalCost              Decimal            @map("total_cost") @db.Decimal(18, 6)
+  receivedAt             DateTime           @map("received_at") @db.DateTime(3)
+  status                 InventoryLotStatus @default(PENDING)
+  createdByUserId        Int                @map("created_by_user_id") @db.UnsignedInt
+  createdAt              DateTime           @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt              DateTime           @updatedAt @map("updated_at") @db.DateTime(3)
+  company                Company            @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  product                Product            @relation(fields: [productId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  purchaseDetail         PurchaseDetail     @relation(fields: [purchaseDetailId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  receivedUnit           ProductUnit        @relation("InventoryLotReceivedUnit", fields: [receivedUnitId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  stockUnit              ProductUnit        @relation("InventoryLotStockUnit", fields: [stockUnitId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  createdBy              User               @relation("InventoryLotCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  locationDetails        InventoryLocationDetail[]
+  movements              InventoryMovement[]
+  labelPrints            InventoryLabelPrint[]
+
+  @@unique([uuid], map: "inventory_lots_uuid_key")
+  @@unique([companyId, code], map: "inventory_lots_company_code_key")
+  @@unique([purchaseDetailId, companyId], map: "inventory_lots_purchase_detail_key")
+  @@unique([id, companyId], map: "inventory_lots_id_company_key")
+  @@index([companyId, productId, status, receivedAt], map: "inventory_lots_product_status_date_idx")
+  @@index([createdByUserId], map: "inventory_lots_created_by_idx")
+  @@map("inventory_lots")
+}
+
+model InventoryLocationDetail {
+  id          Int          @id @default(autoincrement()) @db.UnsignedInt
+  companyId   Int          @map("company_id") @db.UnsignedInt
+  inventoryLotId Int       @map("inventory_lot_id") @db.UnsignedInt
+  locationId  Int          @map("location_id") @db.UnsignedInt
+  quantity    Decimal      @default(0) @db.Decimal(18, 4)
+  createdAt   DateTime     @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt   DateTime     @updatedAt @map("updated_at") @db.DateTime(3)
+  company     Company      @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  inventoryLot InventoryLot @relation(fields: [inventoryLotId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  location    Location     @relation(fields: [locationId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([companyId, inventoryLotId, locationId], map: "inventory_location_details_lot_location_key")
+  @@unique([id, companyId], map: "inventory_location_details_id_company_key")
+  @@index([companyId, locationId], map: "inventory_location_details_location_idx")
+  @@map("inventory_location_details")
+}
+
+model InventoryMovement {
+  id                  BigInt                    @id @default(autoincrement()) @db.UnsignedBigInt
+  uuid                String                    @default(uuid()) @db.Char(36)
+  companyId           Int                       @map("company_id") @db.UnsignedInt
+  productId           Int                       @map("product_id") @db.UnsignedInt
+  inventoryLotId      Int                       @map("inventory_lot_id") @db.UnsignedInt
+  warehouseId         Int                       @map("warehouse_id") @db.UnsignedInt
+  locationId          Int?                      @map("location_id") @db.UnsignedInt
+  movementType        InventoryMovementType     @map("movement_type")
+  movementDate        DateTime                  @map("movement_date") @db.DateTime(3)
+  quantityIn          Decimal                   @default(0) @map("quantity_in") @db.Decimal(18, 4)
+  quantityOut         Decimal                   @default(0) @map("quantity_out") @db.Decimal(18, 4)
+  unitCost            Decimal                   @map("unit_cost") @db.Decimal(18, 6)
+  totalCost           Decimal                   @map("total_cost") @db.Decimal(18, 6)
+  referenceType       InventoryReferenceType    @map("reference_type")
+  referenceId         Int                       @map("reference_id") @db.UnsignedInt
+  reversalOfMovementId BigInt?                  @map("reversal_of_movement_id") @db.UnsignedBigInt
+  reason              String?                   @db.Text
+  confirmedByUserId   Int                       @map("confirmed_by_user_id") @db.UnsignedInt
+  createdAt           DateTime                  @default(now()) @map("created_at") @db.DateTime(3)
+  company             Company                   @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  product             Product                   @relation(fields: [productId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  inventoryLot        InventoryLot              @relation(fields: [inventoryLotId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  warehouse           Warehouse                 @relation(fields: [warehouseId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  location            Location?                 @relation(fields: [locationId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  confirmedBy         User                      @relation("InventoryMovementConfirmedBy", fields: [confirmedByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  reversalOf          InventoryMovement?        @relation("InventoryMovementReversal", fields: [reversalOfMovementId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  reversals           InventoryMovement[]       @relation("InventoryMovementReversal")
+
+  @@unique([uuid], map: "inventory_movements_uuid_key")
+  @@index([companyId, productId, movementDate], map: "inventory_movements_product_date_idx")
+  @@index([companyId, inventoryLotId, movementDate], map: "inventory_movements_lot_date_idx")
+  @@index([companyId, warehouseId, locationId, movementDate], map: "inventory_movements_location_date_idx")
+  @@index([companyId, referenceType, referenceId], map: "inventory_movements_reference_idx")
+  @@index([reversalOfMovementId], map: "inventory_movements_reversal_idx")
+  @@index([confirmedByUserId], map: "inventory_movements_confirmed_by_idx")
+  @@map("inventory_movements")
+}
+
+model InventoryCostAverage {
+  id                Int      @id @default(autoincrement()) @db.UnsignedInt
+  companyId         Int      @map("company_id") @db.UnsignedInt
+  productId         Int      @map("product_id") @db.UnsignedInt
+  quantityOnHand    Decimal  @default(0) @map("quantity_on_hand") @db.Decimal(18, 4)
+  inventoryValue    Decimal  @default(0) @map("inventory_value") @db.Decimal(18, 6)
+  averageUnitCost   Decimal  @default(0) @map("average_unit_cost") @db.Decimal(18, 6)
+  createdAt         DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.DateTime(3)
+  company           Company  @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  product           Product  @relation(fields: [productId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([companyId, productId], map: "inventory_cost_averages_company_product_key")
+  @@unique([id, companyId], map: "inventory_cost_averages_id_company_key")
+  @@map("inventory_cost_averages")
+}
+
+model InventoryLabelPrint {
+  id               BigInt       @id @default(autoincrement()) @db.UnsignedBigInt
+  companyId        Int          @map("company_id") @db.UnsignedInt
+  inventoryLotId   Int          @map("inventory_lot_id") @db.UnsignedInt
+  quantityPrinted  Int          @map("quantity_printed") @db.UnsignedInt
+  reprintReason    String?      @map("reprint_reason") @db.VarChar(500)
+  printedByUserId  Int          @map("printed_by_user_id") @db.UnsignedInt
+  printedAt        DateTime     @default(now()) @map("printed_at") @db.DateTime(3)
+  company          Company      @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  inventoryLot     InventoryLot @relation(fields: [inventoryLotId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  printedBy        User         @relation("InventoryLabelPrintedBy", fields: [printedByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([companyId, inventoryLotId, printedAt], map: "inventory_label_prints_lot_date_idx")
+  @@index([printedByUserId], map: "inventory_label_prints_printed_by_idx")
+  @@map("inventory_label_prints")
 }
 
 model PurchaseOrderExpense {
