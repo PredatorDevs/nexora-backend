@@ -2,6 +2,8 @@ import { Prisma } from '@prisma/client';
 import { AppError } from '../../core/errors/app-error.js';
 import { errorCodes } from '../../core/errors/error-codes.js';
 import { businessCodeEntities, generateBusinessCode } from '../../core/code-generation/business-code.js';
+import { paginationMeta } from '../../core/validation/pagination.js';
+import { createInventoryLabelsPdf } from './inventory-label-pdf.js';
 
 const decimal = (value) => new Prisma.Decimal(value ?? 0);
 const quantity = (value) => decimal(value).toDecimalPlaces(4, Prisma.Decimal.ROUND_HALF_UP);
@@ -36,6 +38,62 @@ function lineCost(purchase, detail, retaceoByPurchaseDetail) {
 
 export function createInventoryService({ repository, runInTransaction, generateCode = generateBusinessCode }) {
   return {
+    async listLots(companyId, query) {
+      const result = await repository.listLots(companyId, query);
+      return { lots: result.items, pagination: paginationMeta({ ...query, total: result.total }) };
+    },
+    async getLot(companyId, id) {
+      const lot = await repository.findLot(companyId, id);
+      if (!lot) throw new AppError({ code: errorCodes.notFound, message: 'No se encontró el lote solicitado.', statusCode: 404 });
+      return lot;
+    },
+    async assignLocation(companyId, lotId, input, context) {
+      return runInTransaction(async (client) => {
+        const lot = await repository.lockLot(companyId, lotId, client);
+        if (!lot) throw new AppError({ code: errorCodes.notFound, message: 'No se encontró el lote solicitado.', statusCode: 404 });
+        if (lot.status !== 'AVAILABLE') throw invalid('Solo los lotes disponibles pueden asignarse a ubicaciones.');
+        const location = await repository.findLocation(companyId, input.locationId, client);
+        if (!location) throw invalid('La ubicación seleccionada no existe o está inactiva.', 404);
+        if (location.warehouseId !== lot.purchaseDetail.purchase.warehouseId)
+          throw invalid('La ubicación debe pertenecer al almacén donde se recibió la mercancía.');
+        const assigned = lot.locationDetails.reduce((sum, item) => sum.add(item.quantity), decimal(0));
+        const amount = quantity(input.quantity);
+        const available = quantity(decimal(lot.stockQuantity).sub(assigned));
+        if (amount.greaterThan(available))
+          throw invalid(`Solo quedan ${available.toString()} unidades pendientes de ubicar.`);
+        await repository.upsertLocationBalance(companyId, lot.id, location.id, amount, client);
+        const movement = {
+          companyId, productId: lot.productId, inventoryLotId: lot.id,
+          warehouseId: location.warehouseId, movementDate: new Date(),
+          unitCost: lot.unitCost, totalCost: money(amount.mul(lot.unitCost)),
+          referenceType: 'PURCHASE', referenceId: lot.purchaseDetail.purchase.id,
+          confirmedByUserId: context.actorUserId,
+        };
+        await repository.createMovement({
+          ...movement, locationId: null, movementType: 'TRANSFER_OUT',
+          quantityIn: decimal(0), quantityOut: amount,
+          reason: `Salida de zona de recepción hacia ${location.code}`,
+        }, client);
+        await repository.createMovement({
+          ...movement, locationId: location.id, movementType: 'TRANSFER_IN',
+          quantityIn: amount, quantityOut: decimal(0),
+          reason: `Ubicación inicial en ${location.code}`,
+        }, client);
+        return repository.findLot(companyId, lot.id, client);
+      });
+    },
+    async printLabels(companyId, lotId, input, context) {
+      const lot = await this.getLot(companyId, lotId);
+      const previous = await repository.countLabelPrints(companyId, lotId);
+      if (previous > 0 && !input.reprintReason)
+        throw invalid('Debes indicar el motivo de reimpresión de las etiquetas.', 400);
+      const buffer = await createInventoryLabelsPdf(lot, input.quantity);
+      await repository.createLabelPrint({
+        companyId, inventoryLotId: lot.id, quantityPrinted: input.quantity,
+        reprintReason: input.reprintReason ?? null, printedByUserId: context.actorUserId,
+      });
+      return { buffer, filename: `etiquetas-${lot.code}.pdf` };
+    },
     async eligibleReceipts(companyId, query) {
       const purchases = await repository.eligibleReceipts(companyId, query);
       return purchases.map((purchase) => ({

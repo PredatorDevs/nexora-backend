@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { createListQuerySchema } from '../../core/validation/pagination.js';
 
 export const inventoryEligibleReceiptsQuery = z.object({
   search: z.string().trim().max(191).optional(),
@@ -8,4 +9,21 @@ export const inventoryReceiptParams = z.object({
 });
 export const postInventoryReceiptBody = z.object({
   expectedUpdatedAt: z.string().datetime(),
+});
+
+export const inventoryLotsQuery = createListQuerySchema([
+  'receivedAt', 'code', 'createdAt', 'status',
+]).extend({
+  warehouseId: z.coerce.number().int().positive().optional(),
+  productId: z.coerce.number().int().positive().optional(),
+  status: z.enum(['PENDING', 'AVAILABLE', 'DEPLETED', 'CANCELLED']).optional(),
+});
+export const inventoryLotParams = z.object({ id: z.coerce.number().int().positive() });
+export const assignInventoryLocationBody = z.object({
+  locationId: z.number().int().positive(),
+  quantity: z.coerce.number().positive().max(1e14),
+});
+export const printInventoryLabelsBody = z.object({
+  quantity: z.coerce.number().int().positive().max(1000),
+  reprintReason: z.string().trim().min(3).max(500).nullable().optional(),
 });

@@ -47,6 +47,15 @@ function setup(value) {
       quantityOnHand: d(8), inventoryValue: d(24), averageUnitCost: d(3),
     }),
     updateCostAverage: vi.fn().mockResolvedValue({}),
+    lockLot: vi.fn().mockResolvedValue({
+      id: 31, companyId: 3, productId: 4, status: 'AVAILABLE',
+      stockQuantity: d(12), unitCost: d(2), locationDetails: [{ quantity: d(3) }],
+      product: { internalCode: 'PRD-000004' },
+      purchaseDetail: { purchase: { id: 9, warehouseId: 7 } },
+    }),
+    findLocation: vi.fn().mockResolvedValue({ id: 21, warehouseId: 7, code: 'A-1-1-1' }),
+    upsertLocationBalance: vi.fn().mockResolvedValue({}),
+    findLot: vi.fn().mockResolvedValue({ id: 31 }),
   };
   const service = createInventoryService({
     repository,
@@ -107,5 +116,27 @@ describe('inventory service', () => {
     const { service } = setup(value);
     const [item] = await service.eligibleReceipts(3, {});
     expect(item).toMatchObject({ eligible: false, pendingLines: 0 });
+  });
+
+  it('assigns only the unlocated quantity and records a balanced putaway', async () => {
+    const { repository, service } = setup(purchase());
+    await service.assignLocation(3, 31, { locationId: 21, quantity: 4 }, { actorUserId: 5 });
+    expect(repository.upsertLocationBalance).toHaveBeenCalledWith(3, 31, 21, d(4), expect.anything());
+    expect(repository.createMovement).toHaveBeenNthCalledWith(1, expect.objectContaining({
+      movementType: 'TRANSFER_OUT', quantityOut: d(4), locationId: null,
+    }), expect.anything());
+    expect(repository.createMovement).toHaveBeenNthCalledWith(2, expect.objectContaining({
+      movementType: 'TRANSFER_IN', quantityIn: d(4), locationId: 21,
+    }), expect.anything());
+  });
+
+  it('rejects assignments greater than the quantity pending location', async () => {
+    const { repository, service } = setup(purchase());
+    await expect(service.assignLocation(3, 31, {
+      locationId: 21, quantity: 10,
+    }, { actorUserId: 5 })).rejects.toMatchObject({
+      message: expect.stringContaining('Solo quedan 9'),
+    });
+    expect(repository.upsertLocationBalance).not.toHaveBeenCalled();
   });
 });
