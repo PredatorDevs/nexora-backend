@@ -56,6 +56,11 @@ function setup(value) {
     findLocation: vi.fn().mockResolvedValue({ id: 21, warehouseId: 7, code: 'A-1-1-1' }),
     upsertLocationBalance: vi.fn().mockResolvedValue({}),
     findLot: vi.fn().mockResolvedValue({ id: 31 }),
+    listStock: vi.fn().mockResolvedValue({ items: [{ id: 1 }], total: 1 }),
+    listKardex: vi.fn().mockResolvedValue({
+      items: [{ id: 41n, reversalOfMovementId: 40n }], total: 1,
+    }),
+    listCosts: vi.fn().mockResolvedValue({ items: [{ id: 1 }], total: 1 }),
   };
   const service = createInventoryService({
     repository,
@@ -138,5 +143,15 @@ describe('inventory service', () => {
       message: expect.stringContaining('Solo quedan 9'),
     });
     expect(repository.upsertLocationBalance).not.toHaveBeenCalled();
+  });
+
+  it('serializes bigint movement identifiers in Kardex responses', async () => {
+    const { service } = setup(purchase());
+    const result = await service.listKardex(3, {
+      page: 1, pageSize: 20, sortBy: 'movementDate', sortOrder: 'desc',
+    });
+    expect(result.movements[0]).toMatchObject({
+      id: '41', reversalOfMovementId: '40',
+    });
   });
 });

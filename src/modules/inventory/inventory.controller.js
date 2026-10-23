@@ -4,6 +4,18 @@ import { auditActions } from '../audit/audit.constants.js';
 
 export function createInventoryController(service, auditService) {
   return {
+    async listStock(request, response) {
+      const result = await service.listStock(request.tenant.companyId, request.validated.query);
+      return sendSuccess(response, result.stock, { meta: { pagination: result.pagination } });
+    },
+    async listKardex(request, response) {
+      const result = await service.listKardex(request.tenant.companyId, request.validated.query);
+      return sendSuccess(response, result.movements, { meta: { pagination: result.pagination } });
+    },
+    async listCosts(request, response) {
+      const result = await service.listCosts(request.tenant.companyId, request.validated.query);
+      return sendSuccess(response, result.costs, { meta: { pagination: result.pagination } });
+    },
     async listLots(request, response) {
       const result = await service.listLots(request.tenant.companyId, request.validated.query);
       return sendSuccess(response, result.lots, { meta: { pagination: result.pagination } });

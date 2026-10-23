@@ -11,12 +11,21 @@ import {
   inventoryLotParams,
   assignInventoryLocationBody,
   printInventoryLabelsBody,
+  inventoryStockQuery,
+  inventoryKardexQuery,
+  inventoryCostsQuery,
 } from './inventory.schemas.js';
 
 export function createInventoryRouter(service, auditService) {
   const router = Router();
   const controller = createInventoryController(service, auditService);
   router.use(authenticate);
+  router.get('/stock', authorizeCompany('inventory.read'),
+    validate({ query: inventoryStockQuery }), controller.listStock);
+  router.get('/kardex', authorizeCompany('inventory.kardex_read'),
+    validate({ query: inventoryKardexQuery }), controller.listKardex);
+  router.get('/costs', authorizeCompany('inventory.costs_read'),
+    validate({ query: inventoryCostsQuery }), controller.listCosts);
   router.get('/lots', authorizeCompany('inventory.lots_read'),
     validate({ query: inventoryLotsQuery }), controller.listLots);
   router.get('/lots/:id', authorizeCompany('inventory.lots_read'),

@@ -38,6 +38,25 @@ function lineCost(purchase, detail, retaceoByPurchaseDetail) {
 
 export function createInventoryService({ repository, runInTransaction, generateCode = generateBusinessCode }) {
   return {
+    async listStock(companyId, query) {
+      const result = await repository.listStock(companyId, query);
+      return { stock: result.items, pagination: paginationMeta({ ...query, total: result.total }) };
+    },
+    async listKardex(companyId, query) {
+      const result = await repository.listKardex(companyId, query);
+      return {
+        movements: result.items.map((item) => ({
+          ...item,
+          id: item.id.toString(),
+          reversalOfMovementId: item.reversalOfMovementId?.toString() ?? null,
+        })),
+        pagination: paginationMeta({ ...query, total: result.total }),
+      };
+    },
+    async listCosts(companyId, query) {
+      const result = await repository.listCosts(companyId, query);
+      return { costs: result.items, pagination: paginationMeta({ ...query, total: result.total }) };
+    },
     async listLots(companyId, query) {
       const result = await repository.listLots(companyId, query);
       return { lots: result.items, pagination: paginationMeta({ ...query, total: result.total }) };

@@ -24,6 +24,102 @@ const purchaseInclude = {
 
 export function createInventoryRepository(prisma) {
   return {
+    async listStock(companyId, query, client = prisma) {
+      const where = {
+        companyId, quantity: { gt: 0 },
+        ...(query.locationId ? { locationId: query.locationId } : {}),
+        ...(query.lotId ? { inventoryLotId: query.lotId } : {}),
+        ...(query.productId ? { inventoryLot: { productId: query.productId } } : {}),
+        ...((query.warehouseId || query.branchId) ? { location: {
+          ...(query.warehouseId ? { warehouseId: query.warehouseId } : {}),
+          ...(query.branchId ? { warehouse: { branchId: query.branchId } } : {}),
+        } } : {}),
+        ...(query.search ? { OR: [
+          { inventoryLot: { code: { contains: query.search } } },
+          { inventoryLot: { product: { internalCode: { contains: query.search } } } },
+          { inventoryLot: { product: { name: { contains: query.search } } } },
+          { location: { code: { contains: query.search } } },
+        ] } : {}),
+      };
+      const [items, total] = await Promise.all([
+        client.inventoryLocationDetail.findMany({
+          where, skip: (query.page - 1) * query.pageSize, take: query.pageSize,
+          orderBy: { [query.sortBy]: query.sortOrder },
+          include: {
+            inventoryLot: { select: {
+              id: true, code: true, receivedAt: true, unitCost: true,
+              stockUnit: { select: { id: true, code: true, name: true } },
+              product: { select: { id: true, internalCode: true, sku: true, name: true } },
+            } },
+            location: { select: {
+              id: true, code: true, aisle: true, rack: true, level: true, position: true,
+              warehouse: { select: { id: true, code: true, name: true, branch: { select: { id: true, code: true, name: true } } } },
+            } },
+          },
+        }),
+        client.inventoryLocationDetail.count({ where }),
+      ]);
+      return { items, total };
+    },
+    async listKardex(companyId, query, client = prisma) {
+      const where = {
+        companyId,
+        ...(query.movementType ? { movementType: query.movementType } : {}),
+        ...(query.locationId ? { locationId: query.locationId } : {}),
+        ...(query.lotId ? { inventoryLotId: query.lotId } : {}),
+        ...(query.productId ? { productId: query.productId } : {}),
+        ...(query.warehouseId ? { warehouseId: query.warehouseId } : {}),
+        ...(query.branchId ? { warehouse: { branchId: query.branchId } } : {}),
+        ...((query.dateFrom || query.dateTo) ? { movementDate: {
+          ...(query.dateFrom ? { gte: query.dateFrom } : {}),
+          ...(query.dateTo ? { lte: query.dateTo } : {}),
+        } } : {}),
+        ...(query.search ? { OR: [
+          { inventoryLot: { code: { contains: query.search } } },
+          { product: { internalCode: { contains: query.search } } },
+          { product: { name: { contains: query.search } } },
+          { reason: { contains: query.search } },
+        ] } : {}),
+      };
+      const [items, total] = await Promise.all([
+        client.inventoryMovement.findMany({
+          where, skip: (query.page - 1) * query.pageSize, take: query.pageSize,
+          orderBy: { [query.sortBy]: query.sortOrder },
+          include: {
+            product: { select: { id: true, internalCode: true, name: true } },
+            inventoryLot: { select: { id: true, code: true, stockUnit: { select: { code: true, name: true } } } },
+            warehouse: { select: { id: true, code: true, name: true, branch: { select: { id: true, code: true, name: true } } } },
+            location: { select: { id: true, code: true } },
+            confirmedBy: { select: { id: true, displayName: true } },
+          },
+        }),
+        client.inventoryMovement.count({ where }),
+      ]);
+      return { items, total };
+    },
+    async listCosts(companyId, query, client = prisma) {
+      const where = {
+        companyId,
+        ...(query.productId ? { productId: query.productId } : {}),
+        ...(query.search ? { OR: [
+          { product: { internalCode: { contains: query.search } } },
+          { product: { sku: { contains: query.search } } },
+          { product: { name: { contains: query.search } } },
+        ] } : {}),
+      };
+      const [items, total] = await Promise.all([
+        client.inventoryCostAverage.findMany({
+          where, skip: (query.page - 1) * query.pageSize, take: query.pageSize,
+          orderBy: { [query.sortBy]: query.sortOrder },
+          include: { product: { select: {
+            id: true, internalCode: true, sku: true, name: true,
+            saleUnit: { select: { id: true, code: true, name: true } },
+          } } },
+        }),
+        client.inventoryCostAverage.count({ where }),
+      ]);
+      return { items, total };
+    },
     async listLots(companyId, query, client = prisma) {
       const where = {
         companyId,
