@@ -35,3 +35,26 @@ export const inventoryTransferTransitionBody = z.object({ expectedUpdatedAt: z.s
 export const inventoryTransferReasonBody = inventoryTransferTransitionBody.extend({
   reason: z.string().trim().min(3).max(5000),
 });
+
+export const createInventoryRelocationBody = z.object({
+  warehouseId: z.number().int().positive(),
+  reason: z.string().trim().min(3).max(500),
+  notes: nullableText,
+  details: z.array(z.object({
+    inventoryLotId: z.number().int().positive(),
+    sourceLocationId: z.number().int().positive(),
+    destinationLocationId: z.number().int().positive(),
+    quantity: z.coerce.number().positive().max(1e14),
+    notes: nullableText,
+  }).superRefine((item, context) => {
+    if (item.sourceLocationId === item.destinationLocationId)
+      context.addIssue({ code: 'custom', path: ['destinationLocationId'], message: 'La ubicación destino debe ser diferente al origen.' });
+  })).min(1).max(500),
+}).superRefine((value, context) => {
+  const keys = new Set();
+  value.details.forEach((item, index) => {
+    const key = `${item.inventoryLotId}:${item.sourceLocationId}:${item.destinationLocationId}`;
+    if (keys.has(key)) context.addIssue({ code: 'custom', path: ['details', index], message: 'La misma combinación de lote y ubicaciones no puede repetirse.' });
+    keys.add(key);
+  });
+});

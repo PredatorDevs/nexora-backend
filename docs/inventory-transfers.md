@@ -33,8 +33,9 @@ PREPARATION ------+-------> CANCELLED
 - `CANCELLED`: borrador cancelado antes del despacho.
 
 Cancelar solo está permitido en `PREPARATION`. Un traslado despachado no puede
-cancelarse porque ya posee movimientos históricos; su corrección requerirá el
-flujo futuro de reversión o ajuste.
+cancelarse porque ya posee movimientos históricos. Su corrección debe realizarse
+mediante un nuevo traslado de retorno o un ajuste autorizado, sin eliminar los
+movimientos originales.
 
 Todas las transiciones reciben `expectedUpdatedAt` para aplicar concurrencia
 optimista.
@@ -107,10 +108,22 @@ la custodia y aceptación de mercancía en tránsito.
 
 ## Limitaciones actuales
 
-- No cubre reubicaciones dentro del mismo almacén.
+- Las reubicaciones dentro del mismo almacén se confirman inmediatamente: crean
+  salida y entrada equivalentes sin utilizar un estado de tránsito.
 - No asigna la existencia a una ubicación tipo vehículo.
 - No permite recepción parcial de una línea de traslado.
 - Una incidencia se registra a nivel de encabezado, no por línea.
-- Los traslados despachados se corrigen mediante los futuros ajustes o
-  movimientos compensatorios.
+- Los traslados despachados se corrigen mediante un traslado de retorno o un
+  ajuste autorizado; no se revierten asientos individuales del documento.
+
+## Reubicación interna
+
+```text
+POST /api/v1/inventory-transfers/relocations
+```
+
+Requiere `inventory.relocations_create`. El origen y destino deben ser
+ubicaciones distintas del mismo almacén. La operación valida nuevamente el
+saldo al confirmar, mueve todas las líneas en una transacción y conserva lote,
+cantidad y costo. No modifica el costo promedio global.
 

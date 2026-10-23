@@ -173,7 +173,6 @@ La API valida permisos independientemente de la visibilidad del menú.
 
 ## Pendientes de la v1.0
 
-- movimientos entre ubicaciones del mismo almacén;
 - ubicación tipo vehículo para mercancía en tránsito;
 - integración con salidas de venta y devoluciones aceptadas;
 - conciliación administrativa asistida entre saldos y Kardex.

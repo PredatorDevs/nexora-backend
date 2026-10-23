@@ -64,6 +64,49 @@ export function createInventoryTransfersService({ repository, runInTransaction, 
         }, client);
       });
     },
+    async relocate(companyId, input, context) {
+      return runInTransaction(async (client) => {
+        if (!await repository.findWarehouse(companyId, input.warehouseId, client))
+          throw invalid('El almacén seleccionado no existe o está inactivo.', 404);
+        const details = [];
+        const requestedBySource = new Map();
+        for (const [index, item] of input.details.entries()) {
+          const source = await repository.findLocationBalance(companyId, item.inventoryLotId, item.sourceLocationId, client);
+          const destination = await repository.findLocation(companyId, item.destinationLocationId, client);
+          if (!source || !destination) throw invalid(`Las ubicaciones de la línea ${index + 1} no son válidas.`, 404);
+          if (!source.location.isActive || source.location.warehouseId !== input.warehouseId || destination.warehouseId !== input.warehouseId)
+            throw invalid(`Ambas ubicaciones de la línea ${index + 1} deben pertenecer al almacén seleccionado.`);
+          if (item.sourceLocationId === item.destinationLocationId)
+            throw invalid(`La ubicación destino de la línea ${index + 1} debe ser diferente al origen.`);
+          if (source.inventoryLot.status !== 'AVAILABLE') throw invalid(`El lote de la línea ${index + 1} no está disponible.`);
+          const amount = qty(item.quantity);
+          const key = `${item.inventoryLotId}:${item.sourceLocationId}`;
+          const accumulated = qty(d(requestedBySource.get(key)).add(amount));
+          if (accumulated.greaterThan(source.quantity)) throw invalid('Las cantidades solicitadas exceden la existencia de la ubicación origen.');
+          requestedBySource.set(key, accumulated);
+          details.push({ companyId, lineNumber: index + 1, inventoryLotId: item.inventoryLotId, sourceLocationId: item.sourceLocationId, destinationLocationId: item.destinationLocationId, quantity: amount, unitCost: source.inventoryLot.unitCost, totalCost: money(amount.mul(source.inventoryLot.unitCost)), notes: item.notes ?? null });
+        }
+        const transfer = await repository.create({
+          companyId, code: await generateCode(client, businessCodeEntities.inventoryTransfer, { companyId }),
+          sourceWarehouseId: input.warehouseId, destinationWarehouseId: input.warehouseId,
+          notes: input.notes ?? input.reason, createdByUserId: context.actorUserId, details,
+        }, client);
+        const now = new Date();
+        for (const detail of transfer.details) {
+          const changed = await repository.decrementBalance(companyId, detail.inventoryLotId, detail.sourceLocationId, detail.quantity, client);
+          if (changed.count !== 1) throw invalid(`No hay existencia suficiente para reubicar la línea ${detail.lineNumber}.`);
+          await repository.incrementBalance(companyId, detail.inventoryLotId, detail.destinationLocationId, detail.quantity, client);
+          const movement = { companyId, productId: detail.inventoryLot.productId, inventoryLotId: detail.inventoryLotId, warehouseId: input.warehouseId, movementDate: now, unitCost: detail.unitCost, totalCost: detail.totalCost, referenceType: 'TRANSFER', referenceId: transfer.id, reason: input.reason, confirmedByUserId: context.actorUserId };
+          await repository.createMovement({ ...movement, locationId: detail.sourceLocationId, movementType: 'TRANSFER_OUT', quantityIn: d(0), quantityOut: detail.quantity }, client);
+          await repository.createMovement({ ...movement, locationId: detail.destinationLocationId, movementType: 'TRANSFER_IN', quantityIn: detail.quantity, quantityOut: d(0) }, client);
+        }
+        await repository.transition(companyId, transfer.id, transfer.updatedAt, ['PREPARATION'], {
+          status: 'RECEIVED', dispatchedAt: now, receivedAt: now,
+          dispatchedByUserId: context.actorUserId, receivedByUserId: context.actorUserId,
+        }, client);
+        return get(companyId, transfer.id, client);
+      });
+    },
     async dispatch(companyId, id, input, context) {
       return runInTransaction(async (client) => {
         const transfer = await get(companyId, id, client);

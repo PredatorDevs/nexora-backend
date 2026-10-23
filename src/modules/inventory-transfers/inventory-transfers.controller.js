@@ -20,6 +20,10 @@ export function createInventoryTransfersController(service, auditService) {
       return sendSuccess(response, await audited(request, 'INVENTORY_TRANSFER.CREATED', () =>
         service.create(request.tenant.companyId, request.validated.body, context(request))), { statusCode: 201 });
     },
+    async relocate(request, response) {
+      return sendSuccess(response, await audited(request, 'INVENTORY_RELOCATION.CREATED', () =>
+        service.relocate(request.tenant.companyId, request.validated.body, context(request))), { statusCode: 201 });
+    },
     async dispatch(request, response) {
       return sendSuccess(response, await audited(request, 'INVENTORY_TRANSFER.DISPATCHED', () =>
         service.dispatch(request.tenant.companyId, request.validated.params.id, request.validated.body, context(request))));

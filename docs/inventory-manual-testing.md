@@ -194,11 +194,21 @@ Los traslados no cambian `quantity_on_hand`, `inventory_value` ni
 `average_unit_cost`. Ningún movimiento confirmado debe poder editarse o
 eliminarse desde la aplicación.
 
+## Caso 13: reubicación interna
+
+1. Seleccionar un almacén con un lote ubicado.
+2. Elegir una ubicación destino distinta dentro del mismo almacén.
+3. Confirmar una cantidad menor o igual al saldo disponible.
+
+Resultado esperado: la cantidad sale del origen y entra al destino en una sola
+operación; el lote, cantidad global, valor y costo promedio no cambian. Deben
+rechazarse el mismo origen y destino, ubicaciones de otro almacén y cantidades
+superiores al saldo.
+
 ## Fuera del alcance de esta guía
 
 Todavía no deben probarse como disponibles:
 
-- reubicación dentro del mismo almacén;
 - tránsito mediante ubicación de vehículo;
 - salidas por venta;
 - reingresos por devolución.

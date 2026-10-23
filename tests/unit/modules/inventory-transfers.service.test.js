@@ -69,4 +69,21 @@ describe('inventory transfers service', () => {
     }), expect.anything());
     expect(repository.updateCostAverage).toBeUndefined();
   });
+
+  it('relocates stock within one warehouse atomically', async () => {
+    const value = transfer();
+    value.destinationWarehouseId = 4;
+    const { repository, service } = setup(value);
+    repository.findLocation.mockResolvedValue({ id: 30, warehouseId: 4 });
+    repository.create.mockResolvedValue(value);
+    await service.relocate(3, {
+      warehouseId: 4, reason: 'Optimización de espacio',
+      details: [{ inventoryLotId: 10, sourceLocationId: 20, destinationLocationId: 30, quantity: 4 }],
+    }, { actorUserId: 2 });
+    expect(repository.decrementBalance).toHaveBeenCalledWith(3, 10, 20, d(4), expect.anything());
+    expect(repository.incrementBalance).toHaveBeenCalledWith(3, 10, 30, d(4), expect.anything());
+    expect(repository.createMovement).toHaveBeenNthCalledWith(1, expect.objectContaining({ movementType: 'TRANSFER_OUT', quantityOut: d(4) }), expect.anything());
+    expect(repository.createMovement).toHaveBeenNthCalledWith(2, expect.objectContaining({ movementType: 'TRANSFER_IN', quantityIn: d(4) }), expect.anything());
+    expect(repository.transition).toHaveBeenCalledWith(3, 8, value.updatedAt, ['PREPARATION'], expect.objectContaining({ status: 'RECEIVED' }), expect.anything());
+  });
 });
