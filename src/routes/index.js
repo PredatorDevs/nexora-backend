@@ -27,6 +27,7 @@ import { createPurchaseQuotationsRouter } from '../modules/purchase-quotations/p
 import { createPurchaseOrdersRouter } from '../modules/purchase-orders/purchase-orders.routes.js';
 import { createPurchasesRouter } from '../modules/purchases/purchases.routes.js';
 import { createRetaceosRouter } from '../modules/retaceos/retaceos.routes.js';
+import { createInventoryRouter } from '../modules/inventory/inventory.routes.js';
 import { createFilesRouter } from '../modules/files/files.routes.js';
 import {
   createCompanyInvitationsManagementRouter,
@@ -235,6 +236,14 @@ export function registerRoutes(app) {
         '/api/v1/retaceos',
         createRetaceosRouter(
           app.locals.services.retaceos,
+          app.locals.services.audit,
+        ),
+      );
+    if (app.locals.services.inventory)
+      app.use(
+        '/api/v1/inventory',
+        createInventoryRouter(
+          app.locals.services.inventory,
           app.locals.services.audit,
         ),
       );

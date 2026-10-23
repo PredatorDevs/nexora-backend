@@ -119,4 +119,5 @@ export const auditActions = Object.freeze({
   retaceoVerified: 'RETACEO.VERIFIED',
   retaceoClosed: 'RETACEO.CLOSED',
   retaceoCancelled: 'RETACEO.CANCELLED',
+  inventoryReceiptPosted: 'INVENTORY.RECEIPT_POSTED',
 });
