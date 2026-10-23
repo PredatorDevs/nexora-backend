@@ -72,6 +72,8 @@ import { createRetaceosRepository } from './modules/retaceos/retaceos.repository
 import { createRetaceosService } from './modules/retaceos/retaceos.service.js';
 import { createInventoryRepository } from './modules/inventory/inventory.repository.js';
 import { createInventoryService } from './modules/inventory/inventory.service.js';
+import { createInventoryTransfersRepository } from './modules/inventory-transfers/inventory-transfers.repository.js';
+import { createInventoryTransfersService } from './modules/inventory-transfers/inventory-transfers.service.js';
 import { createCompanyInvitationsRepository } from './modules/company-invitations/company-invitations.repository.js';
 import { createCompanyInvitationsService } from './modules/company-invitations/company-invitations.service.js';
 import { createMailer } from './core/mail/mailer.js';
@@ -241,6 +243,10 @@ const inventoryService = createInventoryService({
   repository: createInventoryRepository(prisma),
   runInTransaction,
 });
+const inventoryTransfersService = createInventoryTransfersService({
+  repository: createInventoryTransfersRepository(prisma),
+  runInTransaction,
+});
 const companyInvitationsService = createCompanyInvitationsService({
   repository: createCompanyInvitationsRepository(prisma),
   runInTransaction,
@@ -287,6 +293,7 @@ const app = createApp({
     purchases: purchasesService,
     retaceos: retaceosService,
     inventory: inventoryService,
+    inventoryTransfers: inventoryTransfersService,
     companyInvitations: companyInvitationsService,
     files: fileStorage,
   },

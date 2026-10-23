@@ -183,6 +183,16 @@ enum InventoryReferenceType {
   @@map("inventory_reference_type")
 }
 
+enum InventoryTransferStatus {
+  PREPARATION
+  IN_TRANSIT
+  RECEIVED
+  INCIDENT
+  CANCELLED
+
+  @@map("inventory_transfer_status")
+}
+
 enum RetaceoStatus {
   DRAFT
   CALCULATED
@@ -282,6 +292,10 @@ model User {
   inventoryLotsCreated           InventoryLot[]                 @relation("InventoryLotCreatedBy")
   inventoryMovementsConfirmed    InventoryMovement[]            @relation("InventoryMovementConfirmedBy")
   inventoryLabelsPrinted         InventoryLabelPrint[]          @relation("InventoryLabelPrintedBy")
+  inventoryTransfersCreated      InventoryTransfer[]            @relation("InventoryTransferCreatedBy")
+  inventoryTransfersDispatched   InventoryTransfer[]            @relation("InventoryTransferDispatchedBy")
+  inventoryTransfersReceived     InventoryTransfer[]            @relation("InventoryTransferReceivedBy")
+  inventoryTransfersCancelled    InventoryTransfer[]            @relation("InventoryTransferCancelledBy")
 
   @@index([status], map: "users_status_idx")
   @@map("users")
@@ -606,6 +620,8 @@ model Company {
   inventoryMovements                  InventoryMovement[]
   inventoryCostAverages               InventoryCostAverage[]
   inventoryLabelPrints                InventoryLabelPrint[]
+  inventoryTransfers                  InventoryTransfer[]
+  inventoryTransferDetails           InventoryTransferDetail[]
 
   @@index([status, legalName], map: "companies_status_legal_name_idx")
   @@index([countryId], map: "companies_country_id_idx")
@@ -845,6 +861,8 @@ model Warehouse {
   purchaseOrders      PurchaseOrder[]
   purchases           Purchase[]
   inventoryMovements  InventoryMovement[]
+  sourceInventoryTransfers      InventoryTransfer[] @relation("InventoryTransferSourceWarehouse")
+  destinationInventoryTransfers InventoryTransfer[] @relation("InventoryTransferDestinationWarehouse")
 
   @@unique([companyId, code], map: "warehouses_company_code_key")
   @@unique([companyId, branchId, name], map: "warehouses_company_branch_name_key")
@@ -873,6 +891,8 @@ model Location {
   warehouse    Warehouse             @relation(fields: [warehouseId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
   inventoryLocationDetails InventoryLocationDetail[]
   inventoryMovements InventoryMovement[]
+  sourceInventoryTransferDetails      InventoryTransferDetail[] @relation("InventoryTransferSourceLocation")
+  destinationInventoryTransferDetails InventoryTransferDetail[] @relation("InventoryTransferDestinationLocation")
 
   @@unique([companyId, warehouseId, code], map: "locations_company_warehouse_code_key")
   @@unique([companyId, warehouseId, aisle, rack, level, position], map: "locations_physical_coordinates_key")
@@ -1676,6 +1696,7 @@ model InventoryLot {
   locationDetails        InventoryLocationDetail[]
   movements              InventoryMovement[]
   labelPrints            InventoryLabelPrint[]
+  inventoryTransferDetails InventoryTransferDetail[]
 
   @@unique([uuid], map: "inventory_lots_uuid_key")
   @@unique([companyId, code], map: "inventory_lots_company_code_key")
@@ -1775,6 +1796,76 @@ model InventoryLabelPrint {
   @@index([companyId, inventoryLotId, printedAt], map: "inventory_label_prints_lot_date_idx")
   @@index([printedByUserId], map: "inventory_label_prints_printed_by_idx")
   @@map("inventory_label_prints")
+}
+
+model InventoryTransfer {
+  id                     Int                     @id @default(autoincrement()) @db.UnsignedInt
+  uuid                   String                  @default(uuid()) @db.Char(36)
+  companyId              Int                     @map("company_id") @db.UnsignedInt
+  code                   String                  @db.VarChar(50)
+  sourceWarehouseId      Int                     @map("source_warehouse_id") @db.UnsignedInt
+  destinationWarehouseId Int                     @map("destination_warehouse_id") @db.UnsignedInt
+  status                 InventoryTransferStatus @default(PREPARATION)
+  notes                  String?                 @db.Text
+  incidentNotes          String?                 @map("incident_notes") @db.Text
+  createdByUserId        Int                     @map("created_by_user_id") @db.UnsignedInt
+  dispatchedByUserId     Int?                    @map("dispatched_by_user_id") @db.UnsignedInt
+  receivedByUserId       Int?                    @map("received_by_user_id") @db.UnsignedInt
+  cancelledByUserId      Int?                    @map("cancelled_by_user_id") @db.UnsignedInt
+  dispatchedAt           DateTime?               @map("dispatched_at") @db.DateTime(3)
+  receivedAt             DateTime?               @map("received_at") @db.DateTime(3)
+  cancelledAt            DateTime?               @map("cancelled_at") @db.DateTime(3)
+  cancellationReason     String?                 @map("cancellation_reason") @db.Text
+  createdAt              DateTime                @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt              DateTime                @updatedAt @map("updated_at") @db.DateTime(3)
+  company                Company                 @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  sourceWarehouse        Warehouse               @relation("InventoryTransferSourceWarehouse", fields: [sourceWarehouseId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  destinationWarehouse   Warehouse               @relation("InventoryTransferDestinationWarehouse", fields: [destinationWarehouseId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  createdBy              User                    @relation("InventoryTransferCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  dispatchedBy           User?                   @relation("InventoryTransferDispatchedBy", fields: [dispatchedByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  receivedBy             User?                   @relation("InventoryTransferReceivedBy", fields: [receivedByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  cancelledBy            User?                   @relation("InventoryTransferCancelledBy", fields: [cancelledByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  details                InventoryTransferDetail[]
+
+  @@unique([uuid], map: "inventory_transfers_uuid_key")
+  @@unique([companyId, code], map: "inventory_transfers_company_code_key")
+  @@unique([id, companyId], map: "inventory_transfers_id_company_key")
+  @@index([companyId, status, createdAt], map: "inventory_transfers_company_status_date_idx")
+  @@index([companyId, sourceWarehouseId], map: "inventory_transfers_source_idx")
+  @@index([companyId, destinationWarehouseId], map: "inventory_transfers_destination_idx")
+  @@index([createdByUserId], map: "inventory_transfers_created_by_idx")
+  @@index([dispatchedByUserId], map: "inventory_transfers_dispatched_by_idx")
+  @@index([receivedByUserId], map: "inventory_transfers_received_by_idx")
+  @@index([cancelledByUserId], map: "inventory_transfers_cancelled_by_idx")
+  @@map("inventory_transfers")
+}
+
+model InventoryTransferDetail {
+  id                    Int               @id @default(autoincrement()) @db.UnsignedInt
+  companyId             Int               @map("company_id") @db.UnsignedInt
+  inventoryTransferId   Int               @map("inventory_transfer_id") @db.UnsignedInt
+  lineNumber            Int               @map("line_number") @db.UnsignedSmallInt
+  inventoryLotId        Int               @map("inventory_lot_id") @db.UnsignedInt
+  sourceLocationId      Int               @map("source_location_id") @db.UnsignedInt
+  destinationLocationId Int               @map("destination_location_id") @db.UnsignedInt
+  quantity              Decimal           @db.Decimal(18, 4)
+  unitCost              Decimal           @map("unit_cost") @db.Decimal(18, 6)
+  totalCost             Decimal           @map("total_cost") @db.Decimal(18, 6)
+  notes                 String?           @db.Text
+  createdAt             DateTime          @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt             DateTime          @updatedAt @map("updated_at") @db.DateTime(3)
+  company               Company           @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  inventoryTransfer     InventoryTransfer @relation(fields: [inventoryTransferId, companyId], references: [id, companyId], onDelete: Cascade, onUpdate: Cascade)
+  inventoryLot          InventoryLot      @relation(fields: [inventoryLotId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  sourceLocation        Location          @relation("InventoryTransferSourceLocation", fields: [sourceLocationId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  destinationLocation   Location          @relation("InventoryTransferDestinationLocation", fields: [destinationLocationId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([companyId, inventoryTransferId, lineNumber], map: "inventory_transfer_details_line_key")
+  @@unique([id, companyId], map: "inventory_transfer_details_id_company_key")
+  @@index([companyId, inventoryLotId], map: "inventory_transfer_details_lot_idx")
+  @@index([companyId, sourceLocationId], map: "inventory_transfer_details_source_location_idx")
+  @@index([companyId, destinationLocationId], map: "inventory_transfer_details_destination_location_idx")
+  @@map("inventory_transfer_details")
 }
 
 model PurchaseOrderExpense {
