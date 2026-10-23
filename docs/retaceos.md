@@ -149,8 +149,9 @@ creación, actualización y cálculo. Read Only recibe únicamente lectura.
 - La fuente es una compra `VERIFIED` o `CLOSED`, nunca directamente una orden.
 - Los detalles conservan la trazabilidad compra → orden → cotización → solicitud.
 - Los gastos definitivos de orden pueden copiarse como costos del retaceo.
-- El cierre prepara costos para Inventario; este corte no crea existencias ni
-  asientos contables.
+- El cierre congela los costos que posteriormente consume el ingreso a
+  Inventario. Cerrar por sí solo no crea existencias ni asientos contables;
+  el ingreso se confirma de manera explícita desde el módulo de Inventario.
 - La asignación de precios consumirá posteriormente el costo unitario cerrado.
 
 ## API disponible en el corte funcional

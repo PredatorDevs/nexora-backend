@@ -43,11 +43,15 @@ detalle usan `grossAmount`, `discountRate`, `discountAmount`, `subtotal`,
 
 ## Inventario y retaceo
 
-La recepción confirmada deja preparados los datos para crear movimientos de
-inventario, pero la distribución física entre ubicaciones se modelará mediante
-movimientos o asignaciones independientes: una línea puede distribuirse entre
-varias ubicaciones. El retaceo se relacionará con la compra real y utilizará
-únicamente cantidades efectivamente recibidas.
+Una recepción `VERIFIED` o `CLOSED` puede ingresarse al inventario. El proceso
+crea un lote por detalle recibido, registra la entrada en el Kardex y actualiza
+el costo promedio global del producto. La distribución física se realiza
+posteriormente mediante asignaciones independientes, por lo que un lote puede
+repartirse entre varias ubicaciones del almacén receptor.
+
+El modo `DIRECT` utiliza el costo neto de la recepción. El modo `LANDED_COST`
+requiere un retaceo cerrado y utiliza sus costos definitivos. Véase
+`docs/inventory.md`.
 
 ## Permisos
 
