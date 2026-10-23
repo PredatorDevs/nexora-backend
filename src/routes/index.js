@@ -29,6 +29,7 @@ import { createPurchasesRouter } from '../modules/purchases/purchases.routes.js'
 import { createRetaceosRouter } from '../modules/retaceos/retaceos.routes.js';
 import { createInventoryRouter } from '../modules/inventory/inventory.routes.js';
 import { createInventoryTransfersRouter } from '../modules/inventory-transfers/inventory-transfers.routes.js';
+import { createInventoryAdjustmentsRouter } from '../modules/inventory-adjustments/inventory-adjustments.routes.js';
 import { createFilesRouter } from '../modules/files/files.routes.js';
 import {
   createCompanyInvitationsManagementRouter,
@@ -253,6 +254,14 @@ export function registerRoutes(app) {
         '/api/v1/inventory-transfers',
         createInventoryTransfersRouter(
           app.locals.services.inventoryTransfers,
+          app.locals.services.audit,
+        ),
+      );
+    if (app.locals.services.inventoryAdjustments)
+      app.use(
+        '/api/v1/inventory-adjustments',
+        createInventoryAdjustmentsRouter(
+          app.locals.services.inventoryAdjustments,
           app.locals.services.audit,
         ),
       );

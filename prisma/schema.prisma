@@ -193,6 +193,21 @@ enum InventoryTransferStatus {
   @@map("inventory_transfer_status")
 }
 
+enum InventoryAdjustmentStatus {
+  DRAFT
+  APPROVED
+  CANCELLED
+
+  @@map("inventory_adjustment_status")
+}
+
+enum InventoryAdjustmentDirection {
+  IN
+  OUT
+
+  @@map("inventory_adjustment_direction")
+}
+
 enum RetaceoStatus {
   DRAFT
   CALCULATED
@@ -242,60 +257,63 @@ enum CompanyInvitationStatus {
 }
 
 model User {
-  id                             Int                            @id @default(autoincrement()) @db.UnsignedInt
-  email                          String                         @unique(map: "users_email_key") @db.VarChar(191)
-  passwordHash                   String                         @map("password_hash") @db.VarChar(255)
-  displayName                    String                         @map("display_name") @db.VarChar(120)
-  status                         UserStatus                     @default(ACTIVE)
-  securityVersion                Int                            @default(1) @map("security_version") @db.UnsignedInt
-  mustChangePassword             Boolean                        @default(false) @map("must_change_password")
-  createdAt                      DateTime                       @default(now()) @map("created_at") @db.DateTime(3)
-  updatedAt                      DateTime                       @updatedAt @map("updated_at") @db.DateTime(3)
-  roles                          UserRole[]                     @relation("UserRoles")
-  roleAssignmentsGranted         UserRole[]                     @relation("UserRoleAssignedBy")
-  permissionGrantsAssigned       RolePermission[]               @relation("RolePermissionAssignedBy")
-  sessions                       AuthSession[]
-  auditLogs                      AuditLog[]                     @relation("AuditActor")
-  entityChanges                  EntityChangeLog[]              @relation("EntityChangeActor")
-  companyMemberships             CompanyMembership[]
-  companyRolesAssigned           CompanyMembershipRole[]        @relation("CompanyMembershipRoleAssignedBy")
-  companyPermissionsAssigned     CompanyRolePermission[]        @relation("CompanyRolePermissionAssignedBy")
-  companyInvitationsSent         CompanyInvitation[]            @relation("CompanyInvitationInvitedBy")
-  companyInvitationsAccepted     CompanyInvitation[]            @relation("CompanyInvitationAcceptedBy")
-  purchaseRequestsRequested      PurchaseRequest[]              @relation("PurchaseRequestRequestedBy")
-  purchaseRequestsApproved       PurchaseRequest[]              @relation("PurchaseRequestApprovedBy")
-  purchaseRequestsRejected       PurchaseRequest[]              @relation("PurchaseRequestRejectedBy")
-  purchaseRequestsCancelled      PurchaseRequest[]              @relation("PurchaseRequestCancelledBy")
-  purchaseRequestsConsolidated   PurchaseRequest[]              @relation("PurchaseRequestConsolidatedBy")
-  purchaseRequestSegmentsCreated PurchaseRequestSupplierSegment[] @relation("PurchaseRequestSegmentCreatedBy")
-  purchaseRequestSegmentsIssued PurchaseRequestSupplierSegment[] @relation("PurchaseRequestSegmentIssuedBy")
+  id                               Int                              @id @default(autoincrement()) @db.UnsignedInt
+  email                            String                           @unique(map: "users_email_key") @db.VarChar(191)
+  passwordHash                     String                           @map("password_hash") @db.VarChar(255)
+  displayName                      String                           @map("display_name") @db.VarChar(120)
+  status                           UserStatus                       @default(ACTIVE)
+  securityVersion                  Int                              @default(1) @map("security_version") @db.UnsignedInt
+  mustChangePassword               Boolean                          @default(false) @map("must_change_password")
+  createdAt                        DateTime                         @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt                        DateTime                         @updatedAt @map("updated_at") @db.DateTime(3)
+  roles                            UserRole[]                       @relation("UserRoles")
+  roleAssignmentsGranted           UserRole[]                       @relation("UserRoleAssignedBy")
+  permissionGrantsAssigned         RolePermission[]                 @relation("RolePermissionAssignedBy")
+  sessions                         AuthSession[]
+  auditLogs                        AuditLog[]                       @relation("AuditActor")
+  entityChanges                    EntityChangeLog[]                @relation("EntityChangeActor")
+  companyMemberships               CompanyMembership[]
+  companyRolesAssigned             CompanyMembershipRole[]          @relation("CompanyMembershipRoleAssignedBy")
+  companyPermissionsAssigned       CompanyRolePermission[]          @relation("CompanyRolePermissionAssignedBy")
+  companyInvitationsSent           CompanyInvitation[]              @relation("CompanyInvitationInvitedBy")
+  companyInvitationsAccepted       CompanyInvitation[]              @relation("CompanyInvitationAcceptedBy")
+  purchaseRequestsRequested        PurchaseRequest[]                @relation("PurchaseRequestRequestedBy")
+  purchaseRequestsApproved         PurchaseRequest[]                @relation("PurchaseRequestApprovedBy")
+  purchaseRequestsRejected         PurchaseRequest[]                @relation("PurchaseRequestRejectedBy")
+  purchaseRequestsCancelled        PurchaseRequest[]                @relation("PurchaseRequestCancelledBy")
+  purchaseRequestsConsolidated     PurchaseRequest[]                @relation("PurchaseRequestConsolidatedBy")
+  purchaseRequestSegmentsCreated   PurchaseRequestSupplierSegment[] @relation("PurchaseRequestSegmentCreatedBy")
+  purchaseRequestSegmentsIssued    PurchaseRequestSupplierSegment[] @relation("PurchaseRequestSegmentIssuedBy")
   purchaseRequestSegmentsCancelled PurchaseRequestSupplierSegment[] @relation("PurchaseRequestSegmentCancelledBy")
-  purchaseQuotationsRegistered   PurchaseQuotation[]            @relation("PurchaseQuotationRegisteredBy")
-  purchaseQuotationsCancelled    PurchaseQuotation[]            @relation("PurchaseQuotationCancelledBy")
-  purchaseQuotationsSelected     PurchaseQuotation[]            @relation("PurchaseQuotationSelectedBy")
-  purchaseQuotationsRejected     PurchaseQuotation[]            @relation("PurchaseQuotationRejectedBy")
-  quotationRequestDecisions      PurchaseQuotationRequest[]     @relation("PurchaseQuotationRequestDecidedBy")
-  purchaseOrdersCreated          PurchaseOrder[]                @relation("PurchaseOrderCreatedBy")
-  purchaseOrdersApproved         PurchaseOrder[]                @relation("PurchaseOrderApprovedBy")
-  purchaseOrdersSent             PurchaseOrder[]                @relation("PurchaseOrderSentBy")
-  purchaseOrdersCancelled        PurchaseOrder[]                @relation("PurchaseOrderCancelledBy")
-  purchaseOrderDocumentsUploaded PurchaseOrderExpenseDocument[] @relation("PurchaseOrderExpenseDocumentUploadedBy")
-  purchasesReceived              Purchase[]                     @relation("PurchaseReceivedBy")
-  purchasesVerified              Purchase[]                     @relation("PurchaseVerifiedBy")
-  purchasesCancelled             Purchase[]                     @relation("PurchaseCancelledBy")
-  retaceosCreated                Retaceo[]                      @relation("RetaceoCreatedBy")
-  retaceosCalculated             Retaceo[]                      @relation("RetaceoCalculatedBy")
-  retaceosVerified               Retaceo[]                      @relation("RetaceoVerifiedBy")
-  retaceosClosed                 Retaceo[]                      @relation("RetaceoClosedBy")
-  retaceosCancelled              Retaceo[]                      @relation("RetaceoCancelledBy")
-  retaceoCostsCreated            RetaceoCost[]                  @relation("RetaceoCostCreatedBy")
-  inventoryLotsCreated           InventoryLot[]                 @relation("InventoryLotCreatedBy")
-  inventoryMovementsConfirmed    InventoryMovement[]            @relation("InventoryMovementConfirmedBy")
-  inventoryLabelsPrinted         InventoryLabelPrint[]          @relation("InventoryLabelPrintedBy")
-  inventoryTransfersCreated      InventoryTransfer[]            @relation("InventoryTransferCreatedBy")
-  inventoryTransfersDispatched   InventoryTransfer[]            @relation("InventoryTransferDispatchedBy")
-  inventoryTransfersReceived     InventoryTransfer[]            @relation("InventoryTransferReceivedBy")
-  inventoryTransfersCancelled    InventoryTransfer[]            @relation("InventoryTransferCancelledBy")
+  purchaseQuotationsRegistered     PurchaseQuotation[]              @relation("PurchaseQuotationRegisteredBy")
+  purchaseQuotationsCancelled      PurchaseQuotation[]              @relation("PurchaseQuotationCancelledBy")
+  purchaseQuotationsSelected       PurchaseQuotation[]              @relation("PurchaseQuotationSelectedBy")
+  purchaseQuotationsRejected       PurchaseQuotation[]              @relation("PurchaseQuotationRejectedBy")
+  quotationRequestDecisions        PurchaseQuotationRequest[]       @relation("PurchaseQuotationRequestDecidedBy")
+  purchaseOrdersCreated            PurchaseOrder[]                  @relation("PurchaseOrderCreatedBy")
+  purchaseOrdersApproved           PurchaseOrder[]                  @relation("PurchaseOrderApprovedBy")
+  purchaseOrdersSent               PurchaseOrder[]                  @relation("PurchaseOrderSentBy")
+  purchaseOrdersCancelled          PurchaseOrder[]                  @relation("PurchaseOrderCancelledBy")
+  purchaseOrderDocumentsUploaded   PurchaseOrderExpenseDocument[]   @relation("PurchaseOrderExpenseDocumentUploadedBy")
+  purchasesReceived                Purchase[]                       @relation("PurchaseReceivedBy")
+  purchasesVerified                Purchase[]                       @relation("PurchaseVerifiedBy")
+  purchasesCancelled               Purchase[]                       @relation("PurchaseCancelledBy")
+  retaceosCreated                  Retaceo[]                        @relation("RetaceoCreatedBy")
+  retaceosCalculated               Retaceo[]                        @relation("RetaceoCalculatedBy")
+  retaceosVerified                 Retaceo[]                        @relation("RetaceoVerifiedBy")
+  retaceosClosed                   Retaceo[]                        @relation("RetaceoClosedBy")
+  retaceosCancelled                Retaceo[]                        @relation("RetaceoCancelledBy")
+  retaceoCostsCreated              RetaceoCost[]                    @relation("RetaceoCostCreatedBy")
+  inventoryLotsCreated             InventoryLot[]                   @relation("InventoryLotCreatedBy")
+  inventoryMovementsConfirmed      InventoryMovement[]              @relation("InventoryMovementConfirmedBy")
+  inventoryLabelsPrinted           InventoryLabelPrint[]            @relation("InventoryLabelPrintedBy")
+  inventoryTransfersCreated        InventoryTransfer[]              @relation("InventoryTransferCreatedBy")
+  inventoryTransfersDispatched     InventoryTransfer[]              @relation("InventoryTransferDispatchedBy")
+  inventoryTransfersReceived       InventoryTransfer[]              @relation("InventoryTransferReceivedBy")
+  inventoryTransfersCancelled      InventoryTransfer[]              @relation("InventoryTransferCancelledBy")
+  inventoryAdjustmentsCreated      InventoryAdjustment[]            @relation("InventoryAdjustmentCreatedBy")
+  inventoryAdjustmentsApproved     InventoryAdjustment[]            @relation("InventoryAdjustmentApprovedBy")
+  inventoryAdjustmentsCancelled    InventoryAdjustment[]            @relation("InventoryAdjustmentCancelledBy")
 
   @@index([status], map: "users_status_idx")
   @@map("users")
@@ -549,79 +567,81 @@ model MeasurementUnit {
 }
 
 model Company {
-  id                                  Int                                  @id @default(autoincrement()) @db.UnsignedInt
-  code                                String                               @unique(map: "companies_code_key") @db.VarChar(50)
-  legalName                           String                               @map("legal_name") @db.VarChar(191)
-  commercialName                      String                               @map("commercial_name") @db.VarChar(191)
-  nit                                 String                               @unique(map: "companies_nit_key") @db.VarChar(25)
-  nrc                                 String                               @unique(map: "companies_nrc_key") @db.VarChar(25)
-  countryId                           Int                                  @map("country_id") @db.UnsignedInt
-  departmentId                        Int?                                 @map("department_id") @db.UnsignedInt
-  municipalityId                      Int?                                 @map("municipality_id") @db.UnsignedInt
-  districtId                          Int?                                 @map("district_id") @db.UnsignedInt
-  foreignAdministrativeArea           String?                              @map("foreign_administrative_area") @db.VarChar(191)
-  foreignLocality                     String?                              @map("foreign_locality") @db.VarChar(191)
-  addressLine                         String                               @map("address_line") @db.VarChar(500)
-  phone                               String?                              @db.VarChar(30)
-  email                               String?                              @db.VarChar(191)
-  website                             String?                              @db.VarChar(500)
-  logoStorageKey                      String?                              @map("logo_storage_key") @db.VarChar(500)
-  status                              CompanyStatus                        @default(ACTIVE)
-  defaultCurrencyCode                 String                               @default("USD") @map("default_currency_code") @db.Char(3)
-  timezone                            String                               @default("America/El_Salvador") @db.VarChar(100)
-  locale                              String                               @default("es-SV") @db.VarChar(20)
-  createdAt                           DateTime                             @default(now()) @map("created_at") @db.DateTime(3)
-  updatedAt                           DateTime                             @updatedAt @map("updated_at") @db.DateTime(3)
-  country                             Country                              @relation(fields: [countryId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  department                          Department?                          @relation(fields: [departmentId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  municipality                        Municipality?                        @relation(fields: [municipalityId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  district                            District?                            @relation(fields: [districtId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  economicActivities                  CompanyEconomicActivity[]
-  memberships                         CompanyMembership[]
-  roles                               CompanyRole[]
-  sessions                            AuthSession[]
-  auditLogs                           AuditLog[]
-  entityChanges                       EntityChangeLog[]
-  branches                            Branch[]
-  invitations                         CompanyInvitation[]
-  warehouseCategories                 WarehouseCategory[]
-  warehouses                          Warehouse[]
-  locations                           Location[]
-  suppliers                           Supplier[]
-  supplierContacts                    SupplierContact[]
-  brands                              Brand[]
-  productCategories                   ProductCategory[]
-  productUnits                        ProductUnit[]
-  products                            Product[]
-  productImages                       ProductImage[]
-  purchaseRequests                    PurchaseRequest[]
-  purchaseRequestDetails              PurchaseRequestDetail[]
-  purchaseRequestConsolidationDetails PurchaseRequestConsolidationDetail[]
-  purchaseRequestSupplierSegments     PurchaseRequestSupplierSegment[]
+  id                                    Int                                    @id @default(autoincrement()) @db.UnsignedInt
+  code                                  String                                 @unique(map: "companies_code_key") @db.VarChar(50)
+  legalName                             String                                 @map("legal_name") @db.VarChar(191)
+  commercialName                        String                                 @map("commercial_name") @db.VarChar(191)
+  nit                                   String                                 @unique(map: "companies_nit_key") @db.VarChar(25)
+  nrc                                   String                                 @unique(map: "companies_nrc_key") @db.VarChar(25)
+  countryId                             Int                                    @map("country_id") @db.UnsignedInt
+  departmentId                          Int?                                   @map("department_id") @db.UnsignedInt
+  municipalityId                        Int?                                   @map("municipality_id") @db.UnsignedInt
+  districtId                            Int?                                   @map("district_id") @db.UnsignedInt
+  foreignAdministrativeArea             String?                                @map("foreign_administrative_area") @db.VarChar(191)
+  foreignLocality                       String?                                @map("foreign_locality") @db.VarChar(191)
+  addressLine                           String                                 @map("address_line") @db.VarChar(500)
+  phone                                 String?                                @db.VarChar(30)
+  email                                 String?                                @db.VarChar(191)
+  website                               String?                                @db.VarChar(500)
+  logoStorageKey                        String?                                @map("logo_storage_key") @db.VarChar(500)
+  status                                CompanyStatus                          @default(ACTIVE)
+  defaultCurrencyCode                   String                                 @default("USD") @map("default_currency_code") @db.Char(3)
+  timezone                              String                                 @default("America/El_Salvador") @db.VarChar(100)
+  locale                                String                                 @default("es-SV") @db.VarChar(20)
+  createdAt                             DateTime                               @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt                             DateTime                               @updatedAt @map("updated_at") @db.DateTime(3)
+  country                               Country                                @relation(fields: [countryId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  department                            Department?                            @relation(fields: [departmentId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  municipality                          Municipality?                          @relation(fields: [municipalityId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  district                              District?                              @relation(fields: [districtId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  economicActivities                    CompanyEconomicActivity[]
+  memberships                           CompanyMembership[]
+  roles                                 CompanyRole[]
+  sessions                              AuthSession[]
+  auditLogs                             AuditLog[]
+  entityChanges                         EntityChangeLog[]
+  branches                              Branch[]
+  invitations                           CompanyInvitation[]
+  warehouseCategories                   WarehouseCategory[]
+  warehouses                            Warehouse[]
+  locations                             Location[]
+  suppliers                             Supplier[]
+  supplierContacts                      SupplierContact[]
+  brands                                Brand[]
+  productCategories                     ProductCategory[]
+  productUnits                          ProductUnit[]
+  products                              Product[]
+  productImages                         ProductImage[]
+  purchaseRequests                      PurchaseRequest[]
+  purchaseRequestDetails                PurchaseRequestDetail[]
+  purchaseRequestConsolidationDetails   PurchaseRequestConsolidationDetail[]
+  purchaseRequestSupplierSegments       PurchaseRequestSupplierSegment[]
   purchaseRequestSupplierSegmentDetails PurchaseRequestSupplierSegmentDetail[]
-  expenseTypes                        ExpenseType[]
-  purchaseQuotations                  PurchaseQuotation[]
-  purchaseQuotationDetails            PurchaseQuotationDetail[]
-  purchaseQuotationRequests           PurchaseQuotationRequest[]
-  purchaseQuotationRequestDetails     PurchaseQuotationRequestDetail[]
-  purchaseQuotationExpenses           PurchaseQuotationExpense[]
-  purchaseOrders                      PurchaseOrder[]
-  purchaseOrderDetails                PurchaseOrderDetail[]
-  purchaseOrderExpenses               PurchaseOrderExpense[]
-  purchaseOrderExpenseDocuments       PurchaseOrderExpenseDocument[]
-  purchases                           Purchase[]
-  purchaseDetails                     PurchaseDetail[]
-  retaceos                            Retaceo[]
-  retaceoDetails                      RetaceoDetail[]
-  retaceoCosts                        RetaceoCost[]
-  retaceoAllocations                  RetaceoAllocation[]
-  inventoryLots                       InventoryLot[]
-  inventoryLocationDetails            InventoryLocationDetail[]
-  inventoryMovements                  InventoryMovement[]
-  inventoryCostAverages               InventoryCostAverage[]
-  inventoryLabelPrints                InventoryLabelPrint[]
-  inventoryTransfers                  InventoryTransfer[]
-  inventoryTransferDetails           InventoryTransferDetail[]
+  expenseTypes                          ExpenseType[]
+  purchaseQuotations                    PurchaseQuotation[]
+  purchaseQuotationDetails              PurchaseQuotationDetail[]
+  purchaseQuotationRequests             PurchaseQuotationRequest[]
+  purchaseQuotationRequestDetails       PurchaseQuotationRequestDetail[]
+  purchaseQuotationExpenses             PurchaseQuotationExpense[]
+  purchaseOrders                        PurchaseOrder[]
+  purchaseOrderDetails                  PurchaseOrderDetail[]
+  purchaseOrderExpenses                 PurchaseOrderExpense[]
+  purchaseOrderExpenseDocuments         PurchaseOrderExpenseDocument[]
+  purchases                             Purchase[]
+  purchaseDetails                       PurchaseDetail[]
+  retaceos                              Retaceo[]
+  retaceoDetails                        RetaceoDetail[]
+  retaceoCosts                          RetaceoCost[]
+  retaceoAllocations                    RetaceoAllocation[]
+  inventoryLots                         InventoryLot[]
+  inventoryLocationDetails              InventoryLocationDetail[]
+  inventoryMovements                    InventoryMovement[]
+  inventoryCostAverages                 InventoryCostAverage[]
+  inventoryLabelPrints                  InventoryLabelPrint[]
+  inventoryTransfers                    InventoryTransfer[]
+  inventoryTransferDetails              InventoryTransferDetail[]
+  inventoryAdjustments                  InventoryAdjustment[]
+  inventoryAdjustmentDetails            InventoryAdjustmentDetail[]
 
   @@index([status, legalName], map: "companies_status_legal_name_idx")
   @@index([countryId], map: "companies_country_id_idx")
@@ -651,8 +671,8 @@ model ProductUnit {
   purchaseOrderDetails     PurchaseOrderDetail[]
   purchaseDetails          PurchaseDetail[]
   retaceoDetails           RetaceoDetail[]
-  inventoryLotsReceived    InventoryLot[] @relation("InventoryLotReceivedUnit")
-  inventoryLotsStock       InventoryLot[] @relation("InventoryLotStockUnit")
+  inventoryLotsReceived    InventoryLot[]            @relation("InventoryLotReceivedUnit")
+  inventoryLotsStock       InventoryLot[]            @relation("InventoryLotStockUnit")
 
   @@unique([companyId, code], map: "product_units_company_code_key")
   @@unique([companyId, type, name], map: "product_units_company_type_name_key")
@@ -842,27 +862,28 @@ model WarehouseCategory {
 }
 
 model Warehouse {
-  id                  Int               @id @default(autoincrement()) @db.UnsignedInt
-  companyId           Int               @map("company_id") @db.UnsignedInt
-  branchId            Int               @map("branch_id") @db.UnsignedInt
-  warehouseCategoryId Int               @map("warehouse_category_id") @db.UnsignedInt
-  code                String            @db.VarChar(50)
-  name                String            @db.VarChar(191)
-  description         String?           @db.VarChar(500)
-  locationSeparator   String            @default("/") @map("location_separator") @db.VarChar(3)
-  isActive            Boolean           @default(true) @map("is_active")
-  createdAt           DateTime          @default(now()) @map("created_at") @db.DateTime(3)
-  updatedAt           DateTime          @updatedAt @map("updated_at") @db.DateTime(3)
-  company             Company           @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  branch              Branch            @relation(fields: [branchId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
-  warehouseCategory   WarehouseCategory @relation(fields: [warehouseCategoryId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
-  locations           Location[]
-  purchaseRequests    PurchaseRequest[]
-  purchaseOrders      PurchaseOrder[]
-  purchases           Purchase[]
-  inventoryMovements  InventoryMovement[]
-  sourceInventoryTransfers      InventoryTransfer[] @relation("InventoryTransferSourceWarehouse")
-  destinationInventoryTransfers InventoryTransfer[] @relation("InventoryTransferDestinationWarehouse")
+  id                            Int                   @id @default(autoincrement()) @db.UnsignedInt
+  companyId                     Int                   @map("company_id") @db.UnsignedInt
+  branchId                      Int                   @map("branch_id") @db.UnsignedInt
+  warehouseCategoryId           Int                   @map("warehouse_category_id") @db.UnsignedInt
+  code                          String                @db.VarChar(50)
+  name                          String                @db.VarChar(191)
+  description                   String?               @db.VarChar(500)
+  locationSeparator             String                @default("/") @map("location_separator") @db.VarChar(3)
+  isActive                      Boolean               @default(true) @map("is_active")
+  createdAt                     DateTime              @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt                     DateTime              @updatedAt @map("updated_at") @db.DateTime(3)
+  company                       Company               @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  branch                        Branch                @relation(fields: [branchId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  warehouseCategory             WarehouseCategory     @relation(fields: [warehouseCategoryId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  locations                     Location[]
+  purchaseRequests              PurchaseRequest[]
+  purchaseOrders                PurchaseOrder[]
+  purchases                     Purchase[]
+  inventoryMovements            InventoryMovement[]
+  sourceInventoryTransfers      InventoryTransfer[]   @relation("InventoryTransferSourceWarehouse")
+  destinationInventoryTransfers InventoryTransfer[]   @relation("InventoryTransferDestinationWarehouse")
+  inventoryAdjustments          InventoryAdjustment[]
 
   @@unique([companyId, code], map: "warehouses_company_code_key")
   @@unique([companyId, branchId, name], map: "warehouses_company_branch_name_key")
@@ -873,26 +894,27 @@ model Warehouse {
 }
 
 model Location {
-  id           Int                   @id @default(autoincrement()) @db.UnsignedInt
-  companyId    Int                   @map("company_id") @db.UnsignedInt
-  warehouseId  Int                   @map("warehouse_id") @db.UnsignedInt
-  code         String                @db.VarChar(50)
-  aisle        String                @db.VarChar(50)
-  rack         String                @db.VarChar(50)
-  level        String                @db.VarChar(50)
-  position     String                @db.VarChar(50)
-  capacity     Decimal?              @db.Decimal(18, 4)
-  capacityUnit LocationCapacityUnit? @map("capacity_unit")
-  notes        String?               @db.Text
-  isActive     Boolean               @default(true) @map("is_active")
-  createdAt    DateTime              @default(now()) @map("created_at") @db.DateTime(3)
-  updatedAt    DateTime              @updatedAt @map("updated_at") @db.DateTime(3)
-  company      Company               @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  warehouse    Warehouse             @relation(fields: [warehouseId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
-  inventoryLocationDetails InventoryLocationDetail[]
-  inventoryMovements InventoryMovement[]
-  sourceInventoryTransferDetails      InventoryTransferDetail[] @relation("InventoryTransferSourceLocation")
-  destinationInventoryTransferDetails InventoryTransferDetail[] @relation("InventoryTransferDestinationLocation")
+  id                                  Int                         @id @default(autoincrement()) @db.UnsignedInt
+  companyId                           Int                         @map("company_id") @db.UnsignedInt
+  warehouseId                         Int                         @map("warehouse_id") @db.UnsignedInt
+  code                                String                      @db.VarChar(50)
+  aisle                               String                      @db.VarChar(50)
+  rack                                String                      @db.VarChar(50)
+  level                               String                      @db.VarChar(50)
+  position                            String                      @db.VarChar(50)
+  capacity                            Decimal?                    @db.Decimal(18, 4)
+  capacityUnit                        LocationCapacityUnit?       @map("capacity_unit")
+  notes                               String?                     @db.Text
+  isActive                            Boolean                     @default(true) @map("is_active")
+  createdAt                           DateTime                    @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt                           DateTime                    @updatedAt @map("updated_at") @db.DateTime(3)
+  company                             Company                     @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  warehouse                           Warehouse                   @relation(fields: [warehouseId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  inventoryLocationDetails            InventoryLocationDetail[]
+  inventoryMovements                  InventoryMovement[]
+  sourceInventoryTransferDetails      InventoryTransferDetail[]   @relation("InventoryTransferSourceLocation")
+  destinationInventoryTransferDetails InventoryTransferDetail[]   @relation("InventoryTransferDestinationLocation")
+  inventoryAdjustmentDetails          InventoryAdjustmentDetail[]
 
   @@unique([companyId, warehouseId, code], map: "locations_company_warehouse_code_key")
   @@unique([companyId, warehouseId, aisle, rack, level, position], map: "locations_physical_coordinates_key")
@@ -902,30 +924,30 @@ model Location {
 }
 
 model Supplier {
-  id                        Int                 @id @default(autoincrement()) @db.UnsignedInt
-  companyId                 Int                 @map("company_id") @db.UnsignedInt
-  code                      String              @db.VarChar(50)
-  name                      String              @db.VarChar(191)
-  nit                       String?             @db.VarChar(25)
-  nrc                       String?             @db.VarChar(25)
-  countryId                 Int                 @map("country_id") @db.UnsignedInt
-  departmentId              Int?                @map("department_id") @db.UnsignedInt
-  municipalityId            Int?                @map("municipality_id") @db.UnsignedInt
-  districtId                Int?                @map("district_id") @db.UnsignedInt
-  foreignAdministrativeArea String?             @map("foreign_administrative_area") @db.VarChar(191)
-  foreignLocality           String?             @map("foreign_locality") @db.VarChar(191)
-  addressLine               String              @map("address_line") @db.VarChar(500)
-  phone                     String?             @db.VarChar(30)
-  email                     String?             @db.VarChar(191)
-  website                   String?             @db.VarChar(500)
-  isActive                  Boolean             @default(true) @map("is_active")
-  createdAt                 DateTime            @default(now()) @map("created_at") @db.DateTime(3)
-  updatedAt                 DateTime            @updatedAt @map("updated_at") @db.DateTime(3)
-  company                   Company             @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  country                   Country             @relation(fields: [countryId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  department                Department?         @relation(fields: [departmentId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  municipality              Municipality?       @relation(fields: [municipalityId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  district                  District?           @relation(fields: [districtId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  id                        Int                              @id @default(autoincrement()) @db.UnsignedInt
+  companyId                 Int                              @map("company_id") @db.UnsignedInt
+  code                      String                           @db.VarChar(50)
+  name                      String                           @db.VarChar(191)
+  nit                       String?                          @db.VarChar(25)
+  nrc                       String?                          @db.VarChar(25)
+  countryId                 Int                              @map("country_id") @db.UnsignedInt
+  departmentId              Int?                             @map("department_id") @db.UnsignedInt
+  municipalityId            Int?                             @map("municipality_id") @db.UnsignedInt
+  districtId                Int?                             @map("district_id") @db.UnsignedInt
+  foreignAdministrativeArea String?                          @map("foreign_administrative_area") @db.VarChar(191)
+  foreignLocality           String?                          @map("foreign_locality") @db.VarChar(191)
+  addressLine               String                           @map("address_line") @db.VarChar(500)
+  phone                     String?                          @db.VarChar(30)
+  email                     String?                          @db.VarChar(191)
+  website                   String?                          @db.VarChar(500)
+  isActive                  Boolean                          @default(true) @map("is_active")
+  createdAt                 DateTime                         @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt                 DateTime                         @updatedAt @map("updated_at") @db.DateTime(3)
+  company                   Company                          @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  country                   Country                          @relation(fields: [countryId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  department                Department?                      @relation(fields: [departmentId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  municipality              Municipality?                    @relation(fields: [municipalityId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  district                  District?                        @relation(fields: [districtId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   contacts                  SupplierContact[]
   purchaseQuotations        PurchaseQuotation[]
   purchaseOrders            PurchaseOrder[]
@@ -946,25 +968,25 @@ model Supplier {
 }
 
 model SupplierContact {
-  id                 Int                 @id @default(autoincrement()) @db.UnsignedInt
-  companyId          Int                 @map("company_id") @db.UnsignedInt
-  supplierId         Int                 @map("supplier_id") @db.UnsignedInt
-  fullName           String              @map("full_name") @db.VarChar(191)
-  jobTitle           String?             @map("job_title") @db.VarChar(120)
-  department         String?             @db.VarChar(120)
-  phone              String?             @db.VarChar(30)
-  email              String?             @db.VarChar(191)
-  isPrimary          Boolean             @default(false) @map("is_primary")
-  validFrom          DateTime            @default(now()) @map("valid_from") @db.DateTime(3)
-  validUntil         DateTime?           @map("valid_until") @db.DateTime(3)
-  notes              String?             @db.Text
-  isActive           Boolean             @default(true) @map("is_active")
-  createdAt          DateTime            @default(now()) @map("created_at") @db.DateTime(3)
-  updatedAt          DateTime            @updatedAt @map("updated_at") @db.DateTime(3)
-  company            Company             @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  supplier           Supplier            @relation(fields: [supplierId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
-  purchaseQuotations PurchaseQuotation[]
-  purchaseOrders     PurchaseOrder[]
+  id                      Int                              @id @default(autoincrement()) @db.UnsignedInt
+  companyId               Int                              @map("company_id") @db.UnsignedInt
+  supplierId              Int                              @map("supplier_id") @db.UnsignedInt
+  fullName                String                           @map("full_name") @db.VarChar(191)
+  jobTitle                String?                          @map("job_title") @db.VarChar(120)
+  department              String?                          @db.VarChar(120)
+  phone                   String?                          @db.VarChar(30)
+  email                   String?                          @db.VarChar(191)
+  isPrimary               Boolean                          @default(false) @map("is_primary")
+  validFrom               DateTime                         @default(now()) @map("valid_from") @db.DateTime(3)
+  validUntil              DateTime?                        @map("valid_until") @db.DateTime(3)
+  notes                   String?                          @db.Text
+  isActive                Boolean                          @default(true) @map("is_active")
+  createdAt               DateTime                         @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt               DateTime                         @updatedAt @map("updated_at") @db.DateTime(3)
+  company                 Company                          @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  supplier                Supplier                         @relation(fields: [supplierId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  purchaseQuotations      PurchaseQuotation[]
+  purchaseOrders          PurchaseOrder[]
   purchaseRequestSegments PurchaseRequestSupplierSegment[]
 
   @@unique([id, companyId], map: "supplier_contacts_id_company_key")
@@ -974,43 +996,43 @@ model SupplierContact {
 }
 
 model PurchaseRequest {
-  id                   Int                        @id @default(autoincrement()) @db.UnsignedInt
-  uuid                 String                     @default(uuid()) @db.Char(36)
-  companyId            Int                        @map("company_id") @db.UnsignedInt
-  code                 String                     @db.VarChar(50)
-  requestType          PurchaseRequestType        @default(STANDARD) @map("request_type")
-  consolidatedIntoId   Int?                       @map("consolidated_into_id") @db.UnsignedInt
-  consolidatedAt       DateTime?                  @map("consolidated_at") @db.DateTime(3)
-  consolidatedByUserId Int?                       @map("consolidated_by_user_id") @db.UnsignedInt
-  branchId             Int                        @map("branch_id") @db.UnsignedInt
-  warehouseId          Int                        @map("warehouse_id") @db.UnsignedInt
-  requestedByUserId    Int                        @map("requested_by_user_id") @db.UnsignedInt
-  requestDate          DateTime                   @default(now()) @map("request_date") @db.DateTime(3)
-  requiredDate         DateTime                   @map("required_date") @db.DateTime(3)
-  justification        String                     @db.Text
-  status               PurchaseRequestStatus      @default(DRAFT)
-  notes                String?                    @db.Text
-  submittedAt          DateTime?                  @map("submitted_at") @db.DateTime(3)
-  approvedAt           DateTime?                  @map("approved_at") @db.DateTime(3)
-  approvedByUserId     Int?                       @map("approved_by_user_id") @db.UnsignedInt
-  rejectedAt           DateTime?                  @map("rejected_at") @db.DateTime(3)
-  rejectedByUserId     Int?                       @map("rejected_by_user_id") @db.UnsignedInt
-  rejectionReason      String?                    @map("rejection_reason") @db.Text
-  cancelledAt          DateTime?                  @map("cancelled_at") @db.DateTime(3)
-  cancelledByUserId    Int?                       @map("cancelled_by_user_id") @db.UnsignedInt
-  cancellationReason   String?                    @map("cancellation_reason") @db.Text
-  createdAt            DateTime                   @default(now()) @map("created_at") @db.DateTime(3)
-  updatedAt            DateTime                   @updatedAt @map("updated_at") @db.DateTime(3)
-  company              Company                    @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  branch               Branch                     @relation(fields: [branchId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
-  warehouse            Warehouse                  @relation(fields: [warehouseId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
-  requestedBy          User                       @relation("PurchaseRequestRequestedBy", fields: [requestedByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  approvedBy           User?                      @relation("PurchaseRequestApprovedBy", fields: [approvedByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  rejectedBy           User?                      @relation("PurchaseRequestRejectedBy", fields: [rejectedByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  cancelledBy          User?                      @relation("PurchaseRequestCancelledBy", fields: [cancelledByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  consolidatedBy       User?                      @relation("PurchaseRequestConsolidatedBy", fields: [consolidatedByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  consolidatedInto     PurchaseRequest?           @relation("PurchaseRequestConsolidation", fields: [consolidatedIntoId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
-  sourceRequests       PurchaseRequest[]          @relation("PurchaseRequestConsolidation")
+  id                   Int                              @id @default(autoincrement()) @db.UnsignedInt
+  uuid                 String                           @default(uuid()) @db.Char(36)
+  companyId            Int                              @map("company_id") @db.UnsignedInt
+  code                 String                           @db.VarChar(50)
+  requestType          PurchaseRequestType              @default(STANDARD) @map("request_type")
+  consolidatedIntoId   Int?                             @map("consolidated_into_id") @db.UnsignedInt
+  consolidatedAt       DateTime?                        @map("consolidated_at") @db.DateTime(3)
+  consolidatedByUserId Int?                             @map("consolidated_by_user_id") @db.UnsignedInt
+  branchId             Int                              @map("branch_id") @db.UnsignedInt
+  warehouseId          Int                              @map("warehouse_id") @db.UnsignedInt
+  requestedByUserId    Int                              @map("requested_by_user_id") @db.UnsignedInt
+  requestDate          DateTime                         @default(now()) @map("request_date") @db.DateTime(3)
+  requiredDate         DateTime                         @map("required_date") @db.DateTime(3)
+  justification        String                           @db.Text
+  status               PurchaseRequestStatus            @default(DRAFT)
+  notes                String?                          @db.Text
+  submittedAt          DateTime?                        @map("submitted_at") @db.DateTime(3)
+  approvedAt           DateTime?                        @map("approved_at") @db.DateTime(3)
+  approvedByUserId     Int?                             @map("approved_by_user_id") @db.UnsignedInt
+  rejectedAt           DateTime?                        @map("rejected_at") @db.DateTime(3)
+  rejectedByUserId     Int?                             @map("rejected_by_user_id") @db.UnsignedInt
+  rejectionReason      String?                          @map("rejection_reason") @db.Text
+  cancelledAt          DateTime?                        @map("cancelled_at") @db.DateTime(3)
+  cancelledByUserId    Int?                             @map("cancelled_by_user_id") @db.UnsignedInt
+  cancellationReason   String?                          @map("cancellation_reason") @db.Text
+  createdAt            DateTime                         @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt            DateTime                         @updatedAt @map("updated_at") @db.DateTime(3)
+  company              Company                          @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  branch               Branch                           @relation(fields: [branchId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  warehouse            Warehouse                        @relation(fields: [warehouseId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  requestedBy          User                             @relation("PurchaseRequestRequestedBy", fields: [requestedByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  approvedBy           User?                            @relation("PurchaseRequestApprovedBy", fields: [approvedByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  rejectedBy           User?                            @relation("PurchaseRequestRejectedBy", fields: [rejectedByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  cancelledBy          User?                            @relation("PurchaseRequestCancelledBy", fields: [cancelledByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  consolidatedBy       User?                            @relation("PurchaseRequestConsolidatedBy", fields: [consolidatedByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  consolidatedInto     PurchaseRequest?                 @relation("PurchaseRequestConsolidation", fields: [consolidatedIntoId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  sourceRequests       PurchaseRequest[]                @relation("PurchaseRequestConsolidation")
   details              PurchaseRequestDetail[]
   quotationLinks       PurchaseQuotationRequest[]
   supplierSegments     PurchaseRequestSupplierSegment[]
@@ -1031,24 +1053,24 @@ model PurchaseRequest {
 }
 
 model PurchaseRequestDetail {
-  id                   Int                                  @id @default(autoincrement()) @db.UnsignedInt
-  companyId            Int                                  @map("company_id") @db.UnsignedInt
-  purchaseRequestId    Int                                  @map("purchase_request_id") @db.UnsignedInt
-  lineNumber           Int                                  @map("line_number") @db.UnsignedSmallInt
-  productId            Int                                  @map("product_id") @db.UnsignedInt
-  productUnitId        Int                                  @map("product_unit_id") @db.UnsignedInt
-  quantity             Decimal                              @db.Decimal(18, 4)
-  description          String?                              @db.VarChar(500)
-  notes                String?                              @db.Text
-  createdAt            DateTime                             @default(now()) @map("created_at") @db.DateTime(3)
-  updatedAt            DateTime                             @updatedAt @map("updated_at") @db.DateTime(3)
-  company              Company                              @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  purchaseRequest      PurchaseRequest                      @relation(fields: [purchaseRequestId, companyId], references: [id, companyId], onDelete: Cascade, onUpdate: Cascade)
-  product              Product                              @relation(fields: [productId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
-  productUnit          ProductUnit                          @relation(fields: [productUnitId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
-  quotationLinks       PurchaseQuotationRequestDetail[]
-  consolidationSources PurchaseRequestConsolidationDetail[] @relation("ConsolidatedRequestDetail")
-  consolidationTargets PurchaseRequestConsolidationDetail[] @relation("SourceRequestDetail")
+  id                     Int                                    @id @default(autoincrement()) @db.UnsignedInt
+  companyId              Int                                    @map("company_id") @db.UnsignedInt
+  purchaseRequestId      Int                                    @map("purchase_request_id") @db.UnsignedInt
+  lineNumber             Int                                    @map("line_number") @db.UnsignedSmallInt
+  productId              Int                                    @map("product_id") @db.UnsignedInt
+  productUnitId          Int                                    @map("product_unit_id") @db.UnsignedInt
+  quantity               Decimal                                @db.Decimal(18, 4)
+  description            String?                                @db.VarChar(500)
+  notes                  String?                                @db.Text
+  createdAt              DateTime                               @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt              DateTime                               @updatedAt @map("updated_at") @db.DateTime(3)
+  company                Company                                @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  purchaseRequest        PurchaseRequest                        @relation(fields: [purchaseRequestId, companyId], references: [id, companyId], onDelete: Cascade, onUpdate: Cascade)
+  product                Product                                @relation(fields: [productId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  productUnit            ProductUnit                            @relation(fields: [productUnitId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  quotationLinks         PurchaseQuotationRequestDetail[]
+  consolidationSources   PurchaseRequestConsolidationDetail[]   @relation("ConsolidatedRequestDetail")
+  consolidationTargets   PurchaseRequestConsolidationDetail[]   @relation("SourceRequestDetail")
   supplierSegmentDetails PurchaseRequestSupplierSegmentDetail[]
 
   @@unique([companyId, purchaseRequestId, lineNumber], map: "purchase_request_details_line_key")
@@ -1077,31 +1099,31 @@ model PurchaseRequestConsolidationDetail {
 }
 
 model PurchaseRequestSupplierSegment {
-  id                 Int                                  @id @default(autoincrement()) @db.UnsignedInt
-  uuid               String                               @default(uuid()) @db.Char(36)
-  companyId          Int                                  @map("company_id") @db.UnsignedInt
-  purchaseRequestId  Int                                  @map("purchase_request_id") @db.UnsignedInt
-  supplierId         Int                                  @map("supplier_id") @db.UnsignedInt
-  supplierContactId  Int?                                 @map("supplier_contact_id") @db.UnsignedInt
-  segmentNumber      Int                                  @map("segment_number") @db.UnsignedSmallInt
-  code               String                               @db.VarChar(70)
-  status             PurchaseRequestSupplierSegmentStatus @default(DRAFT)
-  notes              String?                              @db.Text
-  createdByUserId    Int                                  @map("created_by_user_id") @db.UnsignedInt
-  issuedAt           DateTime?                            @map("issued_at") @db.DateTime(3)
-  issuedByUserId     Int?                                 @map("issued_by_user_id") @db.UnsignedInt
-  cancelledAt        DateTime?                            @map("cancelled_at") @db.DateTime(3)
-  cancelledByUserId  Int?                                 @map("cancelled_by_user_id") @db.UnsignedInt
-  cancellationReason String?                              @map("cancellation_reason") @db.Text
-  createdAt          DateTime                             @default(now()) @map("created_at") @db.DateTime(3)
-  updatedAt          DateTime                             @updatedAt @map("updated_at") @db.DateTime(3)
-  company            Company                              @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  purchaseRequest    PurchaseRequest                      @relation(fields: [purchaseRequestId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
-  supplier           Supplier                             @relation(fields: [supplierId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
-  supplierContact    SupplierContact?                     @relation(fields: [supplierContactId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
-  createdBy          User                                 @relation("PurchaseRequestSegmentCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  issuedBy           User?                                @relation("PurchaseRequestSegmentIssuedBy", fields: [issuedByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  cancelledBy        User?                                @relation("PurchaseRequestSegmentCancelledBy", fields: [cancelledByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  id                 Int                                    @id @default(autoincrement()) @db.UnsignedInt
+  uuid               String                                 @default(uuid()) @db.Char(36)
+  companyId          Int                                    @map("company_id") @db.UnsignedInt
+  purchaseRequestId  Int                                    @map("purchase_request_id") @db.UnsignedInt
+  supplierId         Int                                    @map("supplier_id") @db.UnsignedInt
+  supplierContactId  Int?                                   @map("supplier_contact_id") @db.UnsignedInt
+  segmentNumber      Int                                    @map("segment_number") @db.UnsignedSmallInt
+  code               String                                 @db.VarChar(70)
+  status             PurchaseRequestSupplierSegmentStatus   @default(DRAFT)
+  notes              String?                                @db.Text
+  createdByUserId    Int                                    @map("created_by_user_id") @db.UnsignedInt
+  issuedAt           DateTime?                              @map("issued_at") @db.DateTime(3)
+  issuedByUserId     Int?                                   @map("issued_by_user_id") @db.UnsignedInt
+  cancelledAt        DateTime?                              @map("cancelled_at") @db.DateTime(3)
+  cancelledByUserId  Int?                                   @map("cancelled_by_user_id") @db.UnsignedInt
+  cancellationReason String?                                @map("cancellation_reason") @db.Text
+  createdAt          DateTime                               @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt          DateTime                               @updatedAt @map("updated_at") @db.DateTime(3)
+  company            Company                                @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  purchaseRequest    PurchaseRequest                        @relation(fields: [purchaseRequestId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  supplier           Supplier                               @relation(fields: [supplierId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  supplierContact    SupplierContact?                       @relation(fields: [supplierContactId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  createdBy          User                                   @relation("PurchaseRequestSegmentCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  issuedBy           User?                                  @relation("PurchaseRequestSegmentIssuedBy", fields: [issuedByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  cancelledBy        User?                                  @relation("PurchaseRequestSegmentCancelledBy", fields: [cancelledByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   details            PurchaseRequestSupplierSegmentDetail[]
 
   @@unique([uuid], map: "purchase_request_supplier_segments_uuid_key")
@@ -1419,45 +1441,45 @@ model PurchaseOrderDetail {
 }
 
 model Purchase {
-  id                    Int              @id @default(autoincrement()) @db.UnsignedInt
-  uuid                  String           @default(uuid()) @db.Char(36)
-  companyId             Int              @map("company_id") @db.UnsignedInt
-  code                  String           @db.VarChar(50)
-  purchaseOrderId       Int              @map("purchase_order_id") @db.UnsignedInt
-  supplierId            Int              @map("supplier_id") @db.UnsignedInt
-  branchId              Int              @map("branch_id") @db.UnsignedInt
-  warehouseId           Int              @map("warehouse_id") @db.UnsignedInt
-  receivedByUserId      Int              @map("received_by_user_id") @db.UnsignedInt
-  purchaseDate          DateTime         @map("purchase_date") @db.DateTime(3)
-  supplierInvoiceNumber String?          @map("supplier_invoice_number") @db.VarChar(100)
-  supplierInvoiceDate   DateTime?        @map("supplier_invoice_date") @db.Date
-  currencyCode          String           @map("currency_code") @db.Char(3)
-  exchangeRate          Decimal          @default(1) @map("exchange_rate") @db.Decimal(18, 8)
-  exchangeRateDate      DateTime?        @map("exchange_rate_date") @db.Date
-  subtotal              Decimal          @default(0) @db.Decimal(18, 6)
-  discount              Decimal          @default(0) @db.Decimal(18, 6)
-  tax                   Decimal          @default(0) @db.Decimal(18, 6)
-  total                 Decimal          @default(0) @db.Decimal(18, 6)
+  id                    Int                 @id @default(autoincrement()) @db.UnsignedInt
+  uuid                  String              @default(uuid()) @db.Char(36)
+  companyId             Int                 @map("company_id") @db.UnsignedInt
+  code                  String              @db.VarChar(50)
+  purchaseOrderId       Int                 @map("purchase_order_id") @db.UnsignedInt
+  supplierId            Int                 @map("supplier_id") @db.UnsignedInt
+  branchId              Int                 @map("branch_id") @db.UnsignedInt
+  warehouseId           Int                 @map("warehouse_id") @db.UnsignedInt
+  receivedByUserId      Int                 @map("received_by_user_id") @db.UnsignedInt
+  purchaseDate          DateTime            @map("purchase_date") @db.DateTime(3)
+  supplierInvoiceNumber String?             @map("supplier_invoice_number") @db.VarChar(100)
+  supplierInvoiceDate   DateTime?           @map("supplier_invoice_date") @db.Date
+  currencyCode          String              @map("currency_code") @db.Char(3)
+  exchangeRate          Decimal             @default(1) @map("exchange_rate") @db.Decimal(18, 8)
+  exchangeRateDate      DateTime?           @map("exchange_rate_date") @db.Date
+  subtotal              Decimal             @default(0) @db.Decimal(18, 6)
+  discount              Decimal             @default(0) @db.Decimal(18, 6)
+  tax                   Decimal             @default(0) @db.Decimal(18, 6)
+  total                 Decimal             @default(0) @db.Decimal(18, 6)
   costingMode           PurchaseCostingMode @default(DIRECT) @map("costing_mode")
-  status                PurchaseStatus   @default(DRAFT)
-  notes                 String?          @db.Text
-  receivedAt            DateTime?        @map("received_at") @db.DateTime(3)
-  verifiedAt            DateTime?        @map("verified_at") @db.DateTime(3)
-  verifiedByUserId      Int?             @map("verified_by_user_id") @db.UnsignedInt
-  cancelledAt           DateTime?        @map("cancelled_at") @db.DateTime(3)
-  cancelledByUserId     Int?             @map("cancelled_by_user_id") @db.UnsignedInt
-  cancellationReason    String?          @map("cancellation_reason") @db.Text
-  closedAt              DateTime?        @map("closed_at") @db.DateTime(3)
-  createdAt             DateTime         @default(now()) @map("created_at") @db.DateTime(3)
-  updatedAt             DateTime         @updatedAt @map("updated_at") @db.DateTime(3)
-  company               Company          @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  purchaseOrder         PurchaseOrder    @relation(fields: [purchaseOrderId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
-  supplier              Supplier         @relation(fields: [supplierId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
-  branch                Branch           @relation(fields: [branchId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
-  warehouse             Warehouse        @relation(fields: [warehouseId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
-  receivedBy            User             @relation("PurchaseReceivedBy", fields: [receivedByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  verifiedBy            User?            @relation("PurchaseVerifiedBy", fields: [verifiedByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  cancelledBy           User?            @relation("PurchaseCancelledBy", fields: [cancelledByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  status                PurchaseStatus      @default(DRAFT)
+  notes                 String?             @db.Text
+  receivedAt            DateTime?           @map("received_at") @db.DateTime(3)
+  verifiedAt            DateTime?           @map("verified_at") @db.DateTime(3)
+  verifiedByUserId      Int?                @map("verified_by_user_id") @db.UnsignedInt
+  cancelledAt           DateTime?           @map("cancelled_at") @db.DateTime(3)
+  cancelledByUserId     Int?                @map("cancelled_by_user_id") @db.UnsignedInt
+  cancellationReason    String?             @map("cancellation_reason") @db.Text
+  closedAt              DateTime?           @map("closed_at") @db.DateTime(3)
+  createdAt             DateTime            @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt             DateTime            @updatedAt @map("updated_at") @db.DateTime(3)
+  company               Company             @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  purchaseOrder         PurchaseOrder       @relation(fields: [purchaseOrderId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  supplier              Supplier            @relation(fields: [supplierId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  branch                Branch              @relation(fields: [branchId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  warehouse             Warehouse           @relation(fields: [warehouseId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  receivedBy            User                @relation("PurchaseReceivedBy", fields: [receivedByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  verifiedBy            User?               @relation("PurchaseVerifiedBy", fields: [verifiedByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  cancelledBy           User?               @relation("PurchaseCancelledBy", fields: [cancelledByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   details               PurchaseDetail[]
   retaceos              Retaceo[]
 
@@ -1669,34 +1691,35 @@ model RetaceoAllocation {
 }
 
 model InventoryLot {
-  id                     Int                @id @default(autoincrement()) @db.UnsignedInt
-  uuid                   String             @default(uuid()) @db.Char(36)
-  companyId              Int                @map("company_id") @db.UnsignedInt
-  code                   String             @db.VarChar(50)
-  productId              Int                @map("product_id") @db.UnsignedInt
-  purchaseDetailId       Int                @map("purchase_detail_id") @db.UnsignedInt
-  receivedUnitId         Int                @map("received_unit_id") @db.UnsignedInt
-  stockUnitId            Int                @map("stock_unit_id") @db.UnsignedInt
-  receivedQuantity       Decimal            @map("received_quantity") @db.Decimal(18, 4)
-  conversionFactor       Decimal            @map("conversion_factor") @db.Decimal(18, 6)
-  stockQuantity          Decimal            @map("stock_quantity") @db.Decimal(18, 4)
-  unitCost               Decimal            @map("unit_cost") @db.Decimal(18, 6)
-  totalCost              Decimal            @map("total_cost") @db.Decimal(18, 6)
-  receivedAt             DateTime           @map("received_at") @db.DateTime(3)
-  status                 InventoryLotStatus @default(PENDING)
-  createdByUserId        Int                @map("created_by_user_id") @db.UnsignedInt
-  createdAt              DateTime           @default(now()) @map("created_at") @db.DateTime(3)
-  updatedAt              DateTime           @updatedAt @map("updated_at") @db.DateTime(3)
-  company                Company            @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  product                Product            @relation(fields: [productId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
-  purchaseDetail         PurchaseDetail     @relation(fields: [purchaseDetailId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
-  receivedUnit           ProductUnit        @relation("InventoryLotReceivedUnit", fields: [receivedUnitId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
-  stockUnit              ProductUnit        @relation("InventoryLotStockUnit", fields: [stockUnitId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
-  createdBy              User               @relation("InventoryLotCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  locationDetails        InventoryLocationDetail[]
-  movements              InventoryMovement[]
-  labelPrints            InventoryLabelPrint[]
-  inventoryTransferDetails InventoryTransferDetail[]
+  id                         Int                         @id @default(autoincrement()) @db.UnsignedInt
+  uuid                       String                      @default(uuid()) @db.Char(36)
+  companyId                  Int                         @map("company_id") @db.UnsignedInt
+  code                       String                      @db.VarChar(50)
+  productId                  Int                         @map("product_id") @db.UnsignedInt
+  purchaseDetailId           Int                         @map("purchase_detail_id") @db.UnsignedInt
+  receivedUnitId             Int                         @map("received_unit_id") @db.UnsignedInt
+  stockUnitId                Int                         @map("stock_unit_id") @db.UnsignedInt
+  receivedQuantity           Decimal                     @map("received_quantity") @db.Decimal(18, 4)
+  conversionFactor           Decimal                     @map("conversion_factor") @db.Decimal(18, 6)
+  stockQuantity              Decimal                     @map("stock_quantity") @db.Decimal(18, 4)
+  unitCost                   Decimal                     @map("unit_cost") @db.Decimal(18, 6)
+  totalCost                  Decimal                     @map("total_cost") @db.Decimal(18, 6)
+  receivedAt                 DateTime                    @map("received_at") @db.DateTime(3)
+  status                     InventoryLotStatus          @default(PENDING)
+  createdByUserId            Int                         @map("created_by_user_id") @db.UnsignedInt
+  createdAt                  DateTime                    @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt                  DateTime                    @updatedAt @map("updated_at") @db.DateTime(3)
+  company                    Company                     @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  product                    Product                     @relation(fields: [productId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  purchaseDetail             PurchaseDetail              @relation(fields: [purchaseDetailId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  receivedUnit               ProductUnit                 @relation("InventoryLotReceivedUnit", fields: [receivedUnitId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  stockUnit                  ProductUnit                 @relation("InventoryLotStockUnit", fields: [stockUnitId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  createdBy                  User                        @relation("InventoryLotCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  locationDetails            InventoryLocationDetail[]
+  movements                  InventoryMovement[]
+  labelPrints                InventoryLabelPrint[]
+  inventoryTransferDetails   InventoryTransferDetail[]
+  inventoryAdjustmentDetails InventoryAdjustmentDetail[]
 
   @@unique([uuid], map: "inventory_lots_uuid_key")
   @@unique([companyId, code], map: "inventory_lots_company_code_key")
@@ -1708,16 +1731,16 @@ model InventoryLot {
 }
 
 model InventoryLocationDetail {
-  id          Int          @id @default(autoincrement()) @db.UnsignedInt
-  companyId   Int          @map("company_id") @db.UnsignedInt
-  inventoryLotId Int       @map("inventory_lot_id") @db.UnsignedInt
-  locationId  Int          @map("location_id") @db.UnsignedInt
-  quantity    Decimal      @default(0) @db.Decimal(18, 4)
-  createdAt   DateTime     @default(now()) @map("created_at") @db.DateTime(3)
-  updatedAt   DateTime     @updatedAt @map("updated_at") @db.DateTime(3)
-  company     Company      @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  inventoryLot InventoryLot @relation(fields: [inventoryLotId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
-  location    Location     @relation(fields: [locationId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  id             Int          @id @default(autoincrement()) @db.UnsignedInt
+  companyId      Int          @map("company_id") @db.UnsignedInt
+  inventoryLotId Int          @map("inventory_lot_id") @db.UnsignedInt
+  locationId     Int          @map("location_id") @db.UnsignedInt
+  quantity       Decimal      @default(0) @db.Decimal(18, 4)
+  createdAt      DateTime     @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt      DateTime     @updatedAt @map("updated_at") @db.DateTime(3)
+  company        Company      @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  inventoryLot   InventoryLot @relation(fields: [inventoryLotId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  location       Location     @relation(fields: [locationId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
 
   @@unique([companyId, inventoryLotId, locationId], map: "inventory_location_details_lot_location_key")
   @@unique([id, companyId], map: "inventory_location_details_id_company_key")
@@ -1726,55 +1749,55 @@ model InventoryLocationDetail {
 }
 
 model InventoryMovement {
-  id                  BigInt                    @id @default(autoincrement()) @db.UnsignedBigInt
-  uuid                String                    @default(uuid()) @db.Char(36)
-  companyId           Int                       @map("company_id") @db.UnsignedInt
-  productId           Int                       @map("product_id") @db.UnsignedInt
-  inventoryLotId      Int                       @map("inventory_lot_id") @db.UnsignedInt
-  warehouseId         Int                       @map("warehouse_id") @db.UnsignedInt
-  locationId          Int?                      @map("location_id") @db.UnsignedInt
-  movementType        InventoryMovementType     @map("movement_type")
-  movementDate        DateTime                  @map("movement_date") @db.DateTime(3)
-  quantityIn          Decimal                   @default(0) @map("quantity_in") @db.Decimal(18, 4)
-  quantityOut         Decimal                   @default(0) @map("quantity_out") @db.Decimal(18, 4)
-  unitCost            Decimal                   @map("unit_cost") @db.Decimal(18, 6)
-  totalCost           Decimal                   @map("total_cost") @db.Decimal(18, 6)
-  referenceType       InventoryReferenceType    @map("reference_type")
-  referenceId         Int                       @map("reference_id") @db.UnsignedInt
-  reversalOfMovementId BigInt?                  @map("reversal_of_movement_id") @db.UnsignedBigInt
-  reason              String?                   @db.Text
-  confirmedByUserId   Int                       @map("confirmed_by_user_id") @db.UnsignedInt
-  createdAt           DateTime                  @default(now()) @map("created_at") @db.DateTime(3)
-  company             Company                   @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  product             Product                   @relation(fields: [productId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
-  inventoryLot        InventoryLot              @relation(fields: [inventoryLotId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
-  warehouse           Warehouse                 @relation(fields: [warehouseId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
-  location            Location?                 @relation(fields: [locationId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
-  confirmedBy         User                      @relation("InventoryMovementConfirmedBy", fields: [confirmedByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  reversalOf          InventoryMovement?        @relation("InventoryMovementReversal", fields: [reversalOfMovementId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  reversals           InventoryMovement[]       @relation("InventoryMovementReversal")
+  id                   BigInt                 @id @default(autoincrement()) @db.UnsignedBigInt
+  uuid                 String                 @default(uuid()) @db.Char(36)
+  companyId            Int                    @map("company_id") @db.UnsignedInt
+  productId            Int                    @map("product_id") @db.UnsignedInt
+  inventoryLotId       Int                    @map("inventory_lot_id") @db.UnsignedInt
+  warehouseId          Int                    @map("warehouse_id") @db.UnsignedInt
+  locationId           Int?                   @map("location_id") @db.UnsignedInt
+  movementType         InventoryMovementType  @map("movement_type")
+  movementDate         DateTime               @map("movement_date") @db.DateTime(3)
+  quantityIn           Decimal                @default(0) @map("quantity_in") @db.Decimal(18, 4)
+  quantityOut          Decimal                @default(0) @map("quantity_out") @db.Decimal(18, 4)
+  unitCost             Decimal                @map("unit_cost") @db.Decimal(18, 6)
+  totalCost            Decimal                @map("total_cost") @db.Decimal(18, 6)
+  referenceType        InventoryReferenceType @map("reference_type")
+  referenceId          Int                    @map("reference_id") @db.UnsignedInt
+  reversalOfMovementId BigInt?                @map("reversal_of_movement_id") @db.UnsignedBigInt
+  reason               String?                @db.Text
+  confirmedByUserId    Int                    @map("confirmed_by_user_id") @db.UnsignedInt
+  createdAt            DateTime               @default(now()) @map("created_at") @db.DateTime(3)
+  company              Company                @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  product              Product                @relation(fields: [productId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  inventoryLot         InventoryLot           @relation(fields: [inventoryLotId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  warehouse            Warehouse              @relation(fields: [warehouseId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  location             Location?              @relation(fields: [locationId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  confirmedBy          User                   @relation("InventoryMovementConfirmedBy", fields: [confirmedByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  reversalOf           InventoryMovement?     @relation("InventoryMovementReversal", fields: [reversalOfMovementId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  reversals            InventoryMovement[]    @relation("InventoryMovementReversal")
 
   @@unique([uuid], map: "inventory_movements_uuid_key")
+  @@unique([reversalOfMovementId], map: "inventory_movements_reversal_unique")
   @@index([companyId, productId, movementDate], map: "inventory_movements_product_date_idx")
   @@index([companyId, inventoryLotId, movementDate], map: "inventory_movements_lot_date_idx")
   @@index([companyId, warehouseId, locationId, movementDate], map: "inventory_movements_location_date_idx")
   @@index([companyId, referenceType, referenceId], map: "inventory_movements_reference_idx")
-  @@index([reversalOfMovementId], map: "inventory_movements_reversal_idx")
   @@index([confirmedByUserId], map: "inventory_movements_confirmed_by_idx")
   @@map("inventory_movements")
 }
 
 model InventoryCostAverage {
-  id                Int      @id @default(autoincrement()) @db.UnsignedInt
-  companyId         Int      @map("company_id") @db.UnsignedInt
-  productId         Int      @map("product_id") @db.UnsignedInt
-  quantityOnHand    Decimal  @default(0) @map("quantity_on_hand") @db.Decimal(18, 4)
-  inventoryValue    Decimal  @default(0) @map("inventory_value") @db.Decimal(18, 6)
-  averageUnitCost   Decimal  @default(0) @map("average_unit_cost") @db.Decimal(18, 6)
-  createdAt         DateTime @default(now()) @map("created_at") @db.DateTime(3)
-  updatedAt         DateTime @updatedAt @map("updated_at") @db.DateTime(3)
-  company           Company  @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  product           Product  @relation(fields: [productId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  id              Int      @id @default(autoincrement()) @db.UnsignedInt
+  companyId       Int      @map("company_id") @db.UnsignedInt
+  productId       Int      @map("product_id") @db.UnsignedInt
+  quantityOnHand  Decimal  @default(0) @map("quantity_on_hand") @db.Decimal(18, 4)
+  inventoryValue  Decimal  @default(0) @map("inventory_value") @db.Decimal(18, 6)
+  averageUnitCost Decimal  @default(0) @map("average_unit_cost") @db.Decimal(18, 6)
+  createdAt       DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.DateTime(3)
+  company         Company  @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  product         Product  @relation(fields: [productId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
 
   @@unique([companyId, productId], map: "inventory_cost_averages_company_product_key")
   @@unique([id, companyId], map: "inventory_cost_averages_id_company_key")
@@ -1782,16 +1805,16 @@ model InventoryCostAverage {
 }
 
 model InventoryLabelPrint {
-  id               BigInt       @id @default(autoincrement()) @db.UnsignedBigInt
-  companyId        Int          @map("company_id") @db.UnsignedInt
-  inventoryLotId   Int          @map("inventory_lot_id") @db.UnsignedInt
-  quantityPrinted  Int          @map("quantity_printed") @db.UnsignedInt
-  reprintReason    String?      @map("reprint_reason") @db.VarChar(500)
-  printedByUserId  Int          @map("printed_by_user_id") @db.UnsignedInt
-  printedAt        DateTime     @default(now()) @map("printed_at") @db.DateTime(3)
-  company          Company      @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  inventoryLot     InventoryLot @relation(fields: [inventoryLotId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
-  printedBy        User         @relation("InventoryLabelPrintedBy", fields: [printedByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  id              BigInt       @id @default(autoincrement()) @db.UnsignedBigInt
+  companyId       Int          @map("company_id") @db.UnsignedInt
+  inventoryLotId  Int          @map("inventory_lot_id") @db.UnsignedInt
+  quantityPrinted Int          @map("quantity_printed") @db.UnsignedInt
+  reprintReason   String?      @map("reprint_reason") @db.VarChar(500)
+  printedByUserId Int          @map("printed_by_user_id") @db.UnsignedInt
+  printedAt       DateTime     @default(now()) @map("printed_at") @db.DateTime(3)
+  company         Company      @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  inventoryLot    InventoryLot @relation(fields: [inventoryLotId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  printedBy       User         @relation("InventoryLabelPrintedBy", fields: [printedByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   @@index([companyId, inventoryLotId, printedAt], map: "inventory_label_prints_lot_date_idx")
   @@index([printedByUserId], map: "inventory_label_prints_printed_by_idx")
@@ -1799,32 +1822,32 @@ model InventoryLabelPrint {
 }
 
 model InventoryTransfer {
-  id                     Int                     @id @default(autoincrement()) @db.UnsignedInt
-  uuid                   String                  @default(uuid()) @db.Char(36)
-  companyId              Int                     @map("company_id") @db.UnsignedInt
-  code                   String                  @db.VarChar(50)
-  sourceWarehouseId      Int                     @map("source_warehouse_id") @db.UnsignedInt
-  destinationWarehouseId Int                     @map("destination_warehouse_id") @db.UnsignedInt
-  status                 InventoryTransferStatus @default(PREPARATION)
-  notes                  String?                 @db.Text
-  incidentNotes          String?                 @map("incident_notes") @db.Text
-  createdByUserId        Int                     @map("created_by_user_id") @db.UnsignedInt
-  dispatchedByUserId     Int?                    @map("dispatched_by_user_id") @db.UnsignedInt
-  receivedByUserId       Int?                    @map("received_by_user_id") @db.UnsignedInt
-  cancelledByUserId      Int?                    @map("cancelled_by_user_id") @db.UnsignedInt
-  dispatchedAt           DateTime?               @map("dispatched_at") @db.DateTime(3)
-  receivedAt             DateTime?               @map("received_at") @db.DateTime(3)
-  cancelledAt            DateTime?               @map("cancelled_at") @db.DateTime(3)
-  cancellationReason     String?                 @map("cancellation_reason") @db.Text
-  createdAt              DateTime                @default(now()) @map("created_at") @db.DateTime(3)
-  updatedAt              DateTime                @updatedAt @map("updated_at") @db.DateTime(3)
-  company                Company                 @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  sourceWarehouse        Warehouse               @relation("InventoryTransferSourceWarehouse", fields: [sourceWarehouseId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
-  destinationWarehouse   Warehouse               @relation("InventoryTransferDestinationWarehouse", fields: [destinationWarehouseId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
-  createdBy              User                    @relation("InventoryTransferCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  dispatchedBy           User?                   @relation("InventoryTransferDispatchedBy", fields: [dispatchedByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  receivedBy             User?                   @relation("InventoryTransferReceivedBy", fields: [receivedByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  cancelledBy            User?                   @relation("InventoryTransferCancelledBy", fields: [cancelledByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  id                     Int                       @id @default(autoincrement()) @db.UnsignedInt
+  uuid                   String                    @default(uuid()) @db.Char(36)
+  companyId              Int                       @map("company_id") @db.UnsignedInt
+  code                   String                    @db.VarChar(50)
+  sourceWarehouseId      Int                       @map("source_warehouse_id") @db.UnsignedInt
+  destinationWarehouseId Int                       @map("destination_warehouse_id") @db.UnsignedInt
+  status                 InventoryTransferStatus   @default(PREPARATION)
+  notes                  String?                   @db.Text
+  incidentNotes          String?                   @map("incident_notes") @db.Text
+  createdByUserId        Int                       @map("created_by_user_id") @db.UnsignedInt
+  dispatchedByUserId     Int?                      @map("dispatched_by_user_id") @db.UnsignedInt
+  receivedByUserId       Int?                      @map("received_by_user_id") @db.UnsignedInt
+  cancelledByUserId      Int?                      @map("cancelled_by_user_id") @db.UnsignedInt
+  dispatchedAt           DateTime?                 @map("dispatched_at") @db.DateTime(3)
+  receivedAt             DateTime?                 @map("received_at") @db.DateTime(3)
+  cancelledAt            DateTime?                 @map("cancelled_at") @db.DateTime(3)
+  cancellationReason     String?                   @map("cancellation_reason") @db.Text
+  createdAt              DateTime                  @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt              DateTime                  @updatedAt @map("updated_at") @db.DateTime(3)
+  company                Company                   @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  sourceWarehouse        Warehouse                 @relation("InventoryTransferSourceWarehouse", fields: [sourceWarehouseId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  destinationWarehouse   Warehouse                 @relation("InventoryTransferDestinationWarehouse", fields: [destinationWarehouseId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  createdBy              User                      @relation("InventoryTransferCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  dispatchedBy           User?                     @relation("InventoryTransferDispatchedBy", fields: [dispatchedByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  receivedBy             User?                     @relation("InventoryTransferReceivedBy", fields: [receivedByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  cancelledBy            User?                     @relation("InventoryTransferCancelledBy", fields: [cancelledByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   details                InventoryTransferDetail[]
 
   @@unique([uuid], map: "inventory_transfers_uuid_key")
@@ -1866,6 +1889,66 @@ model InventoryTransferDetail {
   @@index([companyId, sourceLocationId], map: "inventory_transfer_details_source_location_idx")
   @@index([companyId, destinationLocationId], map: "inventory_transfer_details_destination_location_idx")
   @@map("inventory_transfer_details")
+}
+
+model InventoryAdjustment {
+  id                 Int                         @id @default(autoincrement()) @db.UnsignedInt
+  uuid               String                      @default(uuid()) @db.Char(36)
+  companyId          Int                         @map("company_id") @db.UnsignedInt
+  code               String                      @db.VarChar(50)
+  warehouseId        Int                         @map("warehouse_id") @db.UnsignedInt
+  status             InventoryAdjustmentStatus   @default(DRAFT)
+  reason             String                      @db.VarChar(500)
+  notes              String?                     @db.Text
+  createdByUserId    Int                         @map("created_by_user_id") @db.UnsignedInt
+  approvedByUserId   Int?                        @map("approved_by_user_id") @db.UnsignedInt
+  cancelledByUserId  Int?                        @map("cancelled_by_user_id") @db.UnsignedInt
+  approvedAt         DateTime?                   @map("approved_at") @db.DateTime(3)
+  cancelledAt        DateTime?                   @map("cancelled_at") @db.DateTime(3)
+  cancellationReason String?                     @map("cancellation_reason") @db.Text
+  createdAt          DateTime                    @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt          DateTime                    @updatedAt @map("updated_at") @db.DateTime(3)
+  company            Company                     @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  warehouse          Warehouse                   @relation(fields: [warehouseId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  createdBy          User                        @relation("InventoryAdjustmentCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  approvedBy         User?                       @relation("InventoryAdjustmentApprovedBy", fields: [approvedByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  cancelledBy        User?                       @relation("InventoryAdjustmentCancelledBy", fields: [cancelledByUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  details            InventoryAdjustmentDetail[]
+
+  @@unique([uuid], map: "inventory_adjustments_uuid_key")
+  @@unique([companyId, code], map: "inventory_adjustments_company_code_key")
+  @@unique([id, companyId], map: "inventory_adjustments_id_company_key")
+  @@index([companyId, status, createdAt], map: "inventory_adjustments_company_status_date_idx")
+  @@index([companyId, warehouseId], map: "inventory_adjustments_warehouse_idx")
+  @@index([createdByUserId], map: "inventory_adjustments_created_by_idx")
+  @@index([approvedByUserId], map: "inventory_adjustments_approved_by_idx")
+  @@index([cancelledByUserId], map: "inventory_adjustments_cancelled_by_idx")
+  @@map("inventory_adjustments")
+}
+
+model InventoryAdjustmentDetail {
+  id                    Int                          @id @default(autoincrement()) @db.UnsignedInt
+  companyId             Int                          @map("company_id") @db.UnsignedInt
+  inventoryAdjustmentId Int                          @map("inventory_adjustment_id") @db.UnsignedInt
+  lineNumber            Int                          @map("line_number") @db.UnsignedSmallInt
+  inventoryLotId        Int                          @map("inventory_lot_id") @db.UnsignedInt
+  locationId            Int                          @map("location_id") @db.UnsignedInt
+  direction             InventoryAdjustmentDirection
+  quantity              Decimal                      @db.Decimal(18, 4)
+  unitCost              Decimal?                     @map("unit_cost") @db.Decimal(18, 6)
+  totalCost             Decimal?                     @map("total_cost") @db.Decimal(18, 6)
+  notes                 String?                      @db.Text
+  createdAt             DateTime                     @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt             DateTime                     @updatedAt @map("updated_at") @db.DateTime(3)
+  company               Company                      @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  inventoryAdjustment   InventoryAdjustment          @relation(fields: [inventoryAdjustmentId, companyId], references: [id, companyId], onDelete: Cascade, onUpdate: Cascade)
+  inventoryLot          InventoryLot                 @relation(fields: [inventoryLotId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+  location              Location                     @relation(fields: [locationId, companyId], references: [id, companyId], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([companyId, inventoryAdjustmentId, lineNumber], map: "inventory_adjustment_details_line_key")
+  @@unique([id, companyId], map: "inventory_adjustment_details_id_company_key")
+  @@index([companyId, inventoryLotId, locationId], map: "inventory_adjustment_details_stock_idx")
+  @@map("inventory_adjustment_details")
 }
 
 model PurchaseOrderExpense {

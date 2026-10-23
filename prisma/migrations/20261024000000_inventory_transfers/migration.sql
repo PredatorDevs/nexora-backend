@@ -29,13 +29,13 @@ CREATE TABLE `inventory_transfers` (
   INDEX `inventory_transfers_dispatched_by_idx` (`dispatched_by_user_id`),
   INDEX `inventory_transfers_received_by_idx` (`received_by_user_id`),
   INDEX `inventory_transfers_cancelled_by_idx` (`cancelled_by_user_id`),
-  CONSTRAINT `inventory_transfers_company_fkey` FOREIGN KEY (`company_id`) REFERENCES `companies` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
-  CONSTRAINT `inventory_transfers_source_fkey` FOREIGN KEY (`source_warehouse_id`,`company_id`) REFERENCES `warehouses` (`id`,`company_id`) ON DELETE RESTRICT ON UPDATE CASCADE,
-  CONSTRAINT `inventory_transfers_destination_fkey` FOREIGN KEY (`destination_warehouse_id`,`company_id`) REFERENCES `warehouses` (`id`,`company_id`) ON DELETE RESTRICT ON UPDATE CASCADE,
-  CONSTRAINT `inventory_transfers_created_by_fkey` FOREIGN KEY (`created_by_user_id`) REFERENCES `users` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
-  CONSTRAINT `inventory_transfers_dispatched_by_fkey` FOREIGN KEY (`dispatched_by_user_id`) REFERENCES `users` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
-  CONSTRAINT `inventory_transfers_received_by_fkey` FOREIGN KEY (`received_by_user_id`) REFERENCES `users` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
-  CONSTRAINT `inventory_transfers_cancelled_by_fkey` FOREIGN KEY (`cancelled_by_user_id`) REFERENCES `users` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE
+  CONSTRAINT `inventory_transfers_company_id_fkey` FOREIGN KEY (`company_id`) REFERENCES `companies` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT `inventory_transfers_source_warehouse_id_company_id_fkey` FOREIGN KEY (`source_warehouse_id`,`company_id`) REFERENCES `warehouses` (`id`,`company_id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT `inventory_transfers_destination_warehouse_id_company_id_fkey` FOREIGN KEY (`destination_warehouse_id`,`company_id`) REFERENCES `warehouses` (`id`,`company_id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT `inventory_transfers_created_by_user_id_fkey` FOREIGN KEY (`created_by_user_id`) REFERENCES `users` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT `inventory_transfers_dispatched_by_user_id_fkey` FOREIGN KEY (`dispatched_by_user_id`) REFERENCES `users` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT `inventory_transfers_received_by_user_id_fkey` FOREIGN KEY (`received_by_user_id`) REFERENCES `users` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT `inventory_transfers_cancelled_by_user_id_fkey` FOREIGN KEY (`cancelled_by_user_id`) REFERENCES `users` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE TABLE `inventory_transfer_details` (
@@ -58,11 +58,11 @@ CREATE TABLE `inventory_transfer_details` (
   INDEX `inventory_transfer_details_lot_idx` (`company_id`,`inventory_lot_id`),
   INDEX `inventory_transfer_details_source_location_idx` (`company_id`,`source_location_id`),
   INDEX `inventory_transfer_details_destination_location_idx` (`company_id`,`destination_location_id`),
-  CONSTRAINT `inventory_transfer_details_company_fkey` FOREIGN KEY (`company_id`) REFERENCES `companies` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
-  CONSTRAINT `inventory_transfer_details_transfer_fkey` FOREIGN KEY (`inventory_transfer_id`,`company_id`) REFERENCES `inventory_transfers` (`id`,`company_id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `inventory_transfer_details_lot_fkey` FOREIGN KEY (`inventory_lot_id`,`company_id`) REFERENCES `inventory_lots` (`id`,`company_id`) ON DELETE RESTRICT ON UPDATE CASCADE,
-  CONSTRAINT `inventory_transfer_details_source_location_fkey` FOREIGN KEY (`source_location_id`,`company_id`) REFERENCES `locations` (`id`,`company_id`) ON DELETE RESTRICT ON UPDATE CASCADE,
-  CONSTRAINT `inventory_transfer_details_destination_location_fkey` FOREIGN KEY (`destination_location_id`,`company_id`) REFERENCES `locations` (`id`,`company_id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT `inventory_transfer_details_company_id_fkey` FOREIGN KEY (`company_id`) REFERENCES `companies` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT `inventory_transfer_details_inventory_transfer_id_company_id_fkey` FOREIGN KEY (`inventory_transfer_id`,`company_id`) REFERENCES `inventory_transfers` (`id`,`company_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `inventory_transfer_details_inventory_lot_id_company_id_fkey` FOREIGN KEY (`inventory_lot_id`,`company_id`) REFERENCES `inventory_lots` (`id`,`company_id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT `inventory_transfer_details_source_location_id_company_id_fkey` FOREIGN KEY (`source_location_id`,`company_id`) REFERENCES `locations` (`id`,`company_id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT `inventory_transfer_details_destination_location_id_company__fkey` FOREIGN KEY (`destination_location_id`,`company_id`) REFERENCES `locations` (`id`,`company_id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `inventory_transfer_details_quantity_check` CHECK (`quantity` > 0),
   CONSTRAINT `inventory_transfer_details_cost_check` CHECK (`unit_cost` >= 0 AND `total_cost` >= 0)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

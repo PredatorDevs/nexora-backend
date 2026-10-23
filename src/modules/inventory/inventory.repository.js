@@ -91,6 +91,7 @@ export function createInventoryRepository(prisma) {
             warehouse: { select: { id: true, code: true, name: true, branch: { select: { id: true, code: true, name: true } } } },
             location: { select: { id: true, code: true } },
             confirmedBy: { select: { id: true, displayName: true } },
+            reversals: { select: { id: true }, take: 1 },
           },
         }),
         client.inventoryMovement.count({ where }),

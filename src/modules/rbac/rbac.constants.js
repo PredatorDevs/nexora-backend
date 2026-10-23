@@ -395,6 +395,7 @@ export const companyRoleTemplates = Object.freeze([
       'inventory.locations_assign',
       'inventory.kardex_read',
       'inventory.costs_read',
+      'inventory.adjustments_create',
       'inventory.transfers_create',
       'inventory.transfers_dispatch',
       'inventory.transfers_receive',

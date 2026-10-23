@@ -2,10 +2,12 @@ import {
   permissionCodes,
   permissionScopeForCode,
 } from '../../src/modules/rbac/rbac.constants.js';
+import { mapWithConcurrency } from './seed.utils.js';
 
 export async function seedPermissions(prisma) {
-  return Promise.all(
-    permissionCodes.map((code) => {
+  return mapWithConcurrency(
+    permissionCodes,
+    (code) => {
       const [resource, action] = code.split('.');
       const data = {
         code,
@@ -20,6 +22,6 @@ export async function seedPermissions(prisma) {
         create: data,
         update: data,
       });
-    }),
+    },
   );
 }

@@ -68,42 +68,6 @@ ALTER TABLE `inventory_movements` DROP FOREIGN KEY `inventory_movements_user_fke
 ALTER TABLE `inventory_movements` DROP FOREIGN KEY `inventory_movements_warehouse_fkey`;
 
 -- DropForeignKey
-ALTER TABLE `inventory_transfer_details` DROP FOREIGN KEY `inventory_transfer_details_company_fkey`;
-
--- DropForeignKey
-ALTER TABLE `inventory_transfer_details` DROP FOREIGN KEY `inventory_transfer_details_destination_location_fkey`;
-
--- DropForeignKey
-ALTER TABLE `inventory_transfer_details` DROP FOREIGN KEY `inventory_transfer_details_lot_fkey`;
-
--- DropForeignKey
-ALTER TABLE `inventory_transfer_details` DROP FOREIGN KEY `inventory_transfer_details_source_location_fkey`;
-
--- DropForeignKey
-ALTER TABLE `inventory_transfer_details` DROP FOREIGN KEY `inventory_transfer_details_transfer_fkey`;
-
--- DropForeignKey
-ALTER TABLE `inventory_transfers` DROP FOREIGN KEY `inventory_transfers_cancelled_by_fkey`;
-
--- DropForeignKey
-ALTER TABLE `inventory_transfers` DROP FOREIGN KEY `inventory_transfers_company_fkey`;
-
--- DropForeignKey
-ALTER TABLE `inventory_transfers` DROP FOREIGN KEY `inventory_transfers_created_by_fkey`;
-
--- DropForeignKey
-ALTER TABLE `inventory_transfers` DROP FOREIGN KEY `inventory_transfers_destination_fkey`;
-
--- DropForeignKey
-ALTER TABLE `inventory_transfers` DROP FOREIGN KEY `inventory_transfers_dispatched_by_fkey`;
-
--- DropForeignKey
-ALTER TABLE `inventory_transfers` DROP FOREIGN KEY `inventory_transfers_received_by_fkey`;
-
--- DropForeignKey
-ALTER TABLE `inventory_transfers` DROP FOREIGN KEY `inventory_transfers_source_fkey`;
-
--- DropForeignKey
 ALTER TABLE `locations` DROP FOREIGN KEY `locations_warehouse_company_fkey`;
 
 -- DropForeignKey
@@ -819,42 +783,6 @@ ALTER TABLE `inventory_label_prints` ADD CONSTRAINT `inventory_label_prints_inve
 
 -- AddForeignKey
 ALTER TABLE `inventory_label_prints` ADD CONSTRAINT `inventory_label_prints_printed_by_user_id_fkey` FOREIGN KEY (`printed_by_user_id`) REFERENCES `users`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `inventory_transfers` ADD CONSTRAINT `inventory_transfers_company_id_fkey` FOREIGN KEY (`company_id`) REFERENCES `companies`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `inventory_transfers` ADD CONSTRAINT `inventory_transfers_source_warehouse_id_company_id_fkey` FOREIGN KEY (`source_warehouse_id`, `company_id`) REFERENCES `warehouses`(`id`, `company_id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `inventory_transfers` ADD CONSTRAINT `inventory_transfers_destination_warehouse_id_company_id_fkey` FOREIGN KEY (`destination_warehouse_id`, `company_id`) REFERENCES `warehouses`(`id`, `company_id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `inventory_transfers` ADD CONSTRAINT `inventory_transfers_created_by_user_id_fkey` FOREIGN KEY (`created_by_user_id`) REFERENCES `users`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `inventory_transfers` ADD CONSTRAINT `inventory_transfers_dispatched_by_user_id_fkey` FOREIGN KEY (`dispatched_by_user_id`) REFERENCES `users`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `inventory_transfers` ADD CONSTRAINT `inventory_transfers_received_by_user_id_fkey` FOREIGN KEY (`received_by_user_id`) REFERENCES `users`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `inventory_transfers` ADD CONSTRAINT `inventory_transfers_cancelled_by_user_id_fkey` FOREIGN KEY (`cancelled_by_user_id`) REFERENCES `users`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `inventory_transfer_details` ADD CONSTRAINT `inventory_transfer_details_company_id_fkey` FOREIGN KEY (`company_id`) REFERENCES `companies`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `inventory_transfer_details` ADD CONSTRAINT `inventory_transfer_details_inventory_transfer_id_company_id_fkey` FOREIGN KEY (`inventory_transfer_id`, `company_id`) REFERENCES `inventory_transfers`(`id`, `company_id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `inventory_transfer_details` ADD CONSTRAINT `inventory_transfer_details_inventory_lot_id_company_id_fkey` FOREIGN KEY (`inventory_lot_id`, `company_id`) REFERENCES `inventory_lots`(`id`, `company_id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `inventory_transfer_details` ADD CONSTRAINT `inventory_transfer_details_source_location_id_company_id_fkey` FOREIGN KEY (`source_location_id`, `company_id`) REFERENCES `locations`(`id`, `company_id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `inventory_transfer_details` ADD CONSTRAINT `inventory_transfer_details_destination_location_id_company__fkey` FOREIGN KEY (`destination_location_id`, `company_id`) REFERENCES `locations`(`id`, `company_id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `purchase_order_expenses` ADD CONSTRAINT `purchase_order_expenses_company_id_fkey` FOREIGN KEY (`company_id`) REFERENCES `companies`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;

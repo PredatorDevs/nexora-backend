@@ -160,6 +160,26 @@ las notas de incidencia y responsables.
 - Abrir el mismo registro en dos sesiones; procesarlo en una y luego usar la
   otra: la segunda operación debe rechazarse por `expectedUpdatedAt` obsoleto.
 
+## Caso 11: ajuste autorizado
+
+1. Crear un ajuste de salida sobre un lote y ubicación con saldo.
+2. Comprobar que el borrador no cambie existencias.
+3. Aprobarlo con un usuario que posea `inventory.adjustments_approve`.
+
+Resultado esperado: se descuenta el saldo, se actualiza la valoración y aparece
+un movimiento `ADJUSTMENT_OUT`. Repetir la aprobación o exceder el saldo debe
+rechazarse. Repetir con dirección `IN` debe incrementar saldo y valoración.
+
+## Caso 12: reversión
+
+1. Desde Kardex, revertir el movimiento de ajuste indicando un motivo.
+2. Comprobar saldos, valoración y nuevo movimiento.
+3. Intentar revertir nuevamente el movimiento original.
+
+Resultado esperado: se crea `REVERSAL`, se restaura el efecto contrario y el
+segundo intento se rechaza. No debe ofrecerse reversión directa para ingresos de
+compra ni movimientos de traslado.
+
 ## Conciliación final
 
 Para cada producto probado se debe cumplir:
@@ -178,8 +198,6 @@ eliminarse desde la aplicación.
 
 Todavía no deben probarse como disponibles:
 
-- ajustes de entrada o salida;
-- reversiones;
 - reubicación dentro del mismo almacén;
 - tránsito mediante ubicación de vehículo;
 - salidas por venta;

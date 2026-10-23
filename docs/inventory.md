@@ -19,9 +19,11 @@ El corte actual incluye:
 - consulta de existencias, lotes, Kardex y costo promedio;
 - generación de etiquetas PDF y trazabilidad de reimpresiones;
 - traslados entre almacenes, descritos en `docs/inventory-transfers.md`.
+- ajustes autorizados y reversión de sus movimientos, descritos en
+  `docs/inventory-adjustments.md`.
 
-Los ajustes, reversiones, ventas, devoluciones y ubicación de tránsito mediante
-vehículos todavía no forman parte del flujo operativo disponible.
+Las ventas, devoluciones y la ubicación de tránsito mediante vehículos todavía
+no forman parte del flujo operativo disponible.
 
 ## Modelo de datos
 
@@ -68,7 +70,8 @@ ADJUSTMENT_OUT
 REVERSAL
 ```
 
-En este corte se generan `PURCHASE_RECEIPT`, `TRANSFER_OUT` y `TRANSFER_IN`.
+En este corte se generan `PURCHASE_RECEIPT`, `TRANSFER_OUT`, `TRANSFER_IN`,
+`ADJUSTMENT_IN`, `ADJUSTMENT_OUT` y `REVERSAL`.
 Los movimientos confirmados no se editan ni eliminan; las correcciones futuras
 se harán mediante movimientos compensatorios.
 
@@ -150,8 +153,6 @@ inventory.kardex_read
 inventory.costs_read
 ```
 
-También están reservados para los siguientes cortes:
-
 ```text
 inventory.adjustments_create
 inventory.adjustments_approve
@@ -172,8 +173,6 @@ La API valida permisos independientemente de la visibilidad del menú.
 
 ## Pendientes de la v1.0
 
-- ajustes positivos y negativos con autorización;
-- reversión mediante movimientos compensatorios;
 - movimientos entre ubicaciones del mismo almacén;
 - ubicación tipo vehículo para mercancía en tránsito;
 - integración con salidas de venta y devoluciones aceptadas;

@@ -45,8 +45,8 @@ export function createInventoryService({ repository, runInTransaction, generateC
     async listKardex(companyId, query) {
       const result = await repository.listKardex(companyId, query);
       return {
-        movements: result.items.map((item) => ({
-          ...item,
+        movements: result.items.map(({ reversals, ...item }) => ({
+          ...item, hasReversal: (reversals?.length ?? 0) > 0,
           id: item.id.toString(),
           reversalOfMovementId: item.reversalOfMovementId?.toString() ?? null,
         })),

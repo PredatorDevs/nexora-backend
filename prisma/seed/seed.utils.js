@@ -1,4 +1,4 @@
-export async function mapWithConcurrency(items, mapper, concurrency = 10) {
+export async function mapWithConcurrency(items, mapper, concurrency = 5) {
   if (!Number.isInteger(concurrency) || concurrency < 1) {
     throw new TypeError('concurrency must be a positive integer');
   }
