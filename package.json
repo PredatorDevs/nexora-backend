@@ -30,6 +30,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
     "prisma:seed": "prisma db seed",
+    "prisma:seed:demo": "node --env-file-if-exists=.env prisma/seed/demo.seed.js",
     "artifact:manifest": "node scripts/create-artifact-manifest.mjs release-bundle release-bundle/artifact-manifest.json",
     "artifact:verify": "node scripts/verify-artifact-manifest.mjs release-bundle"
   },

@@ -256,6 +256,7 @@ export const companyPermissionCodes = Object.freeze([
   'inventory.adjustments_create',
   'inventory.adjustments_approve',
   'inventory.movements_reverse',
+  'inventory.relocations_create',
   'inventory.transfers_create',
   'inventory.transfers_dispatch',
   'inventory.transfers_receive',

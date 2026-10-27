@@ -1,0 +1,1 @@
+import{c as e,f as t}from"./index-Ci7C__zK.js";function n({permission:n,anyOf:r,allOf:i,fallback:a=null,children:o}){let{permissions:s}=e();return t(s,{permission:n,anyOf:r,allOf:i})?o:a}export{n as t};
